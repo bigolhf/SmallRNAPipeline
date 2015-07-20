@@ -1,0 +1,7 @@
+{"pipelineName":"pipeline1", 
+ "steps":
+   [
+   	 {"name":"AdapterTrimming", "inputFileList":"raw_data", "outputFileList":"trimmed_data"},
+     {"name":"QC", "inputFileList":"trimmed_data", "outputFileList":"qc_data"}
+   ]
+}

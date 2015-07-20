@@ -1,0 +1,20 @@
+paths:
+  installation_folder: /home/sr/NetBeansProjects/MirPara4j
+
+model:
+  folder: models
+
+rnafold:
+  folder: lib
+  dll: RNAFold.dll
+
+data:
+  folder: data
+  data_file: mirbase.dat
+
+software:
+  root_folder: /home/sr/software/
+  adapter_trimming: trimmomatic/Trimmomatic-0.33/trimmomatic-0.33.jar
+
+  
+
