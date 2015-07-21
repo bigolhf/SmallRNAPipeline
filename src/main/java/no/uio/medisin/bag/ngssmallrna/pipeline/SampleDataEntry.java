@@ -3,13 +3,13 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package no.uio.medisin.bag.ngs;
+package no.uio.medisin.bag.ngssmallrna.pipeline;
 
 /**
  *
  * @author sr
  */
-public class NGSDataEntry {
+public class SampleDataEntry {
     
     private String dataFile;
     private String dataSource;
@@ -18,7 +18,7 @@ public class NGSDataEntry {
 
     
     
-    public NGSDataEntry(String fname, String source, String cond, String t){
+    public SampleDataEntry(String fname, String source, String cond, String t){
         
         dataFile = fname;
         dataSource = source;

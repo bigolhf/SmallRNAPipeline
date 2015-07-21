@@ -9,7 +9,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import no.uio.medisin.bag.ngssmallrna.steps.StepInputData;
-import no.uio.medisin.bag.ngssmallrna.steps.TrimAdapters;
+import no.uio.medisin.bag.ngssmallrna.steps.TrimAdaptersStep;
 
 
 /**
@@ -20,11 +20,11 @@ public class testAdapterTrimming {
     
     static Logger logger = LogManager.getRootLogger();
     public static void main(String args[]){
-        StepInputData sid = new StepInputData();
-        sid.setProjectRoot("/home/sr/research/");
-        sid.setProjectID("sweden");
-        TrimAdapters trimAdapters = new TrimAdapters(sid);
-        trimAdapters.performTrimming();
+//        StepInputData sid = new StepInputData();
+//        sid.setProjectRoot("/home/sr/research/");
+//        sid.setProjectID("sweden");
+//        TrimAdaptersStep trimAdapters = new TrimAdaptersStep(sid);
+//        trimAdapters.performTrimming();
         
     }
 }

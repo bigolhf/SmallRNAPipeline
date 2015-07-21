@@ -16,7 +16,7 @@ import org.apache.logging.log4j.Logger;
  * htsjdk
  * @author sr
  */
-public class StepOutputData {
+public class StepResultData {
     
     static Logger logger = LogManager.getLogger();
     private String projectID;

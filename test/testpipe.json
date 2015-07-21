@@ -1,7 +1,9 @@
 {"pipelineName":"pipeline1", 
- "steps":
+ "projectID":"test",
+ "projectRoot":" /home/sr/NetBeansProjects/NGSsmallRNA/",
+ "stepsData":
    [
-   	 {"name":"AdapterTrimming", "inputFileList":"raw_data", "outputFileList":"trimmed_data"},
-     {"name":"QC", "inputFileList":"trimmed_data", "outputFileList":"qc_data"}
+   	 {"stepType":"TrimAdapters", "inputFileList":"raw_data", "outputFileList":"trimmed_data"},
+     {"stepType":"QC", "inputFileList":"trimmed_data", "outputFileList":"qc_data"}
    ]
 }

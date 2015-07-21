@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package no.uio.medisin.bag.ngs;
+package no.uio.medisin.bag.ngssmallrna.pipeline;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -12,9 +12,11 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import static no.uio.medisin.bag.ngs.SmallNGSCmd.logger;
+import static no.uio.medisin.bag.ngssmallrna.pipeline.SmallNGSCmd.logger;
 import no.uio.medisin.bag.ngssmallrna.steps.NGSStep;
-import no.uio.medisin.bag.ngssmallrna.steps.NGSStepData;
+import no.uio.medisin.bag.ngssmallrna.steps.NGSRunStepData;
+import no.uio.medisin.bag.ngssmallrna.steps.StepInputData;
+import no.uio.medisin.bag.ngssmallrna.steps.TrimAdaptersStep;
 import org.yaml.snakeyaml.Yaml;
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.annotate.JsonAutoDetect;
@@ -28,25 +30,31 @@ import org.codehaus.jackson.map.ObjectMapper;
  */
 public class SmallNGSPipeline {
     
-    static  Yaml                    yaml = new Yaml();
-    static  String                  FileSeparator = System.getProperty("file.separator");
+    static  Yaml                        yaml = new Yaml();
+    static  String                      FileSeparator = System.getProperty("file.separator");
     
-    private String                  configurationFile = "";
-    private String                  pipelineFile = "";
-    private String                  dataFile = "";
+    private String                      configurationFile = "";
+    private String                      pipelineFile = "";
+    private String                      dataFile = "";
     
-    private String                  softwareRootFolder = "";
-    private String                  adapterTrimmingSoftware = "";
+    private String                      softwareRootFolder = "";
+    private String                      adapterTrimmingSoftware = "";
     
-    private PipelineData            pipelineData = new PipelineData();
-    private ArrayList<NGSDataEntry> NGSData = new ArrayList<>();
-    private ArrayList<NGSStep>      NGSSteps = new ArrayList<>();
+    private String                      trimAdapterFile = "";
+    private int                         trimNoOfMismatches = 2;
+    private int                         trimMinAlignScore = 7;
+    private int                         trimNoOfThreads = 4;
+    private int                         trimMinAvgReadQuality = 30;
+    
+    private PipelineData                pipelineData = new PipelineData();
+    private ArrayList<SampleDataEntry>  SampleData = new ArrayList<>();
+    private ArrayList<NGSStep>          NGSSteps = new ArrayList<>();
 
     
     
     /**
-     * here we will read the steps into a Hash and then step through
-     * specific checks are carried out within each step
+     * here we load the information from the three specified files
+     * (run, pipeline and dataset) 
      * 
      * @throws IOException 
      */
@@ -77,12 +85,34 @@ public class SmallNGSPipeline {
     }
     
     
-    
+    /**
+     * 
+     * build each step and execute
+     * 
+     */
     public void buildPipeline(){
         
-        for (NGSStepData stepData: this.getPipelineData().getSteps()){
+        for (NGSRunStepData stepData: this.getPipelineData().getStepsData()){
             
-            getNGSSteps().add(null);
+            switch (stepData.getStepType()){
+                case "TrimAdapters":
+                    
+                    HashMap trimAdapterParams = new HashMap();
+                    trimAdapterParams.put("trimAdapterSoftware",    this.getSoftwareRootFolder() + FileSeparator + this.getAdapterTrimmingSoftware());
+                    trimAdapterParams.put("trimAdapterFile",        this.getTrimAdapterFile());
+                    trimAdapterParams.put("trimNoOfMismatches",     this.getTrimNoOfMismatches());
+                    trimAdapterParams.put("trimMinAlignScore",      this.getTrimMinAlignScore());
+                    trimAdapterParams.put("trimNoOfThreads",        this.getTrimNoOfThreads());
+                    trimAdapterParams.put("trimMinAvgReadQuality",  this.getTrimMinAvgReadQuality());
+                    
+                    StepInputData sid = new StepInputData(trimAdapterParams, this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), this.getSampleData());
+                    TrimAdaptersStep ngsStep = new TrimAdaptersStep(sid);
+                    this.getNGSSteps().add(ngsStep);
+                    ngsStep.verifyInputData();
+                    ngsStep.execute();
+                    
+            }
+            
         }
         
     }
@@ -110,6 +140,7 @@ public class SmallNGSPipeline {
         logger.info("read data file");
         String line = "";
         BufferedReader bwData = new BufferedReader(new FileReader(new File(this.getDataFile())));
+            bwData.readLine(); // skip header line
             while((line=bwData.readLine())!= null){
                 
                 String tokens[] = line.split("\t");
@@ -118,11 +149,11 @@ public class SmallNGSPipeline {
                 String condition = tokens[2];
                 String time = tokens[3];
                 
-                NGSData.add(new NGSDataEntry(file, source, condition, time));
+                getSampleData().add(new SampleDataEntry(file, source, condition, time));
                 
             }
         bwData.close();
-        logger.info("read " + NGSData.size() + " entries");
+        logger.info("read " + getSampleData().size() + " entries");
         
         
     }
@@ -143,6 +174,14 @@ public class SmallNGSPipeline {
         HashMap softwareOptions = (HashMap) pipelineConfiguration.get("software");
         this.setSoftwareRootFolder((String) softwareOptions.get("root_folder"));
         this.setAdapterTrimmingSoftware((String) softwareOptions.get("adapter_trimming"));
+        
+        HashMap trimAdapterOptions = (HashMap) pipelineConfiguration.get("adapter_trimming");
+        this.setTrimAdapterFile((String) trimAdapterOptions.get("adapter_file"));
+        this.setTrimMinAlignScore((int) trimAdapterOptions.get("no_of_mismatches"));
+        this.setTrimNoOfMismatches((int) trimAdapterOptions.get("min_align_score"));
+        this.setTrimNoOfThreads((int) trimAdapterOptions.get("no_of_threads"));
+        this.setTrimMinAvgReadQuality((int) trimAdapterOptions.get("min_avg_read_qual"));
+        
                         
         logger.info("done\n");
         
@@ -272,6 +311,83 @@ public class SmallNGSPipeline {
      */
     public ArrayList<NGSStep> getNGSSteps() {
         return NGSSteps;
+    }
+
+    /**
+     * @return the trimAdapterFile
+     */
+    public String getTrimAdapterFile() {
+        return trimAdapterFile;
+    }
+
+    /**
+     * @param trimAdapterFile the trimAdapterFile to set
+     */
+    public void setTrimAdapterFile(String trimAdapterFile) {
+        this.trimAdapterFile = trimAdapterFile;
+    }
+
+    /**
+     * @return the trimNoOfMismatches
+     */
+    public int getTrimNoOfMismatches() {
+        return trimNoOfMismatches;
+    }
+
+    /**
+     * @param trimNoOfMismatches the trimNoOfMismatches to set
+     */
+    public void setTrimNoOfMismatches(int trimNoOfMismatches) {
+        this.trimNoOfMismatches = trimNoOfMismatches;
+    }
+
+    /**
+     * @return the trimMinAlignScore
+     */
+    public int getTrimMinAlignScore() {
+        return trimMinAlignScore;
+    }
+
+    /**
+     * @param trimMinAlignScore the trimMinAlignScore to set
+     */
+    public void setTrimMinAlignScore(int trimMinAlignScore) {
+        this.trimMinAlignScore = trimMinAlignScore;
+    }
+
+    /**
+     * @return the trimNoOfThreads
+     */
+    public int getTrimNoOfThreads() {
+        return trimNoOfThreads;
+    }
+
+    /**
+     * @param trimNoOfThreads the trimNoOfThreads to set
+     */
+    public void setTrimNoOfThreads(int trimNoOfThreads) {
+        this.trimNoOfThreads = trimNoOfThreads;
+    }
+
+    /**
+     * @return the SampleData
+     */
+    public ArrayList<SampleDataEntry> getSampleData() {
+        return SampleData;
+    }
+
+    /**
+     * @return the trimMinReadQuality
+     */
+    public int getTrimMinAvgReadQuality() {
+        return trimMinAvgReadQuality;
+    }
+
+    /**
+     * @param trimMinReadQuality the trimMinReadQuality to set
+     */
+    public void setTrimMinAvgReadQuality(int trimMinReadQuality) {
+        this.trimMinAvgReadQuality = trimMinReadQuality;
     }
     
     

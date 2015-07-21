@@ -31,7 +31,7 @@ public class User {
     private List<String> messages = new ArrayList<String>();
 
     private String name2;
-    private List <NGSStepData> steps = new ArrayList<>();
+    private List <NGSRunStepData> steps = new ArrayList<>();
         
  
 	//getter and setter methods

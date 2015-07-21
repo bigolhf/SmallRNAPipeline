@@ -5,7 +5,7 @@
  */
 package no.uio.medisin.bag.ngssmallrna.steps;
 
-import no.uio.medisin.bag.ngs.PipelineData;
+import no.uio.medisin.bag.ngssmallrna.pipeline.PipelineData;
 import java.io.File;
 import java.io.IOException;
 import org.codehaus.jackson.JsonGenerationException;

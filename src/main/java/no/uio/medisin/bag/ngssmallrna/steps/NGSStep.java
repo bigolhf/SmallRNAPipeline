@@ -5,10 +5,17 @@
  */
 package no.uio.medisin.bag.ngssmallrna.steps;
 
+import java.util.ArrayList;
+import no.uio.medisin.bag.ngssmallrna.pipeline.SampleDataEntry;
+
 /**
  *
  * @author sr
  */
-public class NGSStep {
+abstract public class NGSStep {
+    
+    abstract void verifyInputData();
+    abstract void outputResultData();
+    abstract void execute();
     
 }

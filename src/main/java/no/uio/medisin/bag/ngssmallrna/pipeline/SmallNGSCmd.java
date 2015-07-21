@@ -3,8 +3,9 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package no.uio.medisin.bag.ngs;
+package no.uio.medisin.bag.ngssmallrna.pipeline;
 
+import java.io.IOException;
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -22,12 +23,19 @@ public class SmallNGSCmd {
     
     static Logger logger = LogManager.getRootLogger();
     static Options options = new Options();
-    SmallNGSPipeline smallPipeline;
     
-    public void main(String args[]){
+    public static void main(String args[]){
         
-        smallPipeline = new SmallNGSPipeline();
-        parseArguments(args);
+        SmallNGSPipeline smallPipeline = new SmallNGSPipeline();
+        parseArguments(args, smallPipeline);
+        try{
+            smallPipeline.prepare_pipeline();
+            smallPipeline.buildPipeline();
+        }
+        catch(IOException exIO){
+            logger.info("IO error while executing pipeline");
+            logger.info(exIO.toString());
+        }
         
         
     }
@@ -43,16 +51,17 @@ public class SmallNGSCmd {
      *   steps file         : contains information about what type of analyses should be performed
      * 
      * @param args 
-     * 
+     * @param smallPipeline 
      */
-    public void parseArguments(String args[]){
+    public static void parseArguments(String args[], SmallNGSPipeline smallPipeline){
         
         
         logger.info("parse arguments");
-        options.addOption("h", "help", false, "view help");
-        options.addOption("c", "config", true, "pipeline configuration file");
-        options.addOption("d", "data", true, "data file list with grouping");
-        options.addOption("s", "steps", true, "step file in JSON format");
+        options.addOption("h", "help",      false,  "view help");
+        options.addOption("r", "run",       true,   "run configuration file");
+        options.addOption("p", "config",    true,   "pipeline configuration file");
+        options.addOption("d", "data",      true,   "data file list with grouping");
+        options.addOption("s", "steps",     true,   "step file in JSON format");
         
         CommandLineParser clParser = new BasicParser();
         CommandLine cmd = null;
@@ -62,12 +71,12 @@ public class SmallNGSCmd {
             cmd = clParser.parse(options, args);
                 
             if(cmd.hasOption("h")){
-                this.printHelp();
+                printHelp();
             }
             
-            if (cmd.hasOption("c")) {
-                logger.info("run configuration file set to " + cmd.getOptionValue("c"));
-                smallPipeline.setConfigurationFile(cmd.getOptionValue("c"));
+            if (cmd.hasOption("r")) {
+                logger.info("run configuration file set to " + cmd.getOptionValue("r"));
+                smallPipeline.setConfigurationFile(cmd.getOptionValue("r"));
             }                    
             else
                 throw new ParseException("no configuration file was specified") ;
@@ -99,7 +108,7 @@ public class SmallNGSCmd {
      * print command line usage
      * 
      */
-    public void printHelp(){
+    public static void printHelp(){
         printBanner();
         HelpFormatter formatter = new HelpFormatter();
 
@@ -115,7 +124,7 @@ public class SmallNGSCmd {
      * print program info
      * 
      */
-    public void printBanner(){
+    public static void printBanner(){
         logger.info("\n\n\n"
                 + "    =======================================================================\n"
                 + "    |  NGS smallRNA pipeline:                                             |"

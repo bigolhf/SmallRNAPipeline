@@ -9,29 +9,29 @@ package no.uio.medisin.bag.ngssmallrna.steps;
  *
  * @author sr
  */
-public class NGSStepData {
+public class NGSRunStepData {
     
-    private String name;
+    private String stepType;
     private String inputFileList;
     private String outputFileList;
 
     
     @Override
     	public String toString() {
-            return "name=" + name + "\t in:" + inputFileList + "\t out:" + outputFileList;
+            return "stepType=" + stepType + "\t in:" + inputFileList + "\t out:" + outputFileList;
         }
     /**
      * @return the name
      */
-    public String getName() {
-        return name;
+    public String getStepType() {
+        return stepType;
     }
 
     /**
      * @param name the name to set
      */
-    public void setName(String name) {
-        this.name = name;
+    public void setStepType(String name) {
+        this.stepType = name;
     }
 
     /**

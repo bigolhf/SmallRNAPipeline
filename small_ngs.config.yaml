@@ -16,5 +16,12 @@ software:
   root_folder: /home/sr/software/
   adapter_trimming: trimmomatic/Trimmomatic-0.33/trimmomatic-0.33.jar
 
+adapter_trimming:
+  adapter_file: /home/sr/NetBeansProjects/NGSsmallRNA/test/TruSeqE-SE.fa
+  no_of_mismatches: 2
+  min_align_score: 7
+  no_of_threads: 4
+  min_avg_read_qual: 30
+
   
 

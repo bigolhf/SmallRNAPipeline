@@ -7,7 +7,9 @@ package no.uio.medisin.bag.ngssmallrna.steps;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import no.uio.medisin.bag.ngssmallrna.pipeline.SampleDataEntry;
 import org.apache.logging.log4j.LogManager;
 
 import org.apache.logging.log4j.Logger;
@@ -23,10 +25,14 @@ public class StepInputData {
     private HashMap stepParams;
     private String projectID;
     private String projectRoot;
-
+    private ArrayList<SampleDataEntry> sampleData;
     
-    public StepInputData(HashMap params){
-        stepParams = params;
+    public StepInputData(HashMap params, String pid, String pRoot, ArrayList<SampleDataEntry>sdata){
+        
+        stepParams  = params;
+        projectID   = pid;
+        projectRoot = pRoot;
+        sampleData  = sdata;
         
     }
     
@@ -41,7 +47,7 @@ public class StepInputData {
         // check the project root exists
         // check the project folder exists within root
         
-        for (Object param: stepParams.keySet()){
+        for (Object param: getStepParams().keySet()){
             logger.info((String) param);
         }
         
@@ -86,6 +92,20 @@ public class StepInputData {
      */
     public void setProjectRoot(String projectRoot) {
         this.projectRoot = projectRoot;
+    }
+
+    /**
+     * @return the stepParams
+     */
+    public HashMap getStepParams() {
+        return stepParams;
+    }
+
+    /**
+     * @return the sampleData
+     */
+    public ArrayList<SampleDataEntry> getSampleData() {
+        return sampleData;
     }
     
     
