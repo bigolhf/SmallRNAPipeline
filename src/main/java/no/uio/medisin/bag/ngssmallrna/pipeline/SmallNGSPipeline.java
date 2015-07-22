@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import static no.uio.medisin.bag.ngssmallrna.pipeline.SmallNGSCmd.logger;
+import no.uio.medisin.bag.ngssmallrna.steps.CollapseReadsStep;
 import no.uio.medisin.bag.ngssmallrna.steps.NGSStep;
 import no.uio.medisin.bag.ngssmallrna.steps.NGSRunStepData;
 import no.uio.medisin.bag.ngssmallrna.steps.StepInputData;
@@ -39,6 +40,8 @@ public class SmallNGSPipeline {
     
     private String                      softwareRootFolder = "";
     private String                      adapterTrimmingSoftware = "";
+    private String                      fastq2fastaSoftware = "";
+    private String                      collapseFastaSoftware = "";
     
     private String                      trimAdapterFile = "";
     private int                         trimNoOfMismatches = 2;
@@ -105,17 +108,32 @@ public class SmallNGSPipeline {
                     trimAdapterParams.put("trimNoOfThreads",        this.getTrimNoOfThreads());
                     trimAdapterParams.put("trimMinAvgReadQuality",  this.getTrimMinAvgReadQuality());
                     
-                    StepInputData sid = new StepInputData(trimAdapterParams, this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), this.getSampleData());
-                    TrimAdaptersStep ngsStep = new TrimAdaptersStep(sid);
-                    this.getNGSSteps().add(ngsStep);
-                    ngsStep.verifyInputData();
-                    ngsStep.execute();
+                    StepInputData sidTrim = new StepInputData(trimAdapterParams, this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), this.getSampleData());
+                    TrimAdaptersStep ngsTrimStep = new TrimAdaptersStep(sidTrim);
+                    this.getNGSSteps().add(ngsTrimStep);
+                    ngsTrimStep.verifyInputData();
+                    ngsTrimStep.execute();
+                    
+                    
+                    
+                case "CollapseReads":
+                    
+                    HashMap collapseReadsParams = new HashMap();
+                    collapseReadsParams.put("fastqTofasta", this.getFastq2fastaSoftware());
+                    collapseReadsParams.put("collapseFasta", this.getCollapseFastaSoftware());
+                    
+                    StepInputData sidCollapse = new StepInputData(collapseReadsParams, this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), this.getSampleData());
+                    CollapseReadsStep ngsCollapseStep = new CollapseReadsStep(sidCollapse);
+                    ngsCollapseStep.verifyInputData();
+                    ngsCollapseStep.execute();
                     
             }
             
         }
         
     }
+
+    
 
     
     public void runPipeline(){
@@ -174,6 +192,8 @@ public class SmallNGSPipeline {
         HashMap softwareOptions = (HashMap) pipelineConfiguration.get("software");
         this.setSoftwareRootFolder((String) softwareOptions.get("root_folder"));
         this.setAdapterTrimmingSoftware((String) softwareOptions.get("adapter_trimming"));
+        this.setFastq2fastaSoftware((String) softwareOptions.get("fastq_to_fasta"));
+        this.setCollapseFastaSoftware((String) softwareOptions.get("fastx_collapser"));
         
         HashMap trimAdapterOptions = (HashMap) pipelineConfiguration.get("adapter_trimming");
         this.setTrimAdapterFile((String) trimAdapterOptions.get("adapter_file"));
@@ -388,6 +408,34 @@ public class SmallNGSPipeline {
      */
     public void setTrimMinAvgReadQuality(int trimMinReadQuality) {
         this.trimMinAvgReadQuality = trimMinReadQuality;
+    }
+
+    /**
+     * @return the fastq2fastaSoftware
+     */
+    public String getFastq2fastaSoftware() {
+        return fastq2fastaSoftware;
+    }
+
+    /**
+     * @param fastq2fastaSoftware the fastq2fastaSoftware to set
+     */
+    public void setFastq2fastaSoftware(String fastq2fastaSoftware) {
+        this.fastq2fastaSoftware = fastq2fastaSoftware;
+    }
+
+    /**
+     * @return the collapseFastaSoftware
+     */
+    public String getCollapseFastaSoftware() {
+        return collapseFastaSoftware;
+    }
+
+    /**
+     * @param collapseFastaSoftware the collapseFastaSoftware to set
+     */
+    public void setCollapseFastaSoftware(String collapseFastaSoftware) {
+        this.collapseFastaSoftware = collapseFastaSoftware;
     }
     
     

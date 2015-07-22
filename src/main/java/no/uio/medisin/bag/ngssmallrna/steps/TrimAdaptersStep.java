@@ -5,7 +5,10 @@
  */
 package no.uio.medisin.bag.ngssmallrna.steps;
 
+import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Iterator;
 import no.uio.medisin.bag.ngssmallrna.pipeline.SampleDataEntry;
@@ -33,6 +36,8 @@ public class TrimAdaptersStep extends NGSStep{
     
     private static final String         infileExtension     = ".fastq";
     private static final String         outfileExtension    = ".trim.fastq";
+    private static final String         inFolder            = "fastq_files";
+    private static final String         outFolder           = "adapter_trimmed";
     
     
     
@@ -70,42 +75,72 @@ public class TrimAdaptersStep extends NGSStep{
         
         Iterator itSD = this.stepInputData.getSampleData().iterator();
         while (itSD.hasNext()){
-            SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
-            String pathToData = stepInputData.getProjectRoot() + FileSeparator + stepInputData.getProjectID();
-            ArrayList<String> cmd = new ArrayList<>();
-            cmd.add("java -jar");
-            cmd.add((String) stepInputData.getStepParams().get("trimAdapterSoftware"));
-            cmd.add("SE");
-            cmd.add("-phred64");
-//          cmd.add("-trimlog " + pathToData + FileSeparator + sampleData.getDataFile() + ".trimlog");  // this will create huge logfiles. best to disable for now
-            cmd.add("-threads " + stepInputData.getStepParams().get("trimNoOfThreads"));
-            cmd.add(pathToData + FileSeparator + sampleData.getDataFile());
-            cmd.add(pathToData + FileSeparator + sampleData.getDataFile().replace(infileExtension, outfileExtension));
-            cmd.add("ILLUMINACLIP:" + stepInputData.getStepParams().get("trimAdapterFile") 
-                + ":" + stepInputData.getStepParams().get("trimNoOfMismatches")
-                + ":30"
-                + ":" + stepInputData.getStepParams().get("trimMinAlignScore")
-            );
-            if (stepInputData.getStepParams().get("trimMinAvgReadQuality") != null){
-                cmd.add("AVGQUAL:" + stepInputData.getStepParams().get("trimMinAvgReadQuality"));
-            }
-            
-                /*
-                java -jar Trimmomatic-0.33/trimmomatic-0.33.jar 
-                SE 
-                -phred64	
-                <input file fastq file>
-                <trimmed output fastq file> 	
-                ILLUMINACLIP:Trimmomatic-0.33/adapters/TruSeqE-SE.fa:2:30:7 2:30:7 (Mismatches:N/A:Alignment Score)
-                AVGQUAL (drop read if average quality is below this threshold)
-                -trimlog (write log)
-                -threads
-                */      
-            
-            String cmdTrimAdapters = StringUtils.join(cmd, " ");
-            cmdTrimAdapters = cmdTrimAdapters.replace(FileSeparator + FileSeparator, FileSeparator);
-            logger.info("Adapter Trim command:\t" + cmdTrimAdapters);
+            try{
+                SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
+                String pathToData = stepInputData.getProjectRoot() + FileSeparator + stepInputData.getProjectID();
+                ArrayList<String> cmd = new ArrayList<>();
+                cmd.add("java -jar");
+                cmd.add((String) stepInputData.getStepParams().get("trimAdapterSoftware"));
+                cmd.add("SE");
+                cmd.add("-phred64");
+    //          cmd.add("-trimlog " + pathToData + FileSeparator + sampleData.getDataFile() + ".trimlog");  // this will create huge logfiles. Disabled for now
+                cmd.add("-threads " + stepInputData.getStepParams().get("trimNoOfThreads"));
+                cmd.add(pathToData + FileSeparator + inFolder + FileSeparator + sampleData.getDataFile());
 
+                String outputFolder = pathToData + FileSeparator + outFolder;
+                outputFolder = outputFolder.replace(FileSeparator + FileSeparator, FileSeparator).trim();
+                Boolean f = new File(outputFolder).mkdir();       
+                if (f) logger.info("created output folder <" + outputFolder + "> for results" );
+
+                cmd.add(outputFolder + FileSeparator + sampleData.getDataFile().replace(infileExtension, outfileExtension));
+                cmd.add("ILLUMINACLIP:" + stepInputData.getStepParams().get("trimAdapterFile") 
+                    + ":" + stepInputData.getStepParams().get("trimNoOfMismatches")
+                    + ":30"
+                    + ":" + stepInputData.getStepParams().get("trimMinAlignScore")
+                );
+//                if (stepInputData.getStepParams().get("trimMinAvgReadQuality") != null){
+//                    cmd.add("AVGQUAL:" + stepInputData.getStepParams().get("trimMinAvgReadQuality"));
+//                }
+
+                    /*
+                    java -jar Trimmomatic-0.33/trimmomatic-0.33.jar 
+                    SE 
+                    -phred64	
+                    <input file fastq file>
+                    <trimmed output fastq file> 	
+                    ILLUMINACLIP:Trimmomatic-0.33/adapters/TruSeqE-SE.fa:2:30:7 2:30:7 (Mismatches:N/A:Alignment Score)
+                    AVGQUAL (drop read if average quality is below this threshold)
+                    -trimlog (write log)
+                    -threads
+                    */      
+
+                String cmdTrimAdapters = StringUtils.join(cmd, " ");
+                cmdTrimAdapters = cmdTrimAdapters.replace(FileSeparator + FileSeparator, FileSeparator);
+                logger.info("Adapter Trim command:\t" + cmdTrimAdapters);
+
+                Runtime rt = Runtime.getRuntime();
+                Process proc = rt.exec(cmdTrimAdapters);
+                BufferedReader brStdin  = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+                BufferedReader brStdErr = new BufferedReader(new InputStreamReader(proc.getErrorStream()));
+                
+                String line = null;
+                logger.info("<OUTPUT>");
+                while ( (line = brStdin.readLine()) != null)
+                    logger.info(line);
+                logger.info("</OUTPUT>");
+                
+                logger.info("<ERROR>");
+                while ( (line = brStdErr.readLine()) != null)
+                    logger.info(line);
+                logger.info("</ERROR>");
+                
+                
+                int exitVal = proc.waitFor();            
+                System.out.println("Process exitValue: " + exitVal);            
+            }
+            catch(IOException|InterruptedException ex){
+                logger.error("error executing AdapterTrimming command\n" + ex.toString());
+            }
         }
         
         
