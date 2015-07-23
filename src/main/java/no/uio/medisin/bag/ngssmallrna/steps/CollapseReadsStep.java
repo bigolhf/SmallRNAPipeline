@@ -35,10 +35,11 @@ public class CollapseReadsStep extends NGSStep{
     static  Logger                      logger = LogManager.getLogger();
     static  String                      FileSeparator = System.getProperty("file.separator");
     
-    private static final String         infileExtension     = ".trim.fastq";
-    private static final String         outfileExtension    = ".trim.clp.fasta";
-    private static final String         inFolder            = "adapter_trimmed";
-    private static final String         outFolder           = "collapsed";
+    private static final String         infileExtension         = ".trim.fastq";
+    private static final String         faOutputExtension       = ".trim.fasta";
+    private static final String         clpfaOutputExtension    = ".trim.clp.fasta";
+    private static final String         inFolder                = "adapter_trimmed";
+    private static final String         outFolder               = "collapsed";
     
     
     
@@ -104,7 +105,7 @@ public class CollapseReadsStep extends NGSStep{
                 Boolean f = new File(outputFolder).mkdir(); 
                 if (f) logger.info("created output folder <" + outputFolder + "> for results" );
 
-                String fastaOutputFile = outputFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", outfileExtension);
+                String fastaOutputFile = outputFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", faOutputExtension);
                 cmdQ2A.add(fastaOutputFile);
                 
                 cmdQ2A.add("-Q33");
@@ -119,22 +120,23 @@ public class CollapseReadsStep extends NGSStep{
                 BufferedReader brStdin  = new BufferedReader(new InputStreamReader(proc.getInputStream()));
                 BufferedReader brStdErr = new BufferedReader(new InputStreamReader(proc.getErrorStream()));
                 
-                String line = null;
-                logger.info("<OUTPUT>");
-                while ( (line = brStdin.readLine()) != null)
-                    logger.info(line);
-                logger.info("</OUTPUT>");
-                
-                logger.info("<ERROR>");
-                while ( (line = brStdErr.readLine()) != null)
-                    logger.info(line);
-                logger.info("</ERROR>");
-                
-                
-                int exitVal = proc.waitFor();            
-                System.out.println("Process exitValue: " + exitVal);            
+                    String line = null;
+                    logger.info("<OUTPUT>");
+                    while ( (line = brStdin.readLine()) != null)
+                        logger.info(line);
+                    logger.info("</OUTPUT>");
 
-            
+                    logger.info("<ERROR>");
+                    while ( (line = brStdErr.readLine()) != null)
+                        logger.info(line);
+                    logger.info("</ERROR>");
+
+
+                    int exitVal = proc.waitFor();            
+                    System.out.println("Process exitValue: " + exitVal);            
+
+                brStdin.close();
+                brStdErr.close();
             
             
             
@@ -156,7 +158,7 @@ public class CollapseReadsStep extends NGSStep{
 
                 if (f) logger.info("created output folder <" + outputFolder + "> for results" );
 
-                String clpOutputFile = outputFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", outfileExtension);
+                String clpOutputFile = outputFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", clpfaOutputExtension);
                 cmd2.add(clpOutputFile);
                 
 
@@ -171,12 +173,12 @@ public class CollapseReadsStep extends NGSStep{
                 
                 line = null;
                 logger.info("<OUTPUT>");
-                while ( (line = brStdin.readLine()) != null)
+                while ( (line = brStdinClp.readLine()) != null)
                     logger.info(line);
                 logger.info("</OUTPUT>");
                 
                 logger.info("<ERROR>");
-                while ( (line = brStdErr.readLine()) != null)
+                while ( (line = brStdErrClp.readLine()) != null)
                     logger.info(line);
                 logger.info("</ERROR>");
                 
@@ -184,7 +186,8 @@ public class CollapseReadsStep extends NGSStep{
                 int exitValclp = procClp.waitFor();            
                 System.out.println("Process exitValue: " + exitValclp);            
             
-            
+                brStdinClp.close();
+                brStdErrClp.close();
             
             }
             catch(IOException|InterruptedException ex){

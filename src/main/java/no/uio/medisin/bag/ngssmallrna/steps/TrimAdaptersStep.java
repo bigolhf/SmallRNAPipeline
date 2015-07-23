@@ -123,20 +123,23 @@ public class TrimAdaptersStep extends NGSStep{
                 BufferedReader brStdin  = new BufferedReader(new InputStreamReader(proc.getInputStream()));
                 BufferedReader brStdErr = new BufferedReader(new InputStreamReader(proc.getErrorStream()));
                 
-                String line = null;
-                logger.info("<OUTPUT>");
-                while ( (line = brStdin.readLine()) != null)
-                    logger.info(line);
-                logger.info("</OUTPUT>");
-                
-                logger.info("<ERROR>");
-                while ( (line = brStdErr.readLine()) != null)
-                    logger.info(line);
-                logger.info("</ERROR>");
+                    String line = null;
+                    logger.info("<OUTPUT>");
+                    while ( (line = brStdin.readLine()) != null)
+                        logger.info(line);
+                    logger.info("</OUTPUT>");
+
+                    logger.info("<ERROR>");
+                    while ( (line = brStdErr.readLine()) != null)
+                        logger.info(line);
+                    logger.info("</ERROR>");
                 
                 
                 int exitVal = proc.waitFor();            
-                System.out.println("Process exitValue: " + exitVal);            
+                logger.info("Process exitValue: " + exitVal);   
+                
+                brStdin.close();
+                brStdErr.close();
             }
             catch(IOException|InterruptedException ex){
                 logger.error("error executing AdapterTrimming command\n" + ex.toString());

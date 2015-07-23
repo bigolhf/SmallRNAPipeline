@@ -11,12 +11,14 @@ rnafold:
 data:
   folder: data
   data_file: mirbase.dat
+  genome_root_folder: /data/genomes
 
 software:
   root_folder: /home/sr/software/
   adapter_trimming: trimmomatic/Trimmomatic-0.33/trimmomatic-0.33.jar
   fastq_to_fasta: fastq_to_fasta
   fastx_collapser: fastx_collapser
+  bowtie_mapper: bowtie
 
 adapter_trimming:
   adapter_file: /home/sr/NetBeansProjects/NGSsmallRNA/test/TruSeqE-SE.fa
@@ -25,5 +27,11 @@ adapter_trimming:
   no_of_threads: 4
   min_avg_read_qual: 30
 
-  
+bowtie_mapping:
+  alignment_mode: v
+  no_of_mismatches: 2
+  no_of_threads: 4
+  host: hsa
+
+
 
