@@ -129,9 +129,9 @@ public class BowtieMapReadsStep extends NGSStep{
                 String fastqAbundantAln     = pathToData + FileSeparator + abundReadsOutFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", fastqAbundantAlnExtension);
                 String fastqAbundantUnAln   = pathToData + FileSeparator + abundReadsOutFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", fastqAbundantUnAlnExtension);
                 String samAbundantAln       = pathToData + FileSeparator + abundReadsOutFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", samAbundantAlnExtension);
-                cmd.add("--al" + fastqAbundantAln);
-                cmd.add("--un" + fastqAbundantUnAln);
-                cmd.add("--sam"  + samAbundantAln);
+                cmd.add("--al " + fastqAbundantAln);
+                cmd.add("--un " + fastqAbundantUnAln);
+                cmd.add("--sam "  + samAbundantAln);
                 cmd.add("");
                 
 

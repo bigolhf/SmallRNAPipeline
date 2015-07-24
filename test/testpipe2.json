@@ -1,0 +1,10 @@
+{"pipelineName":"pipeline1", 
+ "projectID":"test",
+ "projectRoot":" /home/sr/NetBeansProjects/NGSsmallRNA/",
+ "stepsData":
+   [
+   	 {"stepType":"TrimAdapters",   "inputFileList":"raw_data", "outputFileList":"trimmed_data"},
+   	 {"stepType":"CollapseReads",  "inputFileList":"trimmed_data", "outputFileList":"collapsed_reads"},
+   	 {"stepType":"BowtieMapReads", "inputFileList":"collapsed_reads", "outputFileList":"mappedReads"}
+   ]
+}

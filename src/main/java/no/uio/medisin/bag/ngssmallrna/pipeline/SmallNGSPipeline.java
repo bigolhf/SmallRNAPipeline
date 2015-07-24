@@ -17,6 +17,7 @@ import no.uio.medisin.bag.ngssmallrna.steps.BowtieMapReadsStep;
 import no.uio.medisin.bag.ngssmallrna.steps.CollapseReadsStep;
 import no.uio.medisin.bag.ngssmallrna.steps.NGSStep;
 import no.uio.medisin.bag.ngssmallrna.steps.NGSRunStepData;
+import no.uio.medisin.bag.ngssmallrna.steps.ParseSAMForMiRNAsStep;
 import no.uio.medisin.bag.ngssmallrna.steps.StepInputData;
 import no.uio.medisin.bag.ngssmallrna.steps.TrimAdaptersStep;
 import org.yaml.snakeyaml.Yaml;
@@ -152,6 +153,19 @@ public class SmallNGSPipeline {
                     BowtieMapReadsStep ngsBowtieMapReads = new BowtieMapReadsStep(sidMap);
                     ngsBowtieMapReads.verifyInputData();
                     ngsBowtieMapReads.execute();
+                    
+                    break;
+                    
+                    
+                case "parseSAMForMiRNAs":
+                    
+                    HashMap parseSAMmiRNAsParams = new HashMap();
+                    parseSAMmiRNAsParams.put("bleed", 2);
+                    
+                    StepInputData sidSAM = new StepInputData(parseSAMmiRNAsParams, this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), this.getSampleData());
+                    ParseSAMForMiRNAsStep ngsParseSAMForMiRNAs = new ParseSAMForMiRNAsStep(sidSAM);
+                    ngsParseSAMForMiRNAs.verifyInputData();
+                    ngsParseSAMForMiRNAs.execute();
                     
                     break;
                     
