@@ -46,6 +46,7 @@ public class SmallNGSPipeline {
     private String                      collapseFastaSoftware = "";
     
     private String                      genomeRootFolder = "";
+    private String                      mirbaseRootFolder = "";
     
     private String                      trimAdapterFile = "";
     private int                         trimNoOfMismatches = 2;
@@ -57,6 +58,9 @@ public class SmallNGSPipeline {
     private int                         bowtieMappingNoOfMismatches = 2;
     private int                         bowtieMappingNoOfThreads = 4;
     private String                      bowtieMappingReferenceGenome = "";
+    
+    private int                         samParseForMiRNAsBleed = 2;
+    private String                      samParseForMiRNAsMiRBaseVersion = "21";
     
     private PipelineData                pipelineData = new PipelineData();
     private ArrayList<SampleDataEntry>  SampleData = new ArrayList<>();
@@ -160,14 +164,19 @@ public class SmallNGSPipeline {
                 case "parseSAMForMiRNAs":
                     
                     HashMap parseSAMmiRNAsParams = new HashMap();
-                    parseSAMmiRNAsParams.put("bleed", 2);
-                    
+                    parseSAMmiRNAsParams.put("bleed", this.getSamParseForMiRNAsBleed());
+                    parseSAMmiRNAsParams.put("miRBaseHostGFFFile", this.getMiRBaseHostGFF());
+
                     StepInputData sidSAM = new StepInputData(parseSAMmiRNAsParams, this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), this.getSampleData());
                     ParseSAMForMiRNAsStep ngsParseSAMForMiRNAs = new ParseSAMForMiRNAsStep(sidSAM);
                     ngsParseSAMForMiRNAs.verifyInputData();
                     ngsParseSAMForMiRNAs.execute();
                     
                     break;
+                    
+                case "exit":
+                    return;
+                    
                     
             }
             
@@ -233,6 +242,7 @@ public class SmallNGSPipeline {
         
         HashMap dataOptions = (HashMap) pipelineConfiguration.get("data");
         this.setGenomeRootFolder((String) dataOptions.get("genome_root_folder"));
+        this.setMirbaseRootFolder((String) dataOptions.get("mirbase_folder"));
 
         HashMap softwareOptions = (HashMap) pipelineConfiguration.get("software");
         this.setSoftwareRootFolder((String) softwareOptions.get("root_folder"));
@@ -252,6 +262,11 @@ public class SmallNGSPipeline {
         this.setBowtieMappingNoOfMismatches((int) mapReadsOptions.get("no_of_mismatches"));
         this.setBowtieMappingNoOfThreads((int) mapReadsOptions.get("no_of_threads"));
         this.setBowtieMappingReferenceGenome((String) mapReadsOptions.get("host"));
+        
+        HashMap processSAMForMiRNAsOptions  = (HashMap) pipelineConfiguration.get("sam_mirna_processing");
+        this.setSamParseForMiRNAsBleed((int) processSAMForMiRNAsOptions.get("bleed"));
+        this.setSamParseForMiRNAsMiRBaseVersion((String) processSAMForMiRNAsOptions.get("mirbase_release"));
+        
         
         logger.info("done\n");
         
@@ -295,8 +310,15 @@ public class SmallNGSPipeline {
     }
     
     
-    
-    
+    /**
+     * return path to the file containing location information for the known miRNAs
+     * for the specified reference genome
+     * 
+     * @return 
+     */
+    public String getMiRBaseHostGFF(){
+        return this.mirbaseRootFolder + FileSeparator + this.samParseForMiRNAsMiRBaseVersion + FileSeparator + this.getBowtieMappingReferenceGenome() + ".gff3";
+    }
     
 
     /**
@@ -556,6 +578,48 @@ public class SmallNGSPipeline {
      */
     public void setGenomeRootFolder(String genomeRootFolder) {
         this.genomeRootFolder = genomeRootFolder;
+    }
+
+    /**
+     * @return the samParseForMiRNAsBleed
+     */
+    public int getSamParseForMiRNAsBleed() {
+        return samParseForMiRNAsBleed;
+    }
+
+    /**
+     * @param samParseForMiRNAsBleed the samParseForMiRNAsBleed to set
+     */
+    public void setSamParseForMiRNAsBleed(int samParseForMiRNAsBleed) {
+        this.samParseForMiRNAsBleed = samParseForMiRNAsBleed;
+    }
+
+    /**
+     * @return the samParseForMiRNAsMiRBaseVersion
+     */
+    public String getSamParseForMiRNAsMiRBaseVersion() {
+        return samParseForMiRNAsMiRBaseVersion;
+    }
+
+    /**
+     * @param samParseForMiRNAsMiRBaseVersion the samParseForMiRNAsMiRBaseVersion to set
+     */
+    public void setSamParseForMiRNAsMiRBaseVersion(String samParseForMiRNAsMiRBaseVersion) {
+        this.samParseForMiRNAsMiRBaseVersion = samParseForMiRNAsMiRBaseVersion;
+    }
+
+    /**
+     * @return the mirbaseRootFolder
+     */
+    public String getMirbaseRootFolder() {
+        return mirbaseRootFolder;
+    }
+
+    /**
+     * @param mirbaseRootFolder the mirbaseRootFolder to set
+     */
+    public void setMirbaseRootFolder(String mirbaseRootFolder) {
+        this.mirbaseRootFolder = mirbaseRootFolder;
     }
     
     
