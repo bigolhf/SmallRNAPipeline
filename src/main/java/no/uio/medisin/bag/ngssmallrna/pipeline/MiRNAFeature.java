@@ -6,17 +6,22 @@
 package no.uio.medisin.bag.ngssmallrna.pipeline;
 
 /**
- *
+ * stores an miRBase entry
+ * This needs to be made comparable so the entries stored in a list can be sorted
+ * to speed things up
+ * 
  * @author sr
  */
 public class MiRNAFeature {
     
+
     private String mimatID;
     private String name;
     private String parent;
     private String chromosome;
     private int    startPos;
     private int    endPos;
+    private String strand;
     private String sequence;
 
     
@@ -28,10 +33,11 @@ public class MiRNAFeature {
      * @param c String      chromosome
      * @param s int         start position
      * @param e int         end position
+     * @param t String      Strand
      * 
      */
-    public MiRNAFeature(String n, String c, int s, int e){
-        this(n, c, s, e, "", "");
+    public MiRNAFeature(String n, String c, int s, int e, String t){
+        this(n, c, s, e, t, "", "");
     }
     
     
@@ -44,20 +50,96 @@ public class MiRNAFeature {
      * @param c String      chromosome
      * @param s int         start position
      * @param e int         end position
+     * @param t String      Strand
      * @param m String      MIMAT (miRBase) ID
      * @param p String      MI (miRBase) Parent ID
      * 
      */
-    public MiRNAFeature(String n, String c, int s, int e, String m, String p){
+    public MiRNAFeature(String n, String c, int s, int e, String t, String m, String p){
         name = n;
         chromosome = c;
         startPos = s;
         endPos = e;
+        strand = t;
         parent = p;
         mimatID = m;
         
     }
     
+    /**
+     * checks whether Chromosome strings are the same, while attempting
+     * to allow for the presence or absence of a variation on the 'Chr' 
+     * prefix
+     * 
+     * @param queryChr
+     * @return 
+     */
+    public Boolean chromosomeMatch(String queryChr){
+        
+        return removeChromosomePrefix(chromosome).equals(removeChromosomePrefix(queryChr));
+        
+    }
+    
+    
+    
+    
+    /**
+     * attempt to remove any prefix of the form 'Chr' from the chromosome string
+     * 
+     * @param chrString
+     * @return 
+     */
+    public String removeChromosomePrefix(String chrString){
+        
+        if(chrString.contains("chr")){
+            chrString = chrString.replace("chr", "");
+        }
+        else{
+            if(chrString.contains("CHR")){
+                chrString = chrString.replace("CHR", "");
+            }
+            else{
+                if(chrString.contains("Chr")){
+                    chrString = chrString.replace("Chr", "");
+                }
+            }
+            
+        }
+        return chrString;
+        
+    }
+        
+    
+    
+    /**
+     * 
+     * @param miRFeat
+     * @return
+     */
+    @Deprecated
+    public int compareTo(MiRNAFeature miRFeat) {
+
+        int thisChr = -1;
+        int queryChr = -1;
+        if(this.getChromosome().contains("chr")){
+            thisChr = Integer.parseInt(this.getChromosome().replace("chr", ""));
+            queryChr = Integer.parseInt(miRFeat.getChromosome().replace("chr", ""));
+        }
+        
+        if(this.getChromosome().contains("CHR")){
+            thisChr = Integer.parseInt(this.getChromosome().replace("CHR", ""));
+            queryChr = Integer.parseInt(miRFeat.getChromosome().replace("CHR", ""));
+        }
+        
+        if(this.getChromosome().contains("Chr")){
+            thisChr = Integer.parseInt(this.getChromosome().replace("Chr", ""));
+            queryChr = Integer.parseInt(miRFeat.getChromosome().replace("Chr", ""));
+        }
+        
+     return thisChr - queryChr;
+
+     }
+   
     
     /**
      * @return the mimatID
@@ -155,6 +237,20 @@ public class MiRNAFeature {
      */
     public void setEndPos(int endPos) {
         this.endPos = endPos;
+    }
+
+    /**
+     * @return the strand
+     */
+    public String getStrand() {
+        return strand;
+    }
+
+    /**
+     * @param strand the strand to set
+     */
+    public void setStrand(String strand) {
+        this.strand = strand;
     }
     
 }

@@ -90,30 +90,65 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
         Iterator itSD = this.stepInputData.getSampleData().iterator();
         while (itSD.hasNext()){
             try{
+                int bleed = (int) stepInputData.getStepParams().get("bleed");
                 SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
                 
                 String pathToData = stepInputData.getProjectRoot() + FileSeparator + stepInputData.getProjectID();                
                 String samInputFile = pathToData + FileSeparator + inFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", infileExtension);
                 int matchCount5 = 0;
                 int matchCount3 = 0;
-                String line = null;
+                int preMatchCount5 = 0;
+                int preMatchCount3 = 0;
+                String samLine = null;
                 BufferedReader brSAM = new BufferedReader(new FileReader(new File(samInputFile)));
-                    while((line=brSAM.readLine())!= null){
+                    while((samLine=brSAM.readLine())!= null){
+                        /*
+                            1   QNAME	   Query template NAME
+                            2   FLAG	   bitwise FLAG
+                            3   RNAME	   Reference sequence NAME
+                            4   POS	   1-based leftmost mapping POSition
+                            5   MAPQ	   MAPping Quality
+                            6   CIGAR	   CIGAR string
+                            7   RNEXT	   Ref. name of the mate/next read
+                            8   PNEXT	   Position of the mate/next read
+                            9   TLEN	   observed Template LENgth
+                            10  SEQ	   segment SEQuence
+                            11  QUAL	   ASCII of Phred-scaled base QUALity+33
                         
-                        if(line.split("\t")[1].equals("16") || line.split("\t")[1].equals("0")){
-                            if (line.split("\t")[1].equals("16")) 
-                                matchCount3++;
-                            else
-                                matchCount5++;
+                        */
+                        if(samLine.split("\t")[1].equals("16") || samLine.split("\t")[1].equals("0")){
                             
-                            List<String> output = new ArrayList<>();
-                            Matcher match = Pattern.compile("[0-9]+|[a-z]+|[A-Z]+").matcher(line.split("\t")[12].split(":")[2]);
-                            String outputString = line.split("\t")[12] + ": ";
-                            while (match.find()) {
-                                output.add(match.group());
-                                outputString = outputString.concat(match.group() + "|");
+                            
+                            String strand = "";
+                            if (samLine.split("\t")[1].equals("16")) {
+                                strand = "-";
+                                preMatchCount3++;
                             }
-                            logger.info(outputString);
+                            else{
+                                strand = "+";
+                                preMatchCount5++;
+                            }
+                            
+                            int startPos = Integer.parseInt(samLine.split("\t")[3]);
+                            String cigarStr = samLine.split("\t")[5].replace("M", "").trim();
+                            int endPos = startPos + Integer.parseInt(cigarStr);
+                            String chr = samLine.split("\t")[2].trim();
+                            
+                            if (this.doesReadOverlapKnownMiRNA(startPos, endPos, chr, strand, bleed) != null){
+                                List<String> mutations = new ArrayList<>();
+                                Matcher match = Pattern.compile("[0-9]+|[a-z]+|[A-Z]+").matcher(samLine.split("\t")[12].split(":")[2]);
+                                String outputString = samLine.split("\t")[0] + ":" + samLine.split("\t")[12] + ": ";
+                                while (match.find()) {
+                                    mutations.add(match.group());
+                                    outputString = outputString.concat(match.group() + "|");
+                                }
+                                logger.info(outputString);
+                                
+                            }
+                            
+                            
+                            
+                            
                             
                         }
                     }
@@ -129,6 +164,45 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
         
         
     }
+    
+    
+    
+    
+    /**
+     * Does the read sufficiently overlap a defined miRNA entry?
+     * 
+     * @param start
+     * @param stop
+     * @param chr
+     * @param strand
+     * @param bleed     int : specifies how much a read can 'miss' an entry
+     *                        and still be counted
+     * 
+     * @return MiRNAFeature
+     */
+    public MiRNAFeature doesReadOverlapKnownMiRNA(int start, int stop, String chr, String strand, int bleed){
+        
+        for(MiRNAFeature miRBaseEntry: this.miRNAList){
+            if (miRBaseEntry.chromosomeMatch(chr)){
+                if(strand.equals(miRBaseEntry.getStrand())){
+                    
+                    if( java.lang.Math.abs(start - miRBaseEntry.getStartPos()) <= bleed){
+
+                        if( java.lang.Math.abs(stop - miRBaseEntry.getEndPos()) <= bleed){
+                            return miRBaseEntry;
+                        }
+
+                    }
+
+                }
+            }
+        }
+        
+        return null;
+        
+    }
+    
+    
     
     
     /**
@@ -193,12 +267,12 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
                 if(chr.contains("chr")) chr = chr.replace("chr", "");
                 int startPos = Integer.parseInt(line.split("\t")[3].trim());
                 int endPos = Integer.parseInt(line.split("\t")[4].trim());
-                String strand = line.split("\t")[5].trim();
+                String strand = line.split("\t")[6].trim();
                 
                 String id = "";
                 String name = "";
                 String parent = "";
-                String attribs[] = line.split("\t")[5].split(";");
+                String attribs[] = line.split("\t")[8].split(";");
                 
                 for (String attribStr: attribs){
                     String attribType = attribStr.split("=")[0].trim();
@@ -208,8 +282,7 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
                             id = attribValue;
                             break;
                             
-                        case "Alias":
-                            
+                        case "Alias":                            
                             break;
                             
                         case "Name":
@@ -221,11 +294,11 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
                             break;
                             
                         default:
-                            logger.warn("unknowna attribute in parsing miRNA entry from GFF file " + miRBaseGFFFile + ">");
+                            logger.warn("unknown attribute in parsing miRNA entry from GFF file " + miRBaseGFFFile + ">");
                             break;
                     }
                 }
-                this.miRNAList.add(new MiRNAFeature(name, chr, startPos, endPos, id, parent));
+                this.miRNAList.add(new MiRNAFeature(name, chr, startPos, endPos, strand, id, parent));
             }
         brMiR.close();
         logger.info("read " + miRNAList + "miRNA entries");

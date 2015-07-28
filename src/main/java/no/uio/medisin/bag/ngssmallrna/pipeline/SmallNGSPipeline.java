@@ -265,7 +265,7 @@ public class SmallNGSPipeline {
         
         HashMap processSAMForMiRNAsOptions  = (HashMap) pipelineConfiguration.get("sam_mirna_processing");
         this.setSamParseForMiRNAsBleed((int) processSAMForMiRNAsOptions.get("bleed"));
-        this.setSamParseForMiRNAsMiRBaseVersion((String) processSAMForMiRNAsOptions.get("mirbase_release"));
+        this.setSamParseForMiRNAsMiRBaseVersion( String.valueOf(processSAMForMiRNAsOptions.get("mirbase_release")));
         
         
         logger.info("done\n");
