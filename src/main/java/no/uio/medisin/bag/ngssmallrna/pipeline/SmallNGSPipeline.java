@@ -60,6 +60,7 @@ public class SmallNGSPipeline {
     private String                      bowtieMappingReferenceGenome = "";
     
     private int                         samParseForMiRNAsBleed = 2;
+    private int                         samParseForMiRNAsBaselinePercent = 5;
     private String                      samParseForMiRNAsMiRBaseVersion = "21";
     
     private PipelineData                pipelineData = new PipelineData();
@@ -165,6 +166,8 @@ public class SmallNGSPipeline {
                     
                     HashMap parseSAMmiRNAsParams = new HashMap();
                     parseSAMmiRNAsParams.put("bleed", this.getSamParseForMiRNAsBleed());
+                    parseSAMmiRNAsParams.put("baseline_percent", this.getSamParseForMiRNAsBaselinePercent());
+                    parseSAMmiRNAsParams.put("host", this.getBowtieMappingReferenceGenome());
                     parseSAMmiRNAsParams.put("miRBaseHostGFFFile", this.getMiRBaseHostGFF());
 
                     StepInputData sidSAM = new StepInputData(parseSAMmiRNAsParams, this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), this.getSampleData());
@@ -266,6 +269,7 @@ public class SmallNGSPipeline {
         HashMap processSAMForMiRNAsOptions  = (HashMap) pipelineConfiguration.get("sam_mirna_processing");
         this.setSamParseForMiRNAsBleed((int) processSAMForMiRNAsOptions.get("bleed"));
         this.setSamParseForMiRNAsMiRBaseVersion( String.valueOf(processSAMForMiRNAsOptions.get("mirbase_release")));
+        this.setSamParseForMiRNAsBaselinePercent((int) processSAMForMiRNAsOptions.get("baseline_percent"));
         
         
         logger.info("done\n");
@@ -310,6 +314,8 @@ public class SmallNGSPipeline {
     }
     
     
+    
+    
     /**
      * return path to the file containing location information for the known miRNAs
      * for the specified reference genome
@@ -320,7 +326,19 @@ public class SmallNGSPipeline {
         return this.mirbaseRootFolder + FileSeparator + this.samParseForMiRNAsMiRBaseVersion + FileSeparator + this.getBowtieMappingReferenceGenome() + ".gff3";
     }
     
-
+    
+    
+    
+    /**
+     * return path to root folder for MirBase version
+     * 
+     * @return 
+     */
+    public String getMirBaseRootFolder(){
+        return this.mirbaseRootFolder + FileSeparator + this.samParseForMiRNAsMiRBaseVersion;
+    }
+    
+    
     /**
      * @return the configurationFile
      */
@@ -611,7 +629,7 @@ public class SmallNGSPipeline {
     /**
      * @return the mirbaseRootFolder
      */
-    public String getMirbaseRootFolder() {
+    public String getMirBaseVersionRoot() {
         return mirbaseRootFolder;
     }
 
@@ -620,6 +638,20 @@ public class SmallNGSPipeline {
      */
     public void setMirbaseRootFolder(String mirbaseRootFolder) {
         this.mirbaseRootFolder = mirbaseRootFolder;
+    }
+
+    /**
+     * @return the samParseForMiRNAsBaselinePercent
+     */
+    public int getSamParseForMiRNAsBaselinePercent() {
+        return samParseForMiRNAsBaselinePercent;
+    }
+
+    /**
+     * @param samParseForMiRNAsBaselinePercent the samParseForMiRNAsBaselinePercent to set
+     */
+    public void setSamParseForMiRNAsBaselinePercent(int samParseForMiRNAsBaselinePercent) {
+        this.samParseForMiRNAsBaselinePercent = samParseForMiRNAsBaselinePercent;
     }
     
     

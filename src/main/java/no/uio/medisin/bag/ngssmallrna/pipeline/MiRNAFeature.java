@@ -38,7 +38,7 @@ public class MiRNAFeature {
      * 
      */
     public MiRNAFeature(String n, String c, int s, int e, String t){
-        this(n, c, s, e, t, "", "");
+        this(n, c, s, e, t, "", "", "");
     }
     
     
@@ -54,9 +54,10 @@ public class MiRNAFeature {
      * @param t String      Strand
      * @param m String      MIMAT (miRBase) ID
      * @param p String      MI (miRBase) Parent ID
+     * @param seq :     String sequence
      * 
      */
-    public MiRNAFeature(String n, String c, int s, int e, String t, String m, String p){
+    public MiRNAFeature(String n, String c, int s, int e, String t, String m, String p, String seq){
         name = n;
         chromosome = c;
         startPos = s;
@@ -64,6 +65,7 @@ public class MiRNAFeature {
         strand = t;
         parent = p;
         mimatID = m;
+        sequence = seq;
         isomiRString = "";
         
     }
@@ -119,36 +121,72 @@ public class MiRNAFeature {
      * @param start
      * @param cigar
      * @param md 
+     * @param seq
+     * 
      */
-    public void addIsomiR(String name, int start, String cigar, String md){
+    public void addIsomiR(String name, int start, String cigar, String md, String seq){
         
-        isomiRString = isomiRString.concat(name + ";" + start + ";" + cigar + ";" + md + "\t");
+        isomiRString = isomiRString.concat(name + ";" + start + ";" + cigar + ";" + md + ";" + seq + "\t");
         
     }
     
     
     /**
-     * write isomiRs in pretty format
+     * write isomiRs.
      * 
+     * only report reads that are above a baseline, defined in terms of the fraction 
+     * of the total number of reads for the miRNA. e.g. if there are 100 reads, and 
+     * baseline is 5, then only isomiRs with more than 5 reads will be reported
+     * 
+     * @param baselinePercent : int     only report isomiRs with reads that
+     * @param minCounts       : int     total counts for isomiR must be greater
+     *                                  than this value
      * @return 
      */
-    public String reportIsomiRs(){
-        String reportStr = this.getName() + ":\t[" + this.getChromosome() + "]\t" + this.getStartPos() + "\t" + this.getEndPos() + "\n";
+    public String reportIsomiRs(int baselinePercent, int minCounts){
+        String reportStr = this.getName() + ":\t[" + this.getChromosome() + "]\t" 
+                + this.getStartPos() + "\t" + this.getEndPos() + this.getSequence() + "\n";
         String [] isomiRs = isomiRString.split("\t");
+        
+        int totalCounts = this.getTotalCounts();
+        if (totalCounts < minCounts) return "";
+        reportStr = reportStr.concat("Total Counts = " + totalCounts + "\n");
+        
+        String isomiRStr = "";
         for(String isomiR: isomiRs){
             String[] values = isomiR.split(";");
-            reportStr = reportStr.concat("name: " + values[0] + "\t"
-                        + "start: " + values[1] + "\t"
-                        + "cigar: " + values[2] + "\t"
-                        + "MD: " + values[3] + "\n"
-            );
+            if(Double.parseDouble(isomiR.split(";")[0].split("-")[1]) / (double) totalCounts > (double)baselinePercent/100.0){
+                isomiRStr = isomiRStr.concat("name: " + values[0] + "\t"
+                            + "start: " + values[1] + "\t"
+                            + "cigar: " + values[2] + "\t"
+                            + "MD: " + values[3] + "\t" 
+                            + "SQ: " + values[4] + "\n"
+                );
+            }
         }
         
-        return reportStr;
+        if (isomiRStr.equals("")) return "";
+        return reportStr.concat(isomiRStr);
     }
     
     
     
+    
+    /**
+     * sum counts for this isomiR
+     * 
+     * @return 
+     */
+    public int getTotalCounts(){
+        
+        int totalCounts = 0;
+        String [] isomiRs = isomiRString.split("\t");
+
+         for(String isomiR: isomiRs){            
+            totalCounts += Integer.parseInt(isomiR.split(";")[0].split("-")[1]);
+        }
+        return totalCounts;
+    }
     
     
     /**
@@ -180,6 +218,8 @@ public class MiRNAFeature {
 
      }
    
+    
+    
     
     /**
      * base equality on the mimatID, which should be unique
