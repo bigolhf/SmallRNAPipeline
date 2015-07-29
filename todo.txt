@@ -1,0 +1,1 @@
+add reference genome to config file

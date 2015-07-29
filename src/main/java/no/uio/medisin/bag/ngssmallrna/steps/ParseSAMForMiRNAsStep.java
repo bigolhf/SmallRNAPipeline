@@ -54,6 +54,7 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
     
 
     private List<MiRNAFeature>          miRNAList                   = new ArrayList<>();
+    private List<MiRNAFeature>          miRNAHitList                = new ArrayList<>();
     
     /**
      * 
@@ -61,14 +62,7 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
      * 
      */
     public ParseSAMForMiRNAsStep(StepInputData sid){
-        try{
-            stepInputData = sid;
-            stepInputData.verifyInputData();
-            
-        }
-        catch(IOException exIO){
-            
-        }
+        stepInputData = sid;
     }
     
     @Override
@@ -78,6 +72,13 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
             parseSAMmiRNAsParams.put("miRBaseHostGFFFile", this.getMiRBaseHostGFF());
         
         */
+        try{
+            stepInputData.verifyInputData();            
+        }
+        catch(IOException exIO){
+            logger.info("exception parsing InputData" + exIO);
+        }
+    
         
         try{
             this.loadMiRBaseData((String) stepInputData.getStepParams().get("miRBaseHostGFFFile"));
@@ -133,11 +134,25 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
                             String cigarStr = samLine.split("\t")[5].replace("M", "").trim();
                             int endPos = startPos + Integer.parseInt(cigarStr);
                             String chr = samLine.split("\t")[2].trim();
+                            String mdString = samLine.split("\t")[12];
                             
-                            if (this.doesReadOverlapKnownMiRNA(startPos, endPos, chr, strand, bleed) != null){
+                            MiRNAFeature miRNAHit = this.doesReadOverlapKnownMiRNA(startPos, endPos, chr, strand, bleed);
+                            if (miRNAHit != null){
+                                logger.info(miRNAHit.getName());
+                                String name = samLine.split("\t")[0];
+                                if(miRNAHitList.contains(miRNAHit)){ 
+                                    miRNAHitList.get(miRNAHitList.indexOf(miRNAHit)).addIsomiR(name, startPos, cigarStr, mdString);
+                                }
+                                else{
+                                    miRNAHit.addIsomiR(name, startPos, cigarStr, mdString);
+                                    miRNAHitList.add(miRNAHit);
+                                }
+                                    
+                                if(strand.equals("+")) matchCount5++;
+                                else matchCount3++;
                                 List<String> mutations = new ArrayList<>();
                                 Matcher match = Pattern.compile("[0-9]+|[a-z]+|[A-Z]+").matcher(samLine.split("\t")[12].split(":")[2]);
-                                String outputString = samLine.split("\t")[0] + ":" + samLine.split("\t")[12] + ": ";
+                                String outputString = samLine.split("\t")[0] + ":" + startPos + ":" + endPos + ":[" + chr + "]:" + samLine.split("\t")[12] + ": ";
                                 while (match.find()) {
                                     mutations.add(match.group());
                                     outputString = outputString.concat(match.group() + "|");
@@ -149,10 +164,12 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
                             
                             
                             
-                            
                         }
                     }
                     logger.info((matchCount5 + matchCount3) + " reads (" + matchCount5 + " 5'" + "/" + matchCount3 + " 3' ) were mapped");
+                    for(MiRNAFeature miRHit: miRNAHitList){
+                        logger.info(miRHit.reportIsomiRs());
+                    }
                 brSAM.close();
                 
                 

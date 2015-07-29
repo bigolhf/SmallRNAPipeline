@@ -23,6 +23,7 @@ public class MiRNAFeature {
     private int    endPos;
     private String strand;
     private String sequence;
+    private String isomiRString;
 
     
     /**
@@ -63,6 +64,7 @@ public class MiRNAFeature {
         strand = t;
         parent = p;
         mimatID = m;
+        isomiRString = "";
         
     }
     
@@ -76,7 +78,7 @@ public class MiRNAFeature {
      */
     public Boolean chromosomeMatch(String queryChr){
         
-        return removeChromosomePrefix(chromosome).equals(removeChromosomePrefix(queryChr));
+        return MiRNAFeature.removeChromosomePrefix(chromosome).equals(MiRNAFeature.removeChromosomePrefix(queryChr));
         
     }
     
@@ -89,7 +91,7 @@ public class MiRNAFeature {
      * @param chrString
      * @return 
      */
-    public String removeChromosomePrefix(String chrString){
+    public static String removeChromosomePrefix(String chrString){
         
         if(chrString.contains("chr")){
             chrString = chrString.replace("chr", "");
@@ -109,6 +111,44 @@ public class MiRNAFeature {
         
     }
         
+    
+    /**
+     * add information to define an isomiR for this entry
+     * 
+     * @param name
+     * @param start
+     * @param cigar
+     * @param md 
+     */
+    public void addIsomiR(String name, int start, String cigar, String md){
+        
+        isomiRString = isomiRString.concat(name + ";" + start + ";" + cigar + ";" + md + "\t");
+        
+    }
+    
+    
+    /**
+     * write isomiRs in pretty format
+     * 
+     * @return 
+     */
+    public String reportIsomiRs(){
+        String reportStr = this.getName() + ":\t[" + this.getChromosome() + "]\t" + this.getStartPos() + "\t" + this.getEndPos() + "\n";
+        String [] isomiRs = isomiRString.split("\t");
+        for(String isomiR: isomiRs){
+            String[] values = isomiR.split(";");
+            reportStr = reportStr.concat("name: " + values[0] + "\t"
+                        + "start: " + values[1] + "\t"
+                        + "cigar: " + values[2] + "\t"
+                        + "MD: " + values[3] + "\n"
+            );
+        }
+        
+        return reportStr;
+    }
+    
+    
+    
     
     
     /**
@@ -140,6 +180,33 @@ public class MiRNAFeature {
 
      }
    
+    
+    /**
+     * base equality on the mimatID, which should be unique
+     * 
+     * @param qObject
+     * @return 
+     */
+    @Override
+    public boolean equals(Object qObject){
+        if (qObject != null && qObject instanceof MiRNAFeature)
+        {
+            return (this.mimatID.equals(((MiRNAFeature) qObject).mimatID));
+        }
+        return false;
+
+    }
+    
+    
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result
+                + ((mimatID == null) ? 0 : mimatID.hashCode());
+        return result;
+    }    
+    
     
     /**
      * @return the mimatID
@@ -251,6 +318,13 @@ public class MiRNAFeature {
      */
     public void setStrand(String strand) {
         this.strand = strand;
+    }
+
+    /**
+     * @return the isomiRString
+     */
+    public String getIsomiRString() {
+        return isomiRString;
     }
     
 }
