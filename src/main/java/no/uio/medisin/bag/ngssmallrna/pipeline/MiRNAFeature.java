@@ -5,6 +5,10 @@
  */
 package no.uio.medisin.bag.ngssmallrna.pipeline;
 
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import no.uio.medisin.bag.jmirpara.SimpleSeq;
 /**
  * stores an miRBase entry
  * This needs to be made comparable so the entries stored in a list can be sorted
@@ -13,8 +17,9 @@ package no.uio.medisin.bag.ngssmallrna.pipeline;
  * @author sr
  */
 public class MiRNAFeature {
-    
 
+    static Logger                       logger                      = LogManager.getLogger();
+    
     private String mimatID;
     private String name;
     private String parent;
@@ -24,6 +29,16 @@ public class MiRNAFeature {
     private String strand;
     private String sequence;
     private String isomiRString;
+    
+    //(name + ";" + start + ";" + cigar + ";" + md + ";" + seq + "\t")
+    
+    private static final int nameCol    = 0;
+    private static final int startCol   = 1;
+    private static final int cigarCol   = 2;
+    private static final int mdCol      = 3;
+    private static final int seqCol     = 4;
+    
+    
 
     
     /**
@@ -125,14 +140,14 @@ public class MiRNAFeature {
      * 
      */
     public void addIsomiR(String name, int start, String cigar, String md, String seq){
-        
+
         isomiRString = isomiRString.concat(name + ";" + start + ";" + cigar + ";" + md + ";" + seq + "\t");
         
     }
     
     
     /**
-     * write isomiRs.
+     * write out isomiRs.
      * 
      * only report reads that are above a baseline, defined in terms of the fraction 
      * of the total number of reads for the miRNA. e.g. if there are 100 reads, and 
@@ -155,18 +170,121 @@ public class MiRNAFeature {
         String isomiRStr = "";
         for(String isomiR: isomiRs){
             String[] values = isomiR.split(";");
-            if(Double.parseDouble(isomiR.split(";")[0].split("-")[1]) / (double) totalCounts > (double)baselinePercent/100.0){
+            if(Double.parseDouble(isomiR.split(";")[nameCol].split("-")[1]) / (double) totalCounts > (double)baselinePercent/100.0){
                 isomiRStr = isomiRStr.concat("name: " + values[0] + "\t"
-                            + "start: " + values[1] + "\t"
-                            + "cigar: " + values[2] + "\t"
-                            + "MD: " + values[3] + "\t" 
-                            + "SQ: " + values[4] + "\n"
+                            + "start: " + values[startCol] + "\t"
+                            + "cigar: " + values[cigarCol] + "\t"
+                            + "MD: " + values[mdCol] + "\t" 
+                            + "SQ: " + values[seqCol] + "\n"
                 );
             }
         }
         
         if (isomiRStr.equals("")) return "";
         return reportStr.concat(isomiRStr);
+    }
+    
+    
+    
+    
+    /**
+     * report the isomiR in a manner that is visually appealing
+     * 
+     * @param baselinePercent
+     * @param minCounts
+     * @return 
+     */
+    public String prettyReportIsomiRs(int baselinePercent, int minCounts){
+        
+        String reportStr = this.getName() + "|" + this.getMimatID() + " :\tchr" + this.getChromosome() + "\t" 
+                + this.getStartPos() + " --> " + this.getEndPos() + " (" + this.getStrand() + ") : " + this.getSequence() + "\n";
+        
+        int totalCounts = this.getTotalCounts();
+        reportStr = reportStr.concat("Total Counts = " + totalCounts + "\n");
+        logger.info(reportStr);
+        if (totalCounts < minCounts) return "";
+        
+    
+        String [] isomiRs = isomiRString.split("\t");
+        
+        int longestName = this.getName().length();
+        int longestSeq = this.getSequence().length();
+        int longestCounts = 0;
+        int longestMD = 0;
+        int minStart = this.getIsomiRMinStart();
+        int maxStop = this.getIsomiRMaxStop();
+        
+        for(String isomiR: isomiRs){
+            
+            if(Double.parseDouble(isomiR.split(";")[nameCol].split("-")[1]) / (double) totalCounts > (double)baselinePercent/100.0){
+            
+                if(isomiR.split(";")[nameCol].length() > longestName)
+                    longestName = isomiR.split(";")[nameCol].length();
+
+                if(isomiR.split(";")[nameCol].split("-")[1].length() > longestCounts)
+                    longestCounts = isomiR.split(";")[nameCol].split("-")[1].length();
+
+                if(isomiR.split(";")[seqCol].length() > longestSeq)
+                    longestSeq = isomiR.split(";")[seqCol].length();
+                if(this.getStrand().equals("+")){
+                    if(isomiR.split(";")[seqCol].equals(this.getSequence().replace("U", "T")))
+                        longestName++;
+                }
+                else{
+                    if(isomiR.split(";")[seqCol].equals(SimpleSeq.Complement(this.getSequence()).replace("U", "T")))
+                        longestName++;                    
+                }
+                
+                    
+
+                if(isomiR.split(";")[mdCol].length() > longestMD)
+                    longestMD = isomiR.split(";")[mdCol].length();
+                
+                
+            }          
+
+        }    
+        
+        int leftMargin = 10;
+        int ColMargin = 5;
+        
+        String isoString = "";
+        for(String isomiR: isomiRs){
+            
+            if(Double.parseDouble(isomiR.split(";")[nameCol].split("-")[1]) / (double) totalCounts > (double)baselinePercent/100.0){
+
+                isoString           = isoString.concat(StringUtils.repeat(" ", leftMargin));
+                String isoName      = isomiR.split(";")[nameCol];
+                if(this.getStrand().equals("+")){
+                    if(isomiR.split(";")[seqCol].equals(this.getSequence().replace("U", "T")))
+                        isoName = "*".concat(isoName);
+                }
+                else{
+                    if(isomiR.split(";")[seqCol].equals(SimpleSeq.Complement(this.getSequence()).replace("U", "T")))
+                        isoName = "*".concat(isoName);
+                }
+                isoString           = isoString.concat(StringUtils.repeat(" ", longestName - isoName.length()) + isoName);
+                
+                int isoStart        = Integer.parseInt(isomiR.split(";")[startCol]);
+                String isoSeq       = isomiR.split(";")[seqCol];
+                isoString           = isoString.concat(StringUtils.repeat(" ", ColMargin + (isoStart - this.getIsomiRMinStart())));
+                isoString           = isoString.concat(isoSeq);
+                isoString           = isoString.concat(StringUtils.repeat(" ", (this.getIsomiRMaxStop()-(isoStart + isoSeq.length())) + ColMargin));
+                
+                String isoMD        = isomiR.split(";")[mdCol];
+                isoString           = isoString.concat(StringUtils.repeat(" ", ColMargin) + isoMD + StringUtils.repeat(" ", (longestMD - isoMD.length()) + ColMargin));
+                
+                String isoCounts    = isomiR.split(";")[nameCol].split("-")[1];
+                isoString           = isoString.concat(StringUtils.repeat(" ", ColMargin + (longestCounts - isoCounts.length())) + isoCounts + StringUtils.repeat(" ", ColMargin) + "\n");
+            
+            }
+            
+        }
+        
+        if (isoString.equals("")) return "";
+        
+        return reportStr.concat(isoString + "\n\n\n");
+
     }
     
     
@@ -182,11 +300,53 @@ public class MiRNAFeature {
         int totalCounts = 0;
         String [] isomiRs = isomiRString.split("\t");
 
-         for(String isomiR: isomiRs){            
-            totalCounts += Integer.parseInt(isomiR.split(";")[0].split("-")[1]);
+        for(String isomiR: isomiRs){            
+            totalCounts += Integer.parseInt(isomiR.split(";")[nameCol].split("-")[1]);
         }
         return totalCounts;
     }
+    
+    
+    /**
+     * find the smallest start position within the isomiRs
+     * 
+     * @return 
+     */
+    public int getIsomiRMinStart(){
+        
+        int isomiRMinStart = 1000000000;
+        String [] isomiRs = isomiRString.split("\t");
+
+        for(String isomiR: isomiRs){         
+            if(Integer.parseInt(isomiR.split(";")[startCol]) < isomiRMinStart) 
+                isomiRMinStart = Integer.parseInt(isomiR.split(";")[startCol]);
+        }
+        return isomiRMinStart;
+        
+    }
+    
+    
+    
+    
+    /**
+     * find the smallest start position within the isomiRs
+     * 
+     * @return 
+     */
+    public int getIsomiRMaxStop(){
+        
+        int isomiRMaxStop = -1;
+        String [] isomiRs = isomiRString.split("\t");
+
+        for(String isomiR: isomiRs){         
+            if(Integer.parseInt(isomiR.split(";")[startCol]) + isomiR.split(";")[seqCol].length() > isomiRMaxStop) 
+                isomiRMaxStop = Integer.parseInt(isomiR.split(";")[startCol]) + isomiR.split(";")[seqCol].length();
+        }
+        return isomiRMaxStop;
+        
+    }
+    
+    
     
     
     /**

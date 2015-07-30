@@ -41,6 +41,12 @@
             <version>1.9.13</version>
             <type>jar</type>
         </dependency>
+        <dependency>
+            <groupId>no.uio.medisin.bag</groupId>
+            <artifactId>MirPara4j</artifactId>
+            <version>1.0-SNAPSHOT</version>
+            <type>jar</type>
+        </dependency>
     </dependencies>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

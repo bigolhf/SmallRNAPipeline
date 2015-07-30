@@ -6,8 +6,10 @@
 package no.uio.medisin.bag.ngssmallrna.steps;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -17,8 +19,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import no.uio.medisin.bag.ngssmallrna.pipeline.MiRNAFeature;
 import no.uio.medisin.bag.ngssmallrna.pipeline.SampleDataEntry;
-import org.apache.logging.log4j.LogManager;
 
+import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 
@@ -36,17 +38,13 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
     static  String                      FileSeparator               = System.getProperty("file.separator");
     
     private static final String         inFolder                    = "bowtie_genome_mapped";
-    private static final String         abundReadsOutFolder         = "bowtie_abundant_mapped";
+    private static final String         miRNAAnalysisOutFolder      = "mirna_isomir_analysis";
     private static final String         genomeReadsOutFolder        = "bowtie_genome_mapped";
     
     
     private static final String         infileExtension             = ".trim.clp.gen.sam";
-    private static final String         fastqAbundantAlnExtension   = ".trim.clp.abun.fasta";
-    private static final String         fastqAbundantUnAlnExtension = ".trim.clp.notabun.fasta";
-    private static final String         samAbundantAlnExtension     = ".trim.clp.abun.sam";
-    private static final String         fastqGenomeAlnExtension     = ".trim.clp.gen.sam";
-    private static final String         fastqGenomeUnAlnExtension   = ".trim.clp.unmap.fasta";
-    private static final String         samGenomeAlnExtension       = ".trim.clp.gen.sam";
+    private static final String         isomirSummaryExtension      = ".trim.clp.gen.iso_summary.tsv";
+    private static final String         isomirPrettyExtension       = ".trim.clp.gen.iso_pretty.tsv";
     
     
     
@@ -90,7 +88,13 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
         catch(IOException ex){
             logger.error("error reading miRBase reference file <" + (String) stepInputData.getStepParams().get("miRBaseHostGFFFile") + ">\n" + ex.toString());
         }
-    
+        
+        
+        String pathToData = stepInputData.getProjectRoot() + FileSeparator + stepInputData.getProjectID();
+        String miRNAAnalysisOutputFolder = pathToData + FileSeparator + miRNAAnalysisOutFolder;
+        miRNAAnalysisOutputFolder = miRNAAnalysisOutputFolder.replace(FileSeparator + FileSeparator, FileSeparator).trim();
+        Boolean fA = new File(miRNAAnalysisOutputFolder).mkdir();       
+        if (fA) logger.info("created output folder <" + miRNAAnalysisOutputFolder + "> for results" );
         
         Iterator itSD = this.stepInputData.getSampleData().iterator();
         while (itSD.hasNext()){
@@ -98,7 +102,6 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
                 int bleed = (int) stepInputData.getStepParams().get("bleed");
                 SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
                 
-                String pathToData = stepInputData.getProjectRoot() + FileSeparator + stepInputData.getProjectID();                
                 String samInputFile = pathToData + FileSeparator + inFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", infileExtension);
                 int matchCount5 = 0;
                 int matchCount3 = 0;
@@ -176,10 +179,20 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
                     logger.info("total mapped counts = " + totalCounts);
                     Double minCounts = (double) totalCounts /100000.0;
                     logger.info((matchCount5 + matchCount3) + " reads (" + matchCount5 + " 5'" + "/" + matchCount3 + " 3' ) were mapped");
-                    for(MiRNAFeature miRHit: miRNAHitList){
-                        if (miRHit.getTotalCounts() > minCounts.intValue())
-                            logger.info(miRHit.reportIsomiRs((int) stepInputData.getStepParams().get("baseline_percent"), minCounts.intValue()));
-                    }
+                    String  isoDetailsFile = pathToData + FileSeparator + inFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", isomirSummaryExtension);
+                    String  isoPrettyFile  = pathToData + FileSeparator + inFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", isomirPrettyExtension);
+
+                    BufferedWriter brDetails = new BufferedWriter(new FileWriter(new File(isoDetailsFile)));
+                    BufferedWriter brPretty  = new BufferedWriter(new FileWriter(new File(isoPrettyFile)));
+                        for(MiRNAFeature miRHit: miRNAHitList){
+                            if (miRHit.getTotalCounts() > minCounts.intValue()){
+                                logger.info(miRHit.reportIsomiRs((int) stepInputData.getStepParams().get("baseline_percent"), minCounts.intValue()));
+                                brDetails.write(miRHit.reportIsomiRs((int) stepInputData.getStepParams().get("baseline_percent"), minCounts.intValue()));
+                                brPretty.write(miRHit.prettyReportIsomiRs((int) stepInputData.getStepParams().get("baseline_percent"), minCounts.intValue()));
+                            }
+                        }
+                    brPretty.close();
+                    brDetails.close();
                 brSAM.close();
                 
                 
@@ -348,7 +361,9 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
                     }
                 }
                 String seq = miRBaseSeq.get(id);
-                this.miRNAList.add(new MiRNAFeature(name, chr, startPos, endPos, strand, id, parent, seq));
+                logger.warn("no sequence found for entry <" + id + ">. Skipping");
+                if(seq != null) 
+                    this.miRNAList.add(new MiRNAFeature(name, chr, startPos, endPos, strand, id, parent, seq));
             }
         brMiR.close();
         logger.info("read " + miRNAList + "miRNA entries");
