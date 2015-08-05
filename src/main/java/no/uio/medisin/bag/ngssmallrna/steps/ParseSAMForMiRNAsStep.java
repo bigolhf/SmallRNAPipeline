@@ -53,7 +53,7 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
     
 
     private List<MiRNAFeature>          miRNAList                   = new ArrayList<>();
-    private List<MiRNAFeature>          miRNAHitList                = new ArrayList<>();
+    private List<MiRNAFeature>          miRNAHitList;
     
     /**
      * 
@@ -98,6 +98,7 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
         
         Iterator itSD = this.stepInputData.getSampleData().iterator();
         while (itSD.hasNext()){
+            miRNAHitList = new ArrayList<>();
             try{
                 int bleed = (int) stepInputData.getStepParams().get("bleed");
                 SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
@@ -179,8 +180,8 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
                     logger.info("total mapped counts = " + totalCounts);
                     Double minCounts = (double) totalCounts /100000.0;
                     logger.info((matchCount5 + matchCount3) + " reads (" + matchCount5 + " 5'" + "/" + matchCount3 + " 3' ) were mapped");
-                    String  isoDetailsFile = pathToData + FileSeparator + inFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", isomirSummaryExtension);
-                    String  isoPrettyFile  = pathToData + FileSeparator + inFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", isomirPrettyExtension);
+                    String  isoDetailsFile = miRNAAnalysisOutputFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", isomirSummaryExtension);
+                    String  isoPrettyFile  = miRNAAnalysisOutputFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", isomirPrettyExtension);
 
                     BufferedWriter brDetails = new BufferedWriter(new FileWriter(new File(isoDetailsFile)));
                     BufferedWriter brPretty  = new BufferedWriter(new FileWriter(new File(isoPrettyFile)));
@@ -361,9 +362,10 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
                     }
                 }
                 String seq = miRBaseSeq.get(id);
-                logger.warn("no sequence found for entry <" + id + ">. Skipping");
                 if(seq != null) 
                     this.miRNAList.add(new MiRNAFeature(name, chr, startPos, endPos, strand, id, parent, seq));
+                else
+                    logger.warn("no sequence found for entry <" + id + ">. Skipping");
             }
         brMiR.close();
         logger.info("read " + miRNAList + "miRNA entries");
