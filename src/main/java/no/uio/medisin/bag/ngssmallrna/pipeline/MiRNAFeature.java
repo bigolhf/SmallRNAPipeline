@@ -5,6 +5,9 @@
  */
 package no.uio.medisin.bag.ngssmallrna.pipeline;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -145,6 +148,8 @@ public class MiRNAFeature {
         
     }
     
+    
+
     
     /**
      * write out isomiRs.
@@ -287,6 +292,78 @@ public class MiRNAFeature {
 
     }
     
+    
+    
+    
+        /**
+     * an isomiR can be classified as 5´ modification , 3´ modification or polymorphic
+     * 
+     * @param baselinePercent
+     * @param minCounts 
+     * 
+     * @return ArrayList    : list of isomiR points
+     */
+    public ArrayList characterizeIsomiRs(int baselinePercent, int minCounts){
+        
+        ArrayList isomiRPts = new ArrayList<>();
+        // we can identify 5´ modification from start position
+        int totalCounts = this.getTotalCounts();
+        String [] isomiRStrings = isomiRString.split("\t");
+        String isoString = "";
+
+        if(this.getStrand().equals("+")){
+        }
+        else{
+        }
+        for(String isomiR: isomiRStrings){
+
+            if(Double.parseDouble(isomiR.split(";")[nameCol].split("-")[1]) / (double) totalCounts > (double)baselinePercent/100.0){
+
+
+                int isoStart        = Integer.parseInt(isomiR.split(";")[startCol]);
+                String isoSeq       = isomiR.split(";")[seqCol];
+                int isoEnd          = isoStart + isoSeq.length() - 1;
+
+                int noOf5pSteps = 0;
+                int noOf3pSteps = 0;
+                int noOfPolySteps = 0;                
+
+
+                
+                
+                if(isoStart != this.startPos){                   
+                    noOf5pSteps = isoStart - this.startPos;                   
+                }
+
+                if(isoEnd != this.endPos){
+                    noOf3pSteps = isoEnd - this.getEndPos();
+                }
+
+                if(sequence.replace("U", "T").equals(isoSeq.substring(this.startPos- isoStart, sequence.length()))==false){
+                    for(int b=0; b<sequence.length(); b++){
+                        if(sequence.charAt(b) != isoSeq.charAt(b)) noOfPolySteps++;
+                    }
+                }
+
+                String isoCounts    = isomiR.split(";")[nameCol].split("-")[1];
+                
+                HashMap isomiRPt = new HashMap();
+                isomiRPt.put("5p", noOf5pSteps);
+                isomiRPt.put("3p", noOf3pSteps);
+                isomiRPt.put("poly", noOfPolySteps);
+                isomiRPt.put("fraction", Double.parseDouble(isoCounts)/(double)totalCounts);
+                
+                isomiRPts.add(isomiRPt);
+
+            }
+
+        }
+        
+        return isomiRPts;
+
+    }
+    
+
     
     
     
