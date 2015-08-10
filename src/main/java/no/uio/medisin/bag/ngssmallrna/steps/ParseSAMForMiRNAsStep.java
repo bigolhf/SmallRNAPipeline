@@ -102,6 +102,8 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
         while (itSD.hasNext()){
             try{
                 miRNAHitList = new ArrayList<>();
+                isomiRList = new ArrayList<>();
+                
                 int bleed = (int) stepInputData.getStepParams().get("bleed");
                 SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
                 
