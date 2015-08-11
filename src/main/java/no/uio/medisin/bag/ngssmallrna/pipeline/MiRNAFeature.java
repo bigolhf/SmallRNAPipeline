@@ -5,6 +5,9 @@
  */
 package no.uio.medisin.bag.ngssmallrna.pipeline;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -146,6 +149,8 @@ public class MiRNAFeature {
     }
     
     
+
+    
     /**
      * write out isomiRs.
      * 
@@ -217,7 +222,6 @@ public class MiRNAFeature {
         for(String isomiR: isomiRs){
             
             if(Double.parseDouble(isomiR.split(";")[nameCol].split("-")[1]) / (double) totalCounts > (double)baselinePercent/100.0){
-            
                 if(isomiR.split(";")[nameCol].length() > longestName)
                     longestName = isomiR.split(";")[nameCol].length();
 
@@ -287,6 +291,148 @@ public class MiRNAFeature {
 
     }
     
+    
+    
+    
+        /**
+     * an isomiR can be classified as 5´ modification , 3´ modification or polymorphic
+     * 
+     * @param baselinePercent
+     * @param minCounts 
+     * 
+     * @return ArrayList    : list of isomiR points
+     */
+    public ArrayList characterizeIsomiRs(int baselinePercent, int minCounts){
+        
+        ArrayList isomiRPts = new ArrayList<>();
+        // we can identify 5´ modification from start position
+        int totalCounts = this.getTotalCounts();
+        String [] isomiRStrings = isomiRString.split("\t");
+        String isoString = "";
+        logger.info(this.name);
+
+        for(String isomiR: isomiRStrings){
+
+            
+            if(Double.parseDouble(isomiR.split(";")[nameCol].split("-")[1]) / (double) totalCounts > (double)baselinePercent/100.0){
+                logger.info(isomiR.split(";")[nameCol] +  this.getStrand() +  "\n" + this.sequence + "\n" + isomiR.split(";")[seqCol] + "\n" + " : " + Double.parseDouble(isomiR.split(";")[nameCol].split("-")[1]) / (double) totalCounts);
+
+
+                //logger.info(isomiR);
+                    int isoStart        = Integer.parseInt(isomiR.split(";")[startCol]);
+                String isoSeq       = isomiR.split(";")[seqCol];
+                int isoEnd          = isoStart + isoSeq.length() - 1;
+
+                int noOf5pSteps = 0;
+                int noOf3pSteps = 0;
+                int noOfPolySteps = 0;                
+
+                int wStart = 0;
+                int wEnd = 0;
+                int iStart = 0;
+                int iEnd = 0;
+
+                
+                if(this.getStrand().equals("+")){
+                
+                    if(isoStart != this.startPos){                   
+                        noOf5pSteps = isoStart - this.startPos;                   
+                    }
+
+                    if(isoEnd != this.endPos){
+                        noOf3pSteps = isoEnd - this.getEndPos();
+                    }
+                    logger.info(noOf5pSteps + ", " + noOf3pSteps);
+                    logger.info(isoStart + ", " + isoEnd + ", " + (this.startPos- isoStart) + ", " + sequence.length());
+
+                    if(this.startPos >= isoStart ){
+                        wStart = 0;
+                        iStart = this.startPos- isoStart;
+                    }
+                    else{
+                        wStart = isoStart - this.startPos;
+                        iStart = 0;
+                    }
+
+                    if(this.endPos < isoEnd){
+                        wEnd = sequence.length(); 
+                        iEnd = isoSeq.length() - (isoEnd - this.endPos);
+                    }
+                    else{
+                        wEnd = sequence.length() - (this.endPos - isoEnd);
+                        iEnd = isoSeq.length();
+                    }
+
+                    if(sequence.substring(wStart, wEnd).replace("U", "T").equals(isoSeq.substring(iStart, iEnd))==false){
+                        for(int b=0; b<wEnd-wStart; b++){
+                            if(sequence.charAt(wStart + b) != isoSeq.charAt(iStart + b)) noOfPolySteps++;
+                        }
+                    }
+                }
+                else{
+                    
+                    if(isoStart != this.startPos){                   
+                        noOf5pSteps = isoStart - this.startPos;                   
+                    }
+
+                    if(isoEnd != this.endPos){
+                        noOf3pSteps = isoEnd - this.getEndPos();
+                    }
+                    logger.info(noOf5pSteps + ", " + noOf3pSteps);
+                    logger.info(isoStart + ", " + isoEnd + ", " + (this.startPos- isoStart) + ", " + sequence.length());
+
+                    if(this.startPos >= isoStart ){
+                        wStart = 0;
+                        iStart = this.startPos- isoStart;
+                    }
+                    else{
+                        wStart = isoStart - this.startPos;
+                        iStart = 0;
+                    }
+
+                    if(this.endPos < isoEnd){
+                        wEnd = sequence.length(); 
+                        iEnd = isoSeq.length() - (isoEnd - this.endPos);
+                    }
+                    else{
+                        wEnd = sequence.length() - (this.endPos - isoEnd);
+                        iEnd = isoSeq.length();
+                    }
+
+                    if(sequence.substring(wStart, wEnd).replace("U", "T").equals(isoSeq.substring(iStart, iEnd))==false){
+                        for(int b=0; b<wEnd-wStart; b++){
+                            if(sequence.charAt(wStart + b) != isoSeq.charAt(iStart + b)) noOfPolySteps++;
+                        }
+                    }
+                    if(sequence.substring(wStart, wEnd).replace("U", "T").equals(SimpleSeq.Complement(isoSeq.substring(iStart, iEnd)))==false){
+                        String complementIsoSeq = SimpleSeq.Complement(isoSeq.substring(iStart, iEnd));
+                        for(int b=0; b<wEnd-wStart; b++){
+                            if(sequence.charAt(wStart + b) != complementIsoSeq.charAt(iStart + b)) noOfPolySteps++;
+                        }
+                    }                 
+                    
+                }
+
+
+                String isoCounts    = isomiR.split(";")[nameCol].split("-")[1];
+                
+                HashMap isomiRPt = new HashMap();
+                isomiRPt.put("5p", noOf5pSteps);
+                isomiRPt.put("3p", noOf3pSteps);
+                isomiRPt.put("poly", noOfPolySteps);
+                isomiRPt.put("fraction", Double.parseDouble(isoCounts)/(double)totalCounts);
+                
+                isomiRPts.add(isomiRPt);
+
+            }
+
+        }
+        
+        return isomiRPts;
+
+    }
+    
+
     
     
     

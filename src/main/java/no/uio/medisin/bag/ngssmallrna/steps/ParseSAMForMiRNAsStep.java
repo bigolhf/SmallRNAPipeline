@@ -17,6 +17,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import no.uio.medisin.bag.ngssmallrna.pipeline.IsomiRSet;
 import no.uio.medisin.bag.ngssmallrna.pipeline.MiRNAFeature;
 import no.uio.medisin.bag.ngssmallrna.pipeline.SampleDataEntry;
 
@@ -100,6 +101,9 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
         while (itSD.hasNext()){
             miRNAHitList = new ArrayList<>();
             try{
+                miRNAHitList = new ArrayList<>();
+                isomiRList = new ArrayList<>();
+                
                 int bleed = (int) stepInputData.getStepParams().get("bleed");
                 SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
                 
@@ -168,7 +172,6 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
                                     mutations.add(match.group());
                                     outputString = outputString.concat(match.group() + "|");
                                 }
-                                logger.info(outputString);
                                 
                             }
                             
@@ -182,12 +185,24 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
                     logger.info((matchCount5 + matchCount3) + " reads (" + matchCount5 + " 5'" + "/" + matchCount3 + " 3' ) were mapped");
                     String  isoDetailsFile = miRNAAnalysisOutputFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", isomirSummaryExtension);
                     String  isoPrettyFile  = miRNAAnalysisOutputFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", isomirPrettyExtension);
+                    
+                    logger.info("calculate isomiR dispersions");
+                    for(MiRNAFeature miRHit: miRNAHitList){
+                        ArrayList isomirPtsAsHash = miRHit.characterizeIsomiRs((int) stepInputData.getStepParams().get("baseline_percent"), minCounts.intValue());
+                        this.isomiRList.add(new IsomiRSet(miRHit.getMimatID(), sampleData.getDataFile().replace(".fastq", ""), isomirPtsAsHash));
+                    }
+                    
+            
+                    
+                    logger.info("write isomiRs");
+                    String  isoDetailsFile = pathToData + FileSeparator + inFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", isomirSummaryExtension);
+                    String  isoPrettyFile  = pathToData + FileSeparator + inFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", isomirPrettyExtension);
 
                     BufferedWriter brDetails = new BufferedWriter(new FileWriter(new File(isoDetailsFile)));
                     BufferedWriter brPretty  = new BufferedWriter(new FileWriter(new File(isoPrettyFile)));
                         for(MiRNAFeature miRHit: miRNAHitList){
                             if (miRHit.getTotalCounts() > minCounts.intValue()){
-                                logger.info(miRHit.reportIsomiRs((int) stepInputData.getStepParams().get("baseline_percent"), minCounts.intValue()));
+                                logger.info(miRHit.getName());
                                 brDetails.write(miRHit.reportIsomiRs((int) stepInputData.getStepParams().get("baseline_percent"), minCounts.intValue()));
                                 brPretty.write(miRHit.prettyReportIsomiRs((int) stepInputData.getStepParams().get("baseline_percent"), minCounts.intValue()));
                             }
@@ -203,6 +218,19 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
             }
         }
         
+        String dispersionFile = miRNAAnalysisOutputFolder + FileSeparator + stepInputData.getProjectID();
+        logger.info("write dispersions to file <" + dispersionFile + ">");
+        try{
+            BufferedWriter bwDp = new BufferedWriter(new FileWriter(new File(dispersionFile)));
+                for(IsomiRSet isomiRset: isomiRList){
+                    bwDp.write(isomiRset.tabReportIsomiRSet());                
+                }
+            bwDp.close();
+        }
+        catch(IOException exIO){
+            logger.info("error writing isomiR dispersion File <" + dispersionFile + ">\n" + exIO);
+        }
+                    
         
     }
     
