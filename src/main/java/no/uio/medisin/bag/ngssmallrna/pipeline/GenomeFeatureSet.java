@@ -52,15 +52,15 @@ public class GenomeFeatureSet {
         
         for(GenomeFeature feature: this.genomeFeatureList){
             
-            if (featureTypes[0].equals("") || Arrays.asList(featureTypes).contains(feature.getFeatureName())){
+            if (featureTypes[0].equals("all") || Arrays.asList(featureTypes).contains(feature.getFeatureName())){
                 
                 if (feature.chromosomeMatch(chr)){
                     
                     if(strand.equals(feature.getStrand())){
-
                         if((start - bleed) <= feature.getStartPos()){
 
                             if( feature.getEndPos() <= (stop + bleed)){
+                                logger.info("\t" + start + "\t" + stop + "\t" + feature.getStartPos());
                                 return feature;
                             }
 
@@ -87,7 +87,8 @@ public class GenomeFeatureSet {
      * @param gffString 
      */
     public void addFeature(String gffString){
-        genomeFeatureList.add(new GenomeFeature(gffString));
+        if (gffString.contains("exon"))
+            genomeFeatureList.add(new GenomeFeature(gffString));
     }
     
     
@@ -115,7 +116,7 @@ public class GenomeFeatureSet {
                 this.addFeature(line);
             }
         brGFF.close();
-        logger.info("read " + genomeFeatureList + "feature entries");
+        logger.info("read " + genomeFeatureList.size() + " feature entries");
         
     }
     

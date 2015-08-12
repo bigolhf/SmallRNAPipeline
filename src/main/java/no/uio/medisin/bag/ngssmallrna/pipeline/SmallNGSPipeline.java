@@ -358,7 +358,7 @@ public class SmallNGSPipeline {
      * @return 
      */
     public String getGenomeAnnotationGFF(){
-        return this.getGenomeRootFolder() + FileSeparator + "Annotation/Genes/genes.gtf";
+        return this.getGenomeRootFolder() + FileSeparator + this.getBowtieMappingReferenceGenome() + FileSeparator + "Annotation/Genes/genes.gtf";
     }
     
     

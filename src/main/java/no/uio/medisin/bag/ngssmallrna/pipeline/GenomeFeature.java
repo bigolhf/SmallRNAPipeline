@@ -30,7 +30,7 @@ public class GenomeFeature {
     private String featureName;
     private int    startPos;
     private int    endPos;
-    private double score;
+    private String score;
     private String strand;
     private String sequence;
     private String attributeString;
@@ -74,7 +74,7 @@ public class GenomeFeature {
         featureName = tokens[featureCol].trim();
         startPos = Integer.parseInt(tokens[startyCol].trim());
         endPos = Integer.parseInt(tokens[endCol].trim());
-        score = Double.parseDouble(tokens[scoreCol].trim());
+        score = tokens[scoreCol].trim();
         strand = tokens[strandCol].trim();
         attributeString = tokens[attribCol].trim();
         
@@ -231,14 +231,14 @@ public class GenomeFeature {
     /**
      * @return the score
      */
-    public double getScore() {
+    public String getScore() {
         return score;
     }
 
     /**
      * @param score the score to set
      */
-    public void setScore(double score) {
+    public void setScore(String score) {
         this.score = score;
     }
 

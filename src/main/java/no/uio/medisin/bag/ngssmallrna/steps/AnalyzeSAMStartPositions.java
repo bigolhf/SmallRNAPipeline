@@ -94,8 +94,9 @@ public class AnalyzeSAMStartPositions extends NGSStep{
             logger.error("error reading genome reference GFF file <" + (String) stepInputData.getStepParams().get("genomeReferenceGFFFile") + ">\n" + ex.toString());
         }
         ArrayList<String> x = ((ArrayList<String>)stepInputData.getStepParams().get("feature_types"));
-        String featureTypes[] = (String[])((ArrayList<String>)stepInputData.getStepParams().get("feature_types")).toArray();
-        
+        String[] featureTypes = x.toArray(new String[x.size()]);
+
+        String samInputFile = null;
         String pathToData = stepInputData.getProjectRoot() + FileSeparator + stepInputData.getProjectID();
         String startAnalysisOutputFolder = pathToData + FileSeparator + startAnalysisOutFolder;
         startAnalysisOutputFolder = startAnalysisOutputFolder.replace(FileSeparator + FileSeparator, FileSeparator).trim();
@@ -103,26 +104,27 @@ public class AnalyzeSAMStartPositions extends NGSStep{
         if (fA) logger.info("created output folder <" + startAnalysisOutputFolder + "> for results" );
         
         Iterator itSD = this.stepInputData.getSampleData().iterator();
+        codingHits      = new ArrayList<>();
+        nonCodingHits   = new ArrayList<>();
         while (itSD.hasNext()){
             try{
-                codingHits      = new ArrayList<>();
-                nonCodingHits   = new ArrayList<>();
                 
                 
                 int bleed = (int) stepInputData.getStepParams().get("bleed");
                 SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
                 
-                String samInputFile = pathToData + FileSeparator + inFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", infileExtension);
+                samInputFile = pathToData + FileSeparator + inFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", infileExtension);
                 logger.info(sampleData.getDataFile().replace(".fastq", infileExtension));
                 int matchCount5 = 0;
                 int matchCount3 = 0;
                 int codingCounts = 0;
+                int nonCodingCounts = 0;
                 int preMatchCount5 = 0;
                 int preMatchCount3 = 0;
                 int totalCounts = 0;
+                int lineCount = 0;
                 String samLine = null;
                 BufferedReader brSAM = new BufferedReader(new FileReader(new File(samInputFile)));
-                    codingHits = new ArrayList<>();
                     while((samLine=brSAM.readLine())!= null){
                         /*
                             1   QNAME	   Query template NAME
@@ -170,6 +172,7 @@ public class AnalyzeSAMStartPositions extends NGSStep{
                                 ncRead.put("strand", strand);
                                 ncRead.put("counts", Integer.parseInt(samLine.split("\t")[0].split("-")[1]));
                                 nonCodingHits.add(ncRead);
+                                nonCodingCounts += Integer.parseInt(samLine.split("\t")[0].split("-")[1]);
                                 
                             }
                             else{
@@ -190,9 +193,14 @@ public class AnalyzeSAMStartPositions extends NGSStep{
                             
                             
                         }
+                        lineCount++;
+                        if((lineCount % 10000) == 0)
+                            logger.info(lineCount);
+                        
                     }
-                    logger.info("  total mapped counts = " + totalCounts);
-                    logger.info("  total coding counts = " + codingCounts);
+                    logger.info("  total reads              = " + totalCounts);
+                    logger.info("  total coding reads       = " + codingCounts);
+                    logger.info("  total non coding reads   = " + nonCodingCounts);
                     Double minCounts = (double) totalCounts /100000.0;
                     logger.info((matchCount5 + matchCount3) + " reads (" + matchCount5 + " 5'" + "/" + matchCount3 + " 3' ) were mapped");
                     String  codingReadsDetailsFile = startAnalysisOutputFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", readsInExonExtension);
@@ -200,45 +208,43 @@ public class AnalyzeSAMStartPositions extends NGSStep{
                     
             
                     
+                    try{
                     logger.info("  write coding information");
-                    BufferedWriter brCoding = new BufferedWriter(new FileWriter(new File(codingReadsDetailsFile)));
-                        brCoding.write("name\tstart\tend\tchr\tstrand\tcounts");
-                        for(HashMap codingHit: codingHits){
-                            brCoding.write(codingHit.get("name") + "\t" + codingHit.get("start") + "\t" + codingHit.get("end") 
-                              + "\t" + codingHit.get("chr") + "\t" + codingHit.get("strand") + "\t" + codingHit.get("counts") + "\n");                        
-                        }
-                    brCoding.close();
+                        BufferedWriter brCoding = new BufferedWriter(new FileWriter(new File(codingReadsDetailsFile)));
+                            brCoding.write("name\tstart\tend\tchr\tstrand\tcounts\n");
+                            for(HashMap codingHit: codingHits){
+                                brCoding.write(codingHit.get("name") + "\t" + codingHit.get("start") + "\t" + codingHit.get("end") 
+                                  + "\t" + codingHit.get("chr") + "\t" + codingHit.get("strand") + "\t" + codingHit.get("counts") + "\n");                        
+                            }
+                        brCoding.close();
+                    }
+                    catch(IOException exIO){
+                        logger.info("error writing coding File <" + codingReadsDetailsFile + ">\n" + exIO);
+                    }
+
+                    try{
+                        logger.info("  write non-coding information");                    
+                        BufferedWriter brNonCoding  = new BufferedWriter(new FileWriter(new File(nonCodingReadsDetailsFile)));
+                            brNonCoding.write("name\tstart\tend\tchr\tstrand\tcounts\n");
+                            for(HashMap nonCodingHit: nonCodingHits){
+                                brNonCoding.write(nonCodingHit.get("name") + "\t" + nonCodingHit.get("start") + "\t" + nonCodingHit.get("end") 
+                                  + "\t" + nonCodingHit.get("chr") + "\t" + nonCodingHit.get("strand") + "\t" + nonCodingHit.get("counts") + "\n");                        
+                            }
+                        brNonCoding.close();
+                    }
+                    catch(IOException exIO){
+                        logger.info("error writing non-coding File <" + nonCodingReadsDetailsFile + ">\n" + exIO);
+                    }
                     
-                    logger.info("  write non-coding information");                    
-                    BufferedWriter brNonCoding  = new BufferedWriter(new FileWriter(new File(nonCodingReadsDetailsFile)));
-                        brCoding.write("name\tstart\tend\tchr\tstrand\tcounts");
-                        for(HashMap nonCodingHit: nonCodingHits){
-                            brCoding.write(nonCodingHit.get("name") + "\t" + nonCodingHit.get("start") + "\t" + nonCodingHit.get("end") 
-                              + "\t" + nonCodingHit.get("chr") + "\t" + nonCodingHit.get("strand") + "\t" + nonCodingHit.get("counts") + "\n");                        
-                        }
-                    brNonCoding.close();
                 brSAM.close();
                 logger.info("  done\n");
-                
-                
             }
-            catch(IOException ex){
-                logger.error("error executing parse SAM for miRNAs command\n" + ex.toString());
+            catch(IOException exIO){
+                logger.info("error reading non-coding File <" + samInputFile + ">\n" + exIO);
             }
+                
         }
         
-        String dispersionFile = startAnalysisOutputFolder + FileSeparator + stepInputData.getProjectID() + ".disp";
-        logger.info("write dispersions to file <" + dispersionFile + ">");
-        try{
-            BufferedWriter bwDp = new BufferedWriter(new FileWriter(new File(dispersionFile)));
-                for(IsomiRSet isomiRset: isomiRList){
-                    bwDp.write(isomiRset.tabReportIsomiRSet());                
-                }
-            bwDp.close();
-        }
-        catch(IOException exIO){
-            logger.info("error writing isomiR dispersion File <" + dispersionFile + ">\n" + exIO);
-        }
                     
         
     }
