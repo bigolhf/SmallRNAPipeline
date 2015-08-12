@@ -108,7 +108,7 @@ public class BowtieMapReadsStep extends NGSStep{
                 */
                 cmd.add("bowtie");
                 String pathToBowtieIndex = stepInputData.getStepParams().get("bowtieMapGenomeRootFolder") 
-                    + FileSeparator + stepInputData.getStepParams().get("bowtieReferenceGenome") + "/Ensembl/GRCh37/Sequence/AbundantSequences/abundant";
+                    + FileSeparator + stepInputData.getStepParams().get("bowtieReferenceGenome") + "/Sequence/AbundantSequences/abundant";
                 cmd.add(pathToBowtieIndex);
                 
                 String fastqInputFile = pathToData + FileSeparator + inFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", infileExtension);
@@ -179,7 +179,7 @@ public class BowtieMapReadsStep extends NGSStep{
                 cmd = new ArrayList<>();
                 cmd.add("bowtie");
                 String pathToBowtieGenomeIndex = stepInputData.getStepParams().get("bowtieMapGenomeRootFolder") 
-                    + FileSeparator + stepInputData.getStepParams().get("bowtieReferenceGenome") + "/Ensembl/GRCh37/Sequence/BowtieIndex/genome";
+                    + FileSeparator + stepInputData.getStepParams().get("bowtieReferenceGenome") + "/Sequence/BowtieIndex/genome";
                 cmd.add(pathToBowtieGenomeIndex);
                 
                 fastqInputFile = fastqAbundantUnAln;

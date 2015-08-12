@@ -55,7 +55,7 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
 
     private List<MiRNAFeature>          miRNAList                   = new ArrayList<>();
     private List<MiRNAFeature>          miRNAHitList;
-    
+    private ArrayList<IsomiRSet>        isomiRList;
     /**
      * 
      * @param sid StepInputData
@@ -99,7 +99,6 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
         
         Iterator itSD = this.stepInputData.getSampleData().iterator();
         while (itSD.hasNext()){
-            miRNAHitList = new ArrayList<>();
             try{
                 miRNAHitList = new ArrayList<>();
                 isomiRList = new ArrayList<>();
@@ -108,6 +107,7 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
                 SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
                 
                 String samInputFile = pathToData + FileSeparator + inFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", infileExtension);
+                logger.info(sampleData.getDataFile().replace(".fastq", infileExtension));
                 int matchCount5 = 0;
                 int matchCount3 = 0;
                 int preMatchCount5 = 0;
@@ -115,6 +115,7 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
                 int totalCounts = 0;
                 String samLine = null;
                 BufferedReader brSAM = new BufferedReader(new FileReader(new File(samInputFile)));
+                    miRNAHitList = new ArrayList<>();
                     while((samLine=brSAM.readLine())!= null){
                         /*
                             1   QNAME	   Query template NAME
@@ -152,7 +153,7 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
                             
                             MiRNAFeature miRNAHit = this.doesReadOverlapKnownMiRNA(startPos, endPos, chr, strand, bleed);
                             if (miRNAHit != null){
-                                logger.info(miRNAHit.getName());
+                                logger.debug(miRNAHit.getName());
                                 String name = samLine.split("\t")[0];
                                 String sequence = samLine.split("\t")[9];
                                 if(miRNAHitList.contains(miRNAHit)){ 
@@ -180,13 +181,13 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
                             
                         }
                     }
-                    logger.info("total mapped counts = " + totalCounts);
+                    logger.info("  total mapped counts = " + totalCounts);
                     Double minCounts = (double) totalCounts /100000.0;
                     logger.info((matchCount5 + matchCount3) + " reads (" + matchCount5 + " 5'" + "/" + matchCount3 + " 3' ) were mapped");
                     String  isoDetailsFile = miRNAAnalysisOutputFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", isomirSummaryExtension);
                     String  isoPrettyFile  = miRNAAnalysisOutputFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", isomirPrettyExtension);
                     
-                    logger.info("calculate isomiR dispersions");
+                    logger.info("  calculate isomiR dispersions");
                     for(MiRNAFeature miRHit: miRNAHitList){
                         ArrayList isomirPtsAsHash = miRHit.characterizeIsomiRs((int) stepInputData.getStepParams().get("baseline_percent"), minCounts.intValue());
                         this.isomiRList.add(new IsomiRSet(miRHit.getMimatID(), sampleData.getDataFile().replace(".fastq", ""), isomirPtsAsHash));
@@ -194,15 +195,13 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
                     
             
                     
-                    logger.info("write isomiRs");
-                    String  isoDetailsFile = pathToData + FileSeparator + inFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", isomirSummaryExtension);
-                    String  isoPrettyFile  = pathToData + FileSeparator + inFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", isomirPrettyExtension);
+                    logger.info("  write isomiRs");
 
                     BufferedWriter brDetails = new BufferedWriter(new FileWriter(new File(isoDetailsFile)));
                     BufferedWriter brPretty  = new BufferedWriter(new FileWriter(new File(isoPrettyFile)));
                         for(MiRNAFeature miRHit: miRNAHitList){
                             if (miRHit.getTotalCounts() > minCounts.intValue()){
-                                logger.info(miRHit.getName());
+                                logger.debug(miRHit.getName());
                                 brDetails.write(miRHit.reportIsomiRs((int) stepInputData.getStepParams().get("baseline_percent"), minCounts.intValue()));
                                 brPretty.write(miRHit.prettyReportIsomiRs((int) stepInputData.getStepParams().get("baseline_percent"), minCounts.intValue()));
                             }
@@ -210,15 +209,16 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
                     brPretty.close();
                     brDetails.close();
                 brSAM.close();
+                logger.info("  done\n");
                 
                 
             }
             catch(IOException ex){
-                logger.error("error executing AdapterTrimming command\n" + ex.toString());
+                logger.error("error executing parse SAM for miRNAs command\n" + ex.toString());
             }
         }
         
-        String dispersionFile = miRNAAnalysisOutputFolder + FileSeparator + stepInputData.getProjectID();
+        String dispersionFile = miRNAAnalysisOutputFolder + FileSeparator + stepInputData.getProjectID() + ".disp";
         logger.info("write dispersions to file <" + dispersionFile + ">");
         try{
             BufferedWriter bwDp = new BufferedWriter(new FileWriter(new File(dispersionFile)));

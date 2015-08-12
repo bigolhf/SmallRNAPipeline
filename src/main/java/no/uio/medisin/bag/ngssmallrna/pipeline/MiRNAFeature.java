@@ -206,7 +206,7 @@ public class MiRNAFeature {
         
         int totalCounts = this.getTotalCounts();
         reportStr = reportStr.concat("Total Counts = " + totalCounts + "\n");
-        logger.info(reportStr);
+        logger.debug(reportStr);
         if (totalCounts < minCounts) return "";
         
     
@@ -235,7 +235,7 @@ public class MiRNAFeature {
                         longestName++;
                 }
                 else{
-                    if(isomiR.split(";")[seqCol].equals(SimpleSeq.Complement(this.getSequence()).replace("U", "T")))
+                    if(isomiR.split(";")[seqCol].equals(SimpleSeq.complement(this.getSequence()).replace("U", "T")))
                         longestName++;                    
                 }
                 
@@ -264,7 +264,7 @@ public class MiRNAFeature {
                         isoName = "*".concat(isoName);
                 }
                 else{
-                    if(isomiR.split(";")[seqCol].equals(SimpleSeq.Complement(this.getSequence()).replace("U", "T")))
+                    if(isomiR.split(";")[seqCol].equals(SimpleSeq.complement(this.getSequence()).replace("U", "T")))
                         isoName = "*".concat(isoName);
                 }
                 isoString           = isoString.concat(StringUtils.repeat(" ", longestName - isoName.length()) + isoName);
@@ -309,17 +309,17 @@ public class MiRNAFeature {
         int totalCounts = this.getTotalCounts();
         String [] isomiRStrings = isomiRString.split("\t");
         String isoString = "";
-        logger.info(this.name);
+        logger.debug(this.name);
 
         for(String isomiR: isomiRStrings){
 
             
             if(Double.parseDouble(isomiR.split(";")[nameCol].split("-")[1]) / (double) totalCounts > (double)baselinePercent/100.0){
-                logger.info(isomiR.split(";")[nameCol] +  this.getStrand() +  "\n" + this.sequence + "\n" + isomiR.split(";")[seqCol] + "\n" + " : " + Double.parseDouble(isomiR.split(";")[nameCol].split("-")[1]) / (double) totalCounts);
+                logger.debug(isomiR.split(";")[nameCol] +  this.getStrand() +  "\n" + " : " + Double.parseDouble(isomiR.split(";")[nameCol].split("-")[1]) / (double) totalCounts);
 
 
                 //logger.info(isomiR);
-                    int isoStart        = Integer.parseInt(isomiR.split(";")[startCol]);
+                int isoStart        = Integer.parseInt(isomiR.split(";")[startCol]);
                 String isoSeq       = isomiR.split(";")[seqCol];
                 int isoEnd          = isoStart + isoSeq.length() - 1;
 
@@ -334,7 +334,7 @@ public class MiRNAFeature {
 
                 
                 if(this.getStrand().equals("+")){
-                
+                    logger.debug(this.sequence + "\n" + isomiR.split(";")[seqCol]);
                     if(isoStart != this.startPos){                   
                         noOf5pSteps = isoStart - this.startPos;                   
                     }
@@ -342,8 +342,8 @@ public class MiRNAFeature {
                     if(isoEnd != this.endPos){
                         noOf3pSteps = isoEnd - this.getEndPos();
                     }
-                    logger.info(noOf5pSteps + ", " + noOf3pSteps);
-                    logger.info(isoStart + ", " + isoEnd + ", " + (this.startPos- isoStart) + ", " + sequence.length());
+                    logger.debug(noOf5pSteps + ", " + noOf3pSteps);
+                    logger.debug(isoStart + ", " + isoEnd + ", " + (this.startPos- isoStart) + ", " + sequence.length());
 
                     if(this.startPos >= isoStart ){
                         wStart = 0;
@@ -370,6 +370,8 @@ public class MiRNAFeature {
                     }
                 }
                 else{
+                    logger.debug(this.sequence + "\t" + startPos + "\t" + endPos + "\n");
+                    logger.debug(SimpleSeq.complement(isomiR.split(";")[seqCol]) + "\t" + isoStart + "\t" + isoEnd + "\n");
                     
                     if(isoStart != this.startPos){                   
                         noOf5pSteps = isoStart - this.startPos;                   
@@ -378,8 +380,8 @@ public class MiRNAFeature {
                     if(isoEnd != this.endPos){
                         noOf3pSteps = isoEnd - this.getEndPos();
                     }
-                    logger.info(noOf5pSteps + ", " + noOf3pSteps);
-                    logger.info(isoStart + ", " + isoEnd + ", " + (this.startPos- isoStart) + ", " + sequence.length());
+                    logger.debug(noOf5pSteps + ", " + noOf3pSteps);
+                    logger.debug(isoStart + ", " + isoEnd + ", " + (this.startPos- isoStart) + ", " + sequence.length());
 
                     if(this.startPos >= isoStart ){
                         wStart = 0;
@@ -399,15 +401,10 @@ public class MiRNAFeature {
                         iEnd = isoSeq.length();
                     }
 
-                    if(sequence.substring(wStart, wEnd).replace("U", "T").equals(isoSeq.substring(iStart, iEnd))==false){
+                    if(sequence.substring(wStart, wEnd).replace("U", "T").equals(SimpleSeq.complement(isoSeq.substring(iStart, iEnd)))==false){
+                        String complementWTSeq = SimpleSeq.complement(sequence);
                         for(int b=0; b<wEnd-wStart; b++){
-                            if(sequence.charAt(wStart + b) != isoSeq.charAt(iStart + b)) noOfPolySteps++;
-                        }
-                    }
-                    if(sequence.substring(wStart, wEnd).replace("U", "T").equals(SimpleSeq.Complement(isoSeq.substring(iStart, iEnd)))==false){
-                        String complementIsoSeq = SimpleSeq.Complement(isoSeq.substring(iStart, iEnd));
-                        for(int b=0; b<wEnd-wStart; b++){
-                            if(sequence.charAt(wStart + b) != complementIsoSeq.charAt(iStart + b)) noOfPolySteps++;
+                            if(complementWTSeq.charAt(wStart + b) != isoSeq.charAt(iStart + b)) noOfPolySteps++;
                         }
                     }                 
                     

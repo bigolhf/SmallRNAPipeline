@@ -18,6 +18,7 @@ import no.uio.medisin.bag.ngssmallrna.steps.CollapseReadsStep;
 import no.uio.medisin.bag.ngssmallrna.steps.NGSStep;
 import no.uio.medisin.bag.ngssmallrna.steps.NGSRunStepData;
 import no.uio.medisin.bag.ngssmallrna.steps.ParseSAMForMiRNAsStep;
+import no.uio.medisin.bag.ngssmallrna.steps.AnalyzeSAMStartPositions;
 import no.uio.medisin.bag.ngssmallrna.steps.StepInputData;
 import no.uio.medisin.bag.ngssmallrna.steps.TrimAdaptersStep;
 import org.yaml.snakeyaml.Yaml;
@@ -62,6 +63,9 @@ public class SmallNGSPipeline {
     private int                         samParseForMiRNAsBleed = 2;
     private int                         samParseForMiRNAsBaselinePercent = 5;
     private String                      samParseForMiRNAsMiRBaseVersion = "21";
+    
+    private int                         samParseStartPosBleed = 2;
+    private ArrayList<String>           samParseFeatureTypes = new ArrayList<>();
     
     private PipelineData                pipelineData = new PipelineData();
     private ArrayList<SampleDataEntry>  SampleData = new ArrayList<>();
@@ -177,6 +181,21 @@ public class SmallNGSPipeline {
                     
                     break;
                     
+                case "analyzeStartPositions":
+
+                    HashMap analyzeSAMStartPositionsParams = new HashMap();
+                    analyzeSAMStartPositionsParams.put("bleed", this.getSamParseStartPosBleed());
+                    analyzeSAMStartPositionsParams.put("feature_types", this.getSamParseFeatureTypes());
+                    analyzeSAMStartPositionsParams.put("host", this.getBowtieMappingReferenceGenome());
+                    analyzeSAMStartPositionsParams.put("genomeReferenceGFFFile", this.getGenomeAnnotationGFF());
+
+                    StepInputData sidStart = new StepInputData(analyzeSAMStartPositionsParams, this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), this.getSampleData());
+                    AnalyzeSAMStartPositions ngsAnalyzeSAMStartPos = new AnalyzeSAMStartPositions(sidStart);
+                    ngsAnalyzeSAMStartPos.verifyInputData();
+                    ngsAnalyzeSAMStartPos.execute();
+                    
+                    break;
+                    
                 case "exit":
                     return;
                     
@@ -271,6 +290,9 @@ public class SmallNGSPipeline {
         this.setSamParseForMiRNAsMiRBaseVersion( String.valueOf(processSAMForMiRNAsOptions.get("mirbase_release")));
         this.setSamParseForMiRNAsBaselinePercent((int) processSAMForMiRNAsOptions.get("baseline_percent"));
         
+        HashMap processSAMStartPosOptions = (HashMap) pipelineConfiguration.get("sam_startpos_processing");
+        this.setSamParseStartPosBleed((int) processSAMStartPosOptions.get("bleed"));
+        this.setSamParseFeatureTypes((ArrayList<String>)processSAMStartPosOptions.get("feature_types"));
         
         logger.info("done\n");
         
@@ -324,6 +346,19 @@ public class SmallNGSPipeline {
      */
     public String getMiRBaseHostGFF(){
         return this.mirbaseRootFolder + FileSeparator + this.samParseForMiRNAsMiRBaseVersion + FileSeparator + this.getBowtieMappingReferenceGenome() + ".gff3";
+    }
+    
+    
+    
+    
+    /**
+     * return path to the GFF/GTF file containing annotation information 
+     * for the specified reference genome
+     * 
+     * @return 
+     */
+    public String getGenomeAnnotationGFF(){
+        return this.getGenomeRootFolder() + FileSeparator + "Annotation/Genes/genes.gtf";
     }
     
     
@@ -652,6 +687,34 @@ public class SmallNGSPipeline {
      */
     public void setSamParseForMiRNAsBaselinePercent(int samParseForMiRNAsBaselinePercent) {
         this.samParseForMiRNAsBaselinePercent = samParseForMiRNAsBaselinePercent;
+    }
+
+    /**
+     * @return the samParseStartPosBleed
+     */
+    public int getSamParseStartPosBleed() {
+        return samParseStartPosBleed;
+    }
+
+    /**
+     * @param samParseStartPosBleed the samParseStartPosBleed to set
+     */
+    public void setSamParseStartPosBleed(int samParseStartPosBleed) {
+        this.samParseStartPosBleed = samParseStartPosBleed;
+    }
+
+    /**
+     * @return the samParseFeatureTypes
+     */
+    public ArrayList<String> getSamParseFeatureTypes() {
+        return samParseFeatureTypes;
+    }
+
+    /**
+     * @param samParseFeatureTypes the samParseFeatureTypes to set
+     */
+    public void setSamParseFeatureTypes(ArrayList<String> samParseFeatureTypes) {
+        this.samParseFeatureTypes = samParseFeatureTypes;
     }
     
     

@@ -47,8 +47,8 @@ public class IsomiRSet {
         String reportStr = "";
         
         reportStr = reportStr.concat(mimatID + "\t" + runID + "\t" + isomiRPts.size() + "\n" ); 
+        reportStr = reportStr.concat("5p" + "\t" + "3p" + "poly" + "\t" + "fraction" + "\n");
         for(HashMap hmIsomiR: isomiRPts){
-            reportStr = reportStr.concat("5p" + "\t" + "3p" + "poly" + "\t" + "fraction" + "\n");
             reportStr = reportStr.concat(hmIsomiR.get("5p") + "\t" + hmIsomiR.get("3p") 
                     + "\t" + hmIsomiR.get("poly") + "\t" + hmIsomiR.get("fraction") +"\n" );
         }
