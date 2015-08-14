@@ -100,8 +100,6 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
         Iterator itSD = this.stepInputData.getSampleData().iterator();
         while (itSD.hasNext()){
             try{
-                miRNAHitList = new ArrayList<>();
-                isomiRList = new ArrayList<>();
                 
                 int bleed = (int) stepInputData.getStepParams().get("bleed");
                 SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
@@ -116,6 +114,7 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
                 String samLine = null;
                 BufferedReader brSAM = new BufferedReader(new FileReader(new File(samInputFile)));
                     miRNAHitList = new ArrayList<>();
+                    isomiRList = new ArrayList<>();
                     while((samLine=brSAM.readLine())!= null){
                         /*
                             1   QNAME	   Query template NAME
@@ -189,8 +188,10 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
                     
                     logger.info("  calculate isomiR dispersions");
                     for(MiRNAFeature miRHit: miRNAHitList){
-                        ArrayList isomirPtsAsHash = miRHit.characterizeIsomiRs((int) stepInputData.getStepParams().get("baseline_percent"), minCounts.intValue());
-                        this.isomiRList.add(new IsomiRSet(miRHit.getMimatID(), sampleData.getDataFile().replace(".fastq", ""), isomirPtsAsHash));
+                        if (miRHit.getTotalCounts() > minCounts.intValue()){
+                            ArrayList isomirPtsAsHash = miRHit.characterizeIsomiRs((int) stepInputData.getStepParams().get("baseline_percent"), minCounts.intValue());
+                            this.isomiRList.add(new IsomiRSet(miRHit.getMimatID(), sampleData.getDataFile().replace(".fastq", ""), isomirPtsAsHash));
+                        }
                     }
                     
             
@@ -223,6 +224,7 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
         try{
             BufferedWriter bwDp = new BufferedWriter(new FileWriter(new File(dispersionFile)));
                 for(IsomiRSet isomiRset: isomiRList){
+                    isomiRset.calcDistParameters();
                     bwDp.write(isomiRset.tabReportIsomiRSet());                
                 }
             bwDp.close();

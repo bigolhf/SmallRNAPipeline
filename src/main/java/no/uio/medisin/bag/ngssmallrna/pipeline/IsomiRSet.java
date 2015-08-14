@@ -23,6 +23,11 @@ public class IsomiRSet {
     private String mimatID;
     private String runID;
     
+    private double totalPairwiseDist    = 0.0;
+    private double total3pDist          = 0.0;
+    private double total5pDist          = 0.0;
+    private double totalPolyDist        = 0.0;
+    
     
     private ArrayList<HashMap> isomiRPts;
     
@@ -46,14 +51,56 @@ public class IsomiRSet {
     public String tabReportIsomiRSet(){
         String reportStr = "";
         
-        reportStr = reportStr.concat(mimatID + "\t" + runID + "\t" + isomiRPts.size() + "\n" ); 
-        reportStr = reportStr.concat("5p" + "\t" + "3p" + "poly" + "\t" + "fraction" + "\n");
+        reportStr = reportStr.concat(mimatID + ":" + runID + "\t" + isomiRPts.size() + "\t" + totalPairwiseDist 
+          + "\t" + total5pDist + "\t" + total3pDist + "\t" + totalPolyDist + "\n" ); 
+        reportStr = reportStr.concat("5p" + "\t" + "3p" + "poly" + "\t" + "fraction" + "\t" + "TPD" + "\n");
         for(HashMap hmIsomiR: isomiRPts){
             reportStr = reportStr.concat(hmIsomiR.get("5p") + "\t" + hmIsomiR.get("3p") 
-                    + "\t" + hmIsomiR.get("poly") + "\t" + hmIsomiR.get("fraction") +"\n" );
+                    + "\t" + hmIsomiR.get("poly") + "\t" + hmIsomiR.get("fraction") + "\n" );
         }
         return reportStr;
     }
+    
+    
+    
+    /**
+     * calculate sum of pairwise distances between all isomiRs, scaled by the fraction that each isomiR is present
+     * A rather rough way of estimating dispersion, there has to be a better way
+     * 
+     * 
+     */
+    public void calcDistParameters(){
+        
+        totalPairwiseDist = 0;
+        for(int i=0; i<isomiRPts.size(); i++){
+            
+            HashMap hmIsomiRi = isomiRPts.get(i);
+            for(int j=i+1; j<isomiRPts.size(); j++){
+                
+                HashMap hmIsomiRj = isomiRPts.get(j);
+                //(double) ((Integer) marks.get(i)).intValue();
+                ((Integer) 1).doubleValue();
+                double ff=((Integer)hmIsomiRi.get("5p")).doubleValue() * ((Double)hmIsomiRi.get("fraction"));
+
+                total5pDist   += Math.abs(((Integer)hmIsomiRi.get("5p")).doubleValue() * ((Double)hmIsomiRi.get("fraction"))   - ((Integer)hmIsomiRj.get("5p")).doubleValue() * ((Double)hmIsomiRj.get("fraction")));
+                total3pDist   += Math.abs(((Integer)hmIsomiRi.get("3p")).doubleValue() * ((Double)hmIsomiRi.get("fraction"))   - ((Integer)hmIsomiRj.get("3p")).doubleValue() * ((Double)hmIsomiRj.get("fraction")));
+                totalPolyDist += Math.abs(((Integer)hmIsomiRi.get("poly")).doubleValue() * ((Double)hmIsomiRi.get("fraction")) - ((Integer)hmIsomiRj.get("poly")).doubleValue() * ((Double)hmIsomiRj.get("fraction")));
+                totalPairwiseDist += Math.sqrt(
+                  Math.pow(((Integer)hmIsomiRi.get("5p")).doubleValue() * ((Double)hmIsomiRi.get("fraction"))   - ((Integer)hmIsomiRj.get("5p")).doubleValue() * ((Double)hmIsomiRj.get("fraction")), 2.0)
+                + Math.pow(((Integer)hmIsomiRi.get("3p")).doubleValue() * ((Double)hmIsomiRi.get("fraction"))   - ((Integer)hmIsomiRj.get("3p")).doubleValue() * ((Double)hmIsomiRj.get("fraction")), 2.0)
+                + Math.pow(((Integer)hmIsomiRi.get("poly")).doubleValue() * ((Double)hmIsomiRi.get("fraction")) - ((Integer)hmIsomiRj.get("poly")).doubleValue() * ((Double)hmIsomiRj.get("fraction")), 2.0)
+                );
+                
+            }
+            
+
+        }
+
+        int ii=0;
+    }
+    
+    
+    
     
     /**
      * @return the mimatID
@@ -111,6 +158,34 @@ public class IsomiRSet {
      */
     public void setIsomiRPts2(ArrayList<IsomirPoint> isomiRPts2) {
         this.isomiRPts2 = isomiRPts2;
+    }
+
+    /**
+     * @return the totPairwiseDist
+     */
+    public double getTotPairwiseDist() {
+        return totalPairwiseDist;
+    }
+
+    /**
+     * @return the total3pDist
+     */
+    public double getTotal3pDist() {
+        return total3pDist;
+    }
+
+    /**
+     * @return the total5pDist
+     */
+    public double getTotal5pDist() {
+        return total5pDist;
+    }
+
+    /**
+     * @return the totalPolyDist
+     */
+    public double getTotalPolyDist() {
+        return totalPolyDist;
     }
     
     
