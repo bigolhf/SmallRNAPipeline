@@ -15,16 +15,17 @@ public class SampleDataEntry {
     private String dataSource;
     private String condition;
     private String time;
+    private String note;
 
     
     
-    public SampleDataEntry(String fname, String source, String cond, String t){
+    public SampleDataEntry(String fname, String source, String cond, String t, String n){
         
         dataFile = fname;
         dataSource = source;
         condition = cond;
         time = t;
-        
+        note = n;
     }
     
     
@@ -82,5 +83,19 @@ public class SampleDataEntry {
      */
     public void setTime(String time) {
         this.time = time;
+    }
+
+    /**
+     * @return the note
+     */
+    public String getNote() {
+        return note;
+    }
+
+    /**
+     * @param note the note to set
+     */
+    public void setNote(String note) {
+        this.note = note;
     }
 }

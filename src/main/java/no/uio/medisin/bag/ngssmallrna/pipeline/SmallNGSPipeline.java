@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import static no.uio.medisin.bag.ngssmallrna.pipeline.SmallNGSCmd.logger;
+import no.uio.medisin.bag.ngssmallrna.steps.AnalyzeIsomiRDispersionStep;
 import no.uio.medisin.bag.ngssmallrna.steps.BowtieMapReadsStep;
 import no.uio.medisin.bag.ngssmallrna.steps.CollapseReadsStep;
 import no.uio.medisin.bag.ngssmallrna.steps.NGSStep;
@@ -66,6 +67,8 @@ public class SmallNGSPipeline {
     
     private int                         samParseStartPosBleed = 2;
     private ArrayList<String>           samParseFeatureTypes = new ArrayList<>();
+    
+    private double                      analyzeIsomiRDispPVal = 0.05;
     
     private PipelineData                pipelineData = new PipelineData();
     private ArrayList<SampleDataEntry>  SampleData = new ArrayList<>();
@@ -196,6 +199,23 @@ public class SmallNGSPipeline {
                     
                     break;
                     
+                    
+                case "AnalyzeIsomiRDispersion":
+                    
+                    HashMap isomiRDispersionAnalysisParams = new HashMap();
+                    isomiRDispersionAnalysisParams.put("pvalue", this.getAnalyzeIsomiRDispPVal());
+                    isomiRDispersionAnalysisParams.put("host", this.getBowtieMappingReferenceGenome());
+                    isomiRDispersionAnalysisParams.put("miRBaseHostGFFFile", this.getMiRBaseHostGFF());
+                    
+                    StepInputData sidIsoDisp = new StepInputData(isomiRDispersionAnalysisParams, this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), this.getSampleData());                    
+                    AnalyzeIsomiRDispersionStep analyzeIsomiRDispersions = new AnalyzeIsomiRDispersionStep(sidIsoDisp);
+                    analyzeIsomiRDispersions.verifyInputData();
+                    analyzeIsomiRDispersions.execute();
+                    
+                    break;
+                    
+                    
+                    
                 case "exit":
                     return;
                     
@@ -239,8 +259,9 @@ public class SmallNGSPipeline {
                 String source = tokens[1];
                 String condition = tokens[2];
                 String time = tokens[3];
+                String note = tokens[4];
                 
-                getSampleData().add(new SampleDataEntry(file, source, condition, time));
+                getSampleData().add(new SampleDataEntry(file, source, condition, time, note));
                 
             }
         bwData.close();
@@ -293,6 +314,9 @@ public class SmallNGSPipeline {
         HashMap processSAMStartPosOptions = (HashMap) pipelineConfiguration.get("sam_startpos_processing");
         this.setSamParseStartPosBleed((int) processSAMStartPosOptions.get("bleed"));
         this.setSamParseFeatureTypes((ArrayList<String>)processSAMStartPosOptions.get("feature_types"));
+        
+        HashMap analyzeIsomiRDispersionOptions = (HashMap) pipelineConfiguration.get("analyze_isomir_dispersion");
+        this.setAnalyzeIsomiRDispPVal((double) analyzeIsomiRDispersionOptions.get("pvalue"));
         
         logger.info("done\n");
         
@@ -715,6 +739,20 @@ public class SmallNGSPipeline {
      */
     public void setSamParseFeatureTypes(ArrayList<String> samParseFeatureTypes) {
         this.samParseFeatureTypes = samParseFeatureTypes;
+    }
+
+    /**
+     * @return the analyzeIsomiRDispPVal
+     */
+    public double getAnalyzeIsomiRDispPVal() {
+        return analyzeIsomiRDispPVal;
+    }
+
+    /**
+     * @param analyzeIsomiRDispPVal the analyzeIsomiRDispPVal to set
+     */
+    public void setAnalyzeIsomiRDispPVal(double analyzeIsomiRDispPVal) {
+        this.analyzeIsomiRDispPVal = analyzeIsomiRDispPVal;
     }
     
     

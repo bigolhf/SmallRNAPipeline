@@ -22,11 +22,13 @@ import java.util.HashMap;
 public class IsomiRSet {
     private String mimatID;
     private String runID;
+    private String note;
     
     private double totalPairwiseDist    = 0.0;
     private double total3pDist          = 0.0;
     private double total5pDist          = 0.0;
     private double totalPolyDist        = 0.0;
+    private int    noOfIsomiRs          = 0;
     
     
     private ArrayList<HashMap> isomiRPts;
@@ -34,8 +36,29 @@ public class IsomiRSet {
     private ArrayList<IsomirPoint> isomiRPts2;
 
     
-    public IsomiRSet(String mID, String rID, ArrayList<HashMap> isoPts){
+    
+    /**
+     * create from dispersion entry
+     * @param dispLine 
+     */
+    public IsomiRSet(String dispLine){
+        
+        String tokens[] = dispLine.split("\t");
+        runID               = tokens[0].trim();
+        note                = tokens[1].trim();
+        mimatID             = tokens[2].trim();
+        noOfIsomiRs         = Integer.parseInt(tokens[3].trim()); 
+        totalPairwiseDist   = Double.parseDouble(tokens[4].trim());
+        total5pDist         = Double.parseDouble(tokens[5].trim()); 
+        total3pDist         = Double.parseDouble(tokens[6].trim()); 
+        totalPolyDist       = Double.parseDouble(tokens[7].trim());        
+        
+    }
+    
+    
+    public IsomiRSet(String mID, String n, String rID, ArrayList<HashMap> isoPts){
         mimatID = mID;
+        note = n;
         runID = rID;
         isomiRPts = isoPts;
     }
@@ -51,8 +74,7 @@ public class IsomiRSet {
     public String tabReportIsomiRSet(){
         String reportStr = "";
         
-        reportStr = reportStr.concat(mimatID + ":" + runID + "\t" + isomiRPts.size() + "\t" + totalPairwiseDist 
-          + "\t" + total5pDist + "\t" + total3pDist + "\t" + totalPolyDist + "\n" ); 
+        reportStr = reportStr.concat(printSummary()); 
         reportStr = reportStr.concat("5p" + "\t" + "3p" + "poly" + "\t" + "fraction" + "\t" + "TPD" + "\n");
         for(HashMap hmIsomiR: isomiRPts){
             reportStr = reportStr.concat(hmIsomiR.get("5p") + "\t" + hmIsomiR.get("3p") 
@@ -62,6 +84,35 @@ public class IsomiRSet {
     }
     
     
+    
+    /**
+     * return header string for summary line
+     * 
+     * @return 
+     */
+    public static String printSummaryHeader(){
+        
+        return "runID\tnote\tmimatID\tno of isomiRs\ttotal dist\t5p dist\t3p dist\tpoly dist\n";
+        
+    }
+    
+    
+    
+    
+    /**
+     * return summary string for this isomiR
+     * 
+     * @return 
+     */
+    public String printSummary(){
+        
+        String reportStr = "";
+        
+        reportStr = reportStr.concat(runID + "\t" + note + "\t" + mimatID + "\t" + isomiRPts.size() + "\t" + totalPairwiseDist 
+          + "\t" + total5pDist + "\t" + total3pDist + "\t" + totalPolyDist + "\n" ); 
+        
+        return reportStr;
+    }
     
     /**
      * calculate sum of pairwise distances between all isomiRs, scaled by the fraction that each isomiR is present
@@ -186,6 +237,27 @@ public class IsomiRSet {
      */
     public double getTotalPolyDist() {
         return totalPolyDist;
+    }
+
+    /**
+     * @return the note
+     */
+    public String getNote() {
+        return note;
+    }
+
+    /**
+     * @param note the note to set
+     */
+    public void setNote(String note) {
+        this.note = note;
+    }
+
+    /**
+     * @return the noOfIsomiRs
+     */
+    public int getNoOfIsomiRs() {
+        return noOfIsomiRs;
     }
     
     

@@ -96,6 +96,7 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
         miRNAAnalysisOutputFolder = miRNAAnalysisOutputFolder.replace(FileSeparator + FileSeparator, FileSeparator).trim();
         Boolean fA = new File(miRNAAnalysisOutputFolder).mkdir();       
         if (fA) logger.info("created output folder <" + miRNAAnalysisOutputFolder + "> for results" );
+        isomiRList = new ArrayList<>();
         
         Iterator itSD = this.stepInputData.getSampleData().iterator();
         while (itSD.hasNext()){
@@ -114,7 +115,6 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
                 String samLine = null;
                 BufferedReader brSAM = new BufferedReader(new FileReader(new File(samInputFile)));
                     miRNAHitList = new ArrayList<>();
-                    isomiRList = new ArrayList<>();
                     while((samLine=brSAM.readLine())!= null){
                         /*
                             1   QNAME	   Query template NAME
@@ -190,7 +190,7 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
                     for(MiRNAFeature miRHit: miRNAHitList){
                         if (miRHit.getTotalCounts() > minCounts.intValue()){
                             ArrayList isomirPtsAsHash = miRHit.characterizeIsomiRs((int) stepInputData.getStepParams().get("baseline_percent"), minCounts.intValue());
-                            this.isomiRList.add(new IsomiRSet(miRHit.getMimatID(), sampleData.getDataFile().replace(".fastq", ""), isomirPtsAsHash));
+                            this.isomiRList.add(new IsomiRSet(miRHit.getMimatID(), sampleData.getNote(), sampleData.getDataFile().replace(".fastq", ""), isomirPtsAsHash));
                         }
                     }
                     
@@ -219,14 +219,19 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
             }
         }
         
-        String dispersionFile = miRNAAnalysisOutputFolder + FileSeparator + stepInputData.getProjectID() + ".disp";
+        String dispersionFile   = miRNAAnalysisOutputFolder + FileSeparator + stepInputData.getProjectID() + ".disp.tsv";
+        String summaryFile      = miRNAAnalysisOutputFolder + FileSeparator + stepInputData.getProjectID() + ".disp.summary.tsv";
         logger.info("write dispersions to file <" + dispersionFile + ">");
         try{
             BufferedWriter bwDp = new BufferedWriter(new FileWriter(new File(dispersionFile)));
+            BufferedWriter bwSm = new BufferedWriter(new FileWriter(new File(summaryFile)));   
+                bwSm.write(IsomiRSet.printSummaryHeader());
                 for(IsomiRSet isomiRset: isomiRList){
                     isomiRset.calcDistParameters();
+                    bwSm.write(isomiRset.printSummary());
                     bwDp.write(isomiRset.tabReportIsomiRSet());                
                 }
+            bwSm.close();
             bwDp.close();
         }
         catch(IOException exIO){
@@ -398,7 +403,7 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
                     logger.warn("no sequence found for entry <" + id + ">. Skipping");
             }
         brMiR.close();
-        logger.info("read " + miRNAList + "miRNA entries");
+        logger.info("read " + miRNAList.size() + "miRNA entries");
         
     }
     

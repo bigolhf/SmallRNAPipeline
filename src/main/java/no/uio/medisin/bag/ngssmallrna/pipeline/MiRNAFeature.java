@@ -24,6 +24,7 @@ public class MiRNAFeature {
     static Logger                       logger                      = LogManager.getLogger();
     
     private String mimatID;
+    private String note;
     private String name;
     private String parent;
     private String chromosome;
@@ -32,6 +33,7 @@ public class MiRNAFeature {
     private String strand;
     private String sequence;
     private String isomiRString;
+    
     
     //(name + ";" + start + ";" + cigar + ";" + md + ";" + seq + "\t")
     
@@ -668,6 +670,20 @@ public class MiRNAFeature {
      */
     public String getIsomiRString() {
         return isomiRString;
+    }
+
+    /**
+     * @return the note
+     */
+    public String getNote() {
+        return note;
+    }
+
+    /**
+     * @param note the note to set
+     */
+    public void setNote(String note) {
+        this.note = note;
     }
     
 }

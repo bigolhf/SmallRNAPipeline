@@ -1,10 +1,10 @@
-disp <-read.table("liver.disp.1642962.summary")
+disp <-read.table("liver.disp.summary")
 
 dispnasc <- na.omit(disp)
 
 dispnascmat <- dist(dispnasc, method ="euclidean")
 dispnascmat <- na.omit(dispnascmat)
-
+print("start clustering")
 fit <- hclust(dispnascmat, method="ward")
 
 library(ggplot2)
@@ -12,9 +12,11 @@ library(ggplot2)
 library(ggdendro)
 
 fit$labels <- dispnasc$V1
+print("generate dendrogram")
 gf<-ggdendrogram(fit)
 
-
-pdf("SRR1642962.pdf", paper="a4r", width=15, height=4)
+print("plotting")
+pdf("liver.pdf", width=500, height=20)
 plot(gf)
 dev.off()
+print("done")
