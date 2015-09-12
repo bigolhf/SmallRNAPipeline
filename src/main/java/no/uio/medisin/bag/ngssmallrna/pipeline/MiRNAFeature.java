@@ -90,6 +90,20 @@ public class MiRNAFeature {
         
     }
     
+    
+    public MiRNAFeature(MiRNAFeature m){
+        
+        name            = m.name;
+        chromosome      = m.chromosome;
+        startPos        = m.startPos;
+        endPos          = m.endPos;
+        strand          = m.strand;
+        parent          = m.parent;
+        mimatID         = m.mimatID;
+        sequence        = m.sequence;
+        isomiRString    = m.isomiRString;
+        
+    }
     /**
      * checks whether Chromosome strings are the same, while attempting
      * to allow for the presence or absence of a variation on the 'Chr' 
@@ -150,7 +164,13 @@ public class MiRNAFeature {
         
     }
     
-    
+    /**
+     * delete the isomiR string
+     * 
+     */
+    public void removeIsomiRs(){
+        isomiRString = "";
+    }
 
     
     /**

@@ -26,7 +26,9 @@ import org.apache.logging.log4j.Logger;
 
 
 /**
- *  parse SAM file to extract and process the miRNA reads
+ *   1. parse SAM file to extract and process the miRNA reads to determine isomiR content
+ *   2. merge the counts from each sample to generate a single count file 
+ *      that can be used for differential expression analysis
  * 
  *   Input is a SAM file
  * 
@@ -46,6 +48,7 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
     private static final String         infileExtension             = ".trim.clp.gen.sam";
     private static final String         isomirSummaryExtension      = ".trim.clp.gen.iso_summary.tsv";
     private static final String         isomirPrettyExtension       = ".trim.clp.gen.iso_pretty.tsv";
+    private static final String         miRCountsExtension          = ".trim.clp.gen.mircounts.tsv";
     
     
     
@@ -96,7 +99,6 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
         miRNAAnalysisOutputFolder = miRNAAnalysisOutputFolder.replace(FileSeparator + FileSeparator, FileSeparator).trim();
         Boolean fA = new File(miRNAAnalysisOutputFolder).mkdir();       
         if (fA) logger.info("created output folder <" + miRNAAnalysisOutputFolder + "> for results" );
-        isomiRList = new ArrayList<>();
         
         Iterator itSD = this.stepInputData.getSampleData().iterator();
         while (itSD.hasNext()){
@@ -114,6 +116,7 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
                 int totalCounts = 0;
                 String samLine = null;
                 BufferedReader brSAM = new BufferedReader(new FileReader(new File(samInputFile)));
+                    isomiRList = new ArrayList<>();
                     miRNAHitList = new ArrayList<>();
                     while((samLine=brSAM.readLine())!= null){
                         /*
@@ -150,8 +153,9 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
                             String chr = samLine.split("\t")[2].trim();
                             String mdString = samLine.split("\t")[12];
                             
-                            MiRNAFeature miRNAHit = this.doesReadOverlapKnownMiRNA(startPos, endPos, chr, strand, bleed);
-                            if (miRNAHit != null){
+                            MiRNAFeature miRNAFeature = this.doesReadOverlapKnownMiRNA(startPos, endPos, chr, strand, bleed);
+                            if (miRNAFeature != null){
+                                MiRNAFeature miRNAHit = new MiRNAFeature(miRNAFeature);
                                 logger.debug(miRNAHit.getName());
                                 String name = samLine.split("\t")[0];
                                 String sequence = samLine.split("\t")[9];
@@ -183,8 +187,6 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
                     logger.info("  total mapped counts = " + totalCounts);
                     Double minCounts = (double) totalCounts /100000.0;
                     logger.info((matchCount5 + matchCount3) + " reads (" + matchCount5 + " 5'" + "/" + matchCount3 + " 3' ) were mapped");
-                    String  isoDetailsFile = miRNAAnalysisOutputFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", isomirSummaryExtension);
-                    String  isoPrettyFile  = miRNAAnalysisOutputFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", isomirPrettyExtension);
                     
                     logger.info("  calculate isomiR dispersions");
                     for(MiRNAFeature miRHit: miRNAHitList){
@@ -198,9 +200,12 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
                     
                     logger.info("  write isomiRs");
 
+                    String  isoDetailsFile = miRNAAnalysisOutputFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", isomirSummaryExtension);
+                    String  isoPrettyFile  = miRNAAnalysisOutputFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", isomirPrettyExtension);
+                    
                     BufferedWriter brDetails = new BufferedWriter(new FileWriter(new File(isoDetailsFile)));
                     BufferedWriter brPretty  = new BufferedWriter(new FileWriter(new File(isoPrettyFile)));
-                        for(MiRNAFeature miRHit: miRNAHitList){
+                        for(MiRNAFeature miRHit: this.miRNAHitList){
                             if (miRHit.getTotalCounts() > minCounts.intValue()){
                                 logger.debug(miRHit.getName());
                                 brDetails.write(miRHit.reportIsomiRs((int) stepInputData.getStepParams().get("baseline_percent"), minCounts.intValue()));
@@ -209,8 +214,30 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
                         }
                     brPretty.close();
                     brDetails.close();
+                    
+                    
+                    logger.info("  write miRNA counts");
+
+                    String  miRCountsFile  = miRNAAnalysisOutputFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", miRCountsExtension);
+                    
+                    BufferedWriter brCounts  = new BufferedWriter(new FileWriter(new File(miRCountsFile)));
+                        for(MiRNAFeature miR: this.miRNAList){
+                            if(miRNAHitList.contains(miR)){
+                                for(MiRNAFeature miRHit: this.miRNAHitList){
+                                    if(miRHit.equals(miR)){
+                                        brCounts.write(miR.getMimatID() + ":" + miR.getName() + "\t" + miR.getTotalCounts());
+                                        break;
+                                    }
+                                }
+                            }
+                            else{
+                                brCounts.write(miR.getMimatID() + ":" + miR.getName() + "\t" + 0);                                
+                            }
+                        }
+                    brCounts.close();
+                    
                 brSAM.close();
-                logger.info("  done\n");
+                logger.info("  completed processing SAM file\n\n");
                 
                 
             }
@@ -237,7 +264,43 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
         catch(IOException exIO){
             logger.info("error writing isomiR dispersion File <" + dispersionFile + ">\n" + exIO);
         }
-                    
+
+        
+        logger.info("Merging Count Files");
+        String[] countStrings = new String[miRNAList.size()];
+        itSD = this.stepInputData.getSampleData().iterator();
+        while (itSD.hasNext()){
+            SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
+            String  miRCountsFile  = miRNAAnalysisOutputFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", miRCountsExtension);
+            try{
+                int m=0;
+                BufferedReader brmiRCounts  = new BufferedReader(new FileReader(new File(miRCountsFile)));
+                    String countLine = "";
+                    while((countLine = brmiRCounts.readLine()) != null){
+                        countStrings[m] = countStrings[m].concat(countLine.split("\t")[1].trim());
+                        m++;
+                    }
+                brmiRCounts.close();
+            }
+            catch(IOException ex){
+                logger.error("error reading count files for merging <" + miRCountsFile + "> \n" + ex.toString());
+            }
+        }
+        
+        logger.info("Writing merged count files");
+        String mergedCountsFile      = miRNAAnalysisOutputFolder + FileSeparator + stepInputData.getProjectID() + ".merged.mirna_counts.tsv";    
+        try{
+            BufferedWriter bwMc = new BufferedWriter(new FileWriter(new File(mergedCountsFile)));
+            int m=0;
+            for(MiRNAFeature miR: this.miRNAList){
+                bwMc.write(miR.getMimatID() + ":" + miR.getName() + "\t" + countStrings[m]);
+            }
+            
+            bwMc.close();
+        }
+        catch(IOException exIO){
+            logger.info("error writing merged counts File <" + mergedCountsFile + ">\n" + exIO);        
+        }
         
     }
     
