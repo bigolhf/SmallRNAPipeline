@@ -1,0 +1,10 @@
+2015-04-05 16:04:55.493 [main] INFO   - parse arguments
+2015-04-05 16:04:55.498 [main] INFO   - run configuration file set to /data/ngsdata/sweden/small_ngs.config.yaml
+2015-04-05 16:04:55.498 [main] INFO   - pipeline file set to /data/ngsdata/sweden/sweden.pipe.json
+2015-04-05 16:04:55.498 [main] INFO   - NGS data filelist set to /data/ngsdata/sweden/sweden.data.tab
+2015-04-05 16:04:55.498 [main] INFO   - read pipeline configuration file
+2015-06-05 16:06:01.182 [main] INFO   - parse arguments
+2015-06-05 16:06:01.186 [main] INFO   - run configuration file set to /data/ngsdata/sweden/small_ngs.config.yaml
+2015-06-05 16:06:01.186 [main] INFO   - pipeline file set to /data/ngsdata/sweden/sweden.pipe.json
+2015-06-05 16:06:01.186 [main] INFO   - NGS data filelist set to /data/ngsdata/sweden/sweden.data.tab
+2015-06-05 16:06:01.186 [main] INFO   - read pipeline configuration file

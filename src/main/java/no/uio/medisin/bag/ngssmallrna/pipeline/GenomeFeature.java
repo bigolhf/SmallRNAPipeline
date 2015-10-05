@@ -40,7 +40,7 @@ public class GenomeFeature {
     private static final int seqnameCol     = 0;
     private static final int sourceCol      = 1;
     private static final int featureCol     = 2;
-    private static final int startyCol       = 3;
+    private static final int startyCol      = 3;
     private static final int endCol         = 4;
     private static final int scoreCol       = 5;
     private static final int strandCol      = 6;

@@ -1,0 +1,118 @@
+2015-07-05 16:07:46.914 [main] INFO   - parse arguments
+2015-07-05 16:07:46.918 [main] INFO   - run configuration file set to /data/ngsdata/liver/small_ngs.config.yaml
+2015-07-05 16:07:46.919 [main] INFO   - pipeline file set to /data/ngsdata/liver/liver.pipe.json
+2015-07-05 16:07:46.919 [main] INFO   - NGS data filelist set to /data/ngsdata/liver/liver.data.960.tab
+2015-07-05 16:07:46.919 [main] INFO   - read pipeline configuration file
+2015-08-05 16:08:20.340 [main] INFO   - parse arguments
+2015-08-05 16:08:20.345 [main] INFO   - run configuration file set to /data/ngsdata/liver/small_ngs.config.yaml
+2015-08-05 16:08:20.345 [main] INFO   - pipeline file set to /data/ngsdata/liver/liver.pipe.json
+2015-08-05 16:08:20.345 [main] INFO   - NGS data filelist set to /data/ngsdata/liver/liver.data.960.tab
+2015-08-05 16:08:20.345 [main] INFO   - read pipeline configuration file
+2015-12-05 16:12:37.780 [main] INFO   - parse arguments
+2015-12-05 16:12:37.784 [main] INFO   - run configuration file set to /data/ngsdata/liver/small_ngs.config.yaml
+2015-12-05 16:12:37.784 [main] INFO   - pipeline file set to /data/ngsdata/liver/liver.pipe.json
+2015-12-05 16:12:37.784 [main] INFO   - NGS data filelist set to /data/ngsdata/liver/liver.data.960.tab
+2015-12-05 16:12:37.785 [main] INFO   - read pipeline configuration file
+2015-14-05 16:14:38.457 [main] INFO   - done
+
+2015-14-05 16:14:56.702 [main] INFO   - read pipeline file </data/ngsdata/liver/liver.pipe.json>
+2015-14-05 16:14:56.744 [main] INFO   - done
+2015-14-05 16:14:56.744 [main] INFO   - User [pipeline1]
+stepType=differentialExpression	 in:mirna_isomir_analysis	 out:de_analysis
+stepType=exit	 in:null	 out:null
+stepType=parseSAMForMiRNAs	 in:bowtie_genome_mapped	 out:mirna_isomir_analysis
+stepType=AnalyzeIsomiRDispersion	 in:mirna_isomir_analysis	 out:dispersion_analysis
+stepType=exit	 in:null	 out:null
+stepType=TrimAdapters	 in:raw_data	 out:trimmed_data
+stepType=CollapseReads	 in:trimmed_data	 out:collapsed_reads
+stepType=BowtieMapReads	 in:collapsed_reads	 out:mappedReads
+stepType=parseSAMForMiRNAs	 in:bowtie_genome_mapped	 out:mirna_isomir_analysis
+
+2015-14-05 16:14:56.744 [main] INFO   - read data file
+2015-14-05 16:14:56.745 [main] INFO   - read 4 entries
+2015-18-05 16:18:45.438 [main] INFO  no.uio.medisin.bag.ngssmallrna.steps.StepInputData - verify input data
+2015-18-05 16:18:45.440 [main] INFO  no.uio.medisin.bag.ngssmallrna.steps.StepInputData - pvalue
+2015-18-05 16:18:45.441 [main] INFO  no.uio.medisin.bag.ngssmallrna.steps.StepInputData - Project root </data/ngsdata/> exists
+2015-18-05 16:18:45.443 [main] INFO  no.uio.medisin.bag.ngssmallrna.steps.StepInputData - Project folder </data/ngsdata//liver>  exists
+2015-18-05 16:18:56.717 [main] INFO  no.uio.medisin.bag.ngssmallrna.steps.DEwithEdgeRStep - created output folder </data/ngsdata/liver/de_analysis> for results
+2015-18-05 16:18:59.223 [main] INFO  no.uio.medisin.bag.ngssmallrna.steps.DEwithEdgeRStep - Merging Count Files
+2015-24-05 16:24:55.758 [main] INFO   - parse arguments
+2015-24-05 16:24:55.762 [main] INFO   - run configuration file set to /data/ngsdata/liver/small_ngs.config.yaml
+2015-24-05 16:24:55.762 [main] INFO   - pipeline file set to /data/ngsdata/liver/liver.pipe.json
+2015-24-05 16:24:55.763 [main] INFO   - NGS data filelist set to /data/ngsdata/liver/liver.data.960.tab
+2015-24-05 16:24:55.763 [main] INFO   - read pipeline configuration file
+2015-25-05 16:25:00.455 [main] INFO   - done
+
+2015-25-05 16:25:00.568 [main] INFO   - read pipeline file </data/ngsdata/liver/liver.pipe.json>
+2015-25-05 16:25:00.612 [main] INFO   - done
+2015-25-05 16:25:00.612 [main] INFO   - User [pipeline1]
+stepType=differentialExpression	 in:mirna_isomir_analysis	 out:de_analysis
+stepType=exit	 in:null	 out:null
+stepType=parseSAMForMiRNAs	 in:bowtie_genome_mapped	 out:mirna_isomir_analysis
+stepType=AnalyzeIsomiRDispersion	 in:mirna_isomir_analysis	 out:dispersion_analysis
+stepType=exit	 in:null	 out:null
+stepType=TrimAdapters	 in:raw_data	 out:trimmed_data
+stepType=CollapseReads	 in:trimmed_data	 out:collapsed_reads
+stepType=BowtieMapReads	 in:collapsed_reads	 out:mappedReads
+stepType=parseSAMForMiRNAs	 in:bowtie_genome_mapped	 out:mirna_isomir_analysis
+
+2015-25-05 16:25:00.612 [main] INFO   - read data file
+2015-25-05 16:25:00.613 [main] INFO   - read 4 entries
+2015-29-05 16:29:52.352 [main] INFO  no.uio.medisin.bag.ngssmallrna.steps.StepInputData - verify input data
+2015-29-05 16:29:52.353 [main] INFO  no.uio.medisin.bag.ngssmallrna.steps.StepInputData - pvalue
+2015-29-05 16:29:52.353 [main] INFO  no.uio.medisin.bag.ngssmallrna.steps.StepInputData - Project root </data/ngsdata/> exists
+2015-29-05 16:29:52.354 [main] INFO  no.uio.medisin.bag.ngssmallrna.steps.StepInputData - Project folder </data/ngsdata//liver>  exists
+2015-34-05 16:34:23.247 [main] INFO   - parse arguments
+2015-34-05 16:34:23.252 [main] INFO   - run configuration file set to /data/ngsdata/liver/small_ngs.config.yaml
+2015-34-05 16:34:23.252 [main] INFO   - pipeline file set to /data/ngsdata/liver/liver.pipe.json
+2015-34-05 16:34:23.252 [main] INFO   - NGS data filelist set to /data/ngsdata/liver/liver.data.960.tab
+2015-34-05 16:34:23.252 [main] INFO   - read pipeline configuration file
+2015-34-05 16:34:25.612 [main] INFO   - done
+
+2015-34-05 16:34:25.745 [main] INFO   - read pipeline file </data/ngsdata/liver/liver.pipe.json>
+2015-34-05 16:34:25.787 [main] INFO   - done
+2015-34-05 16:34:25.787 [main] INFO   - User [pipeline1]
+stepType=differentialExpression	 in:mirna_isomir_analysis	 out:de_analysis
+stepType=exit	 in:null	 out:null
+stepType=parseSAMForMiRNAs	 in:bowtie_genome_mapped	 out:mirna_isomir_analysis
+stepType=AnalyzeIsomiRDispersion	 in:mirna_isomir_analysis	 out:dispersion_analysis
+stepType=exit	 in:null	 out:null
+stepType=TrimAdapters	 in:raw_data	 out:trimmed_data
+stepType=CollapseReads	 in:trimmed_data	 out:collapsed_reads
+stepType=BowtieMapReads	 in:collapsed_reads	 out:mappedReads
+stepType=parseSAMForMiRNAs	 in:bowtie_genome_mapped	 out:mirna_isomir_analysis
+
+2015-34-05 16:34:25.788 [main] INFO   - read data file
+2015-34-05 16:34:25.788 [main] INFO   - read 4 entries
+2015-34-05 16:34:28.182 [main] INFO  no.uio.medisin.bag.ngssmallrna.steps.StepInputData - verify input data
+2015-34-05 16:34:28.183 [main] INFO  no.uio.medisin.bag.ngssmallrna.steps.StepInputData - pvalue
+2015-34-05 16:34:28.183 [main] INFO  no.uio.medisin.bag.ngssmallrna.steps.StepInputData - Project root </data/ngsdata/> exists
+2015-34-05 16:34:28.183 [main] INFO  no.uio.medisin.bag.ngssmallrna.steps.StepInputData - Project folder </data/ngsdata//liver>  exists
+2015-36-05 16:36:54.006 [main] INFO  no.uio.medisin.bag.ngssmallrna.steps.DEwithEdgeRStep - Merging Count Files
+2015-40-05 16:40:59.410 [main] INFO   - parse arguments
+2015-40-05 16:40:59.414 [main] INFO   - run configuration file set to /data/ngsdata/liver/small_ngs.config.yaml
+2015-40-05 16:40:59.414 [main] INFO   - pipeline file set to /data/ngsdata/liver/liver.pipe.json
+2015-40-05 16:40:59.414 [main] INFO   - NGS data filelist set to /data/ngsdata/liver/liver.data.960.tab
+2015-40-05 16:40:59.415 [main] INFO   - read pipeline configuration file
+2015-41-05 16:41:02.743 [main] INFO   - done
+
+2015-41-05 16:41:02.852 [main] INFO   - read pipeline file </data/ngsdata/liver/liver.pipe.json>
+2015-41-05 16:41:02.895 [main] INFO   - done
+2015-41-05 16:41:02.895 [main] INFO   - User [pipeline1]
+stepType=differentialExpression	 in:mirna_isomir_analysis	 out:de_analysis
+stepType=exit	 in:null	 out:null
+stepType=parseSAMForMiRNAs	 in:bowtie_genome_mapped	 out:mirna_isomir_analysis
+stepType=AnalyzeIsomiRDispersion	 in:mirna_isomir_analysis	 out:dispersion_analysis
+stepType=exit	 in:null	 out:null
+stepType=TrimAdapters	 in:raw_data	 out:trimmed_data
+stepType=CollapseReads	 in:trimmed_data	 out:collapsed_reads
+stepType=BowtieMapReads	 in:collapsed_reads	 out:mappedReads
+stepType=parseSAMForMiRNAs	 in:bowtie_genome_mapped	 out:mirna_isomir_analysis
+
+2015-41-05 16:41:02.895 [main] INFO   - read data file
+2015-41-05 16:41:02.896 [main] INFO   - read 4 entries
+2015-41-05 16:41:10.597 [main] INFO  no.uio.medisin.bag.ngssmallrna.steps.StepInputData - verify input data
+2015-41-05 16:41:10.598 [main] INFO  no.uio.medisin.bag.ngssmallrna.steps.StepInputData - pvalue
+2015-41-05 16:41:10.598 [main] INFO  no.uio.medisin.bag.ngssmallrna.steps.StepInputData - Project root </data/ngsdata/> exists
+2015-41-05 16:41:10.599 [main] INFO  no.uio.medisin.bag.ngssmallrna.steps.StepInputData - Project folder </data/ngsdata//liver>  exists
+2015-41-05 16:41:14.016 [main] INFO  no.uio.medisin.bag.ngssmallrna.steps.DEwithEdgeRStep - Merging Count Files

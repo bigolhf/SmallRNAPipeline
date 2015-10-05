@@ -20,6 +20,7 @@ import no.uio.medisin.bag.ngssmallrna.steps.NGSStep;
 import no.uio.medisin.bag.ngssmallrna.steps.NGSRunStepData;
 import no.uio.medisin.bag.ngssmallrna.steps.ParseSAMForMiRNAsStep;
 import no.uio.medisin.bag.ngssmallrna.steps.AnalyzeSAMStartPositions;
+import no.uio.medisin.bag.ngssmallrna.steps.DEwithEdgeRStep;
 import no.uio.medisin.bag.ngssmallrna.steps.StepInputData;
 import no.uio.medisin.bag.ngssmallrna.steps.TrimAdaptersStep;
 import org.yaml.snakeyaml.Yaml;
@@ -69,6 +70,8 @@ public class SmallNGSPipeline {
     private ArrayList<String>           samParseFeatureTypes = new ArrayList<>();
     
     private double                      analyzeIsomiRDispPVal = 0.05;
+    
+    private double                      diffExpressionPVal = 0.05;
     
     private PipelineData                pipelineData = new PipelineData();
     private ArrayList<SampleDataEntry>  SampleData = new ArrayList<>();
@@ -214,6 +217,14 @@ public class SmallNGSPipeline {
                     
                     break;
                     
+                case "differentialExpression":
+                    HashMap diffExpressionAnalysisParams = new HashMap();
+                    diffExpressionAnalysisParams.put("pvalue", this.getDiffExpressionPVal());
+                    
+                    StepInputData siodDiffExpr = new StepInputData(diffExpressionAnalysisParams, this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), this.getSampleData());
+                    DEwithEdgeRStep edgeRDE = new DEwithEdgeRStep(siodDiffExpr);
+                    edgeRDE.verifyInputData();
+                    edgeRDE.execute();
                     
                     
                 case "exit":
@@ -317,6 +328,9 @@ public class SmallNGSPipeline {
         
         HashMap analyzeIsomiRDispersionOptions = (HashMap) pipelineConfiguration.get("analyze_isomir_dispersion");
         this.setAnalyzeIsomiRDispPVal((double) analyzeIsomiRDispersionOptions.get("pvalue"));
+        
+        HashMap diffExpressionOptions = (HashMap) pipelineConfiguration.get("differential_expression");
+        this.setDiffExpressionPVal((double) diffExpressionOptions.get("pvalue"));
         
         logger.info("done\n");
         
@@ -753,6 +767,20 @@ public class SmallNGSPipeline {
      */
     public void setAnalyzeIsomiRDispPVal(double analyzeIsomiRDispPVal) {
         this.analyzeIsomiRDispPVal = analyzeIsomiRDispPVal;
+    }
+
+    /**
+     * @return the diffExpressionPVal
+     */
+    public double getDiffExpressionPVal() {
+        return diffExpressionPVal;
+    }
+
+    /**
+     * @param diffExpressionPVal the diffExpressionPVal to set
+     */
+    public void setDiffExpressionPVal(double diffExpressionPVal) {
+        this.diffExpressionPVal = diffExpressionPVal;
     }
     
     
