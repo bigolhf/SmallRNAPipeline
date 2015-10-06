@@ -220,6 +220,8 @@ public class SmallNGSPipeline {
                 case "differentialExpression":
                     HashMap diffExpressionAnalysisParams = new HashMap();
                     diffExpressionAnalysisParams.put("pvalue", this.getDiffExpressionPVal());
+                    diffExpressionAnalysisParams.put("host", this.getBowtieMappingReferenceGenome());
+                    diffExpressionAnalysisParams.put("miRBaseHostGFFFile", this.getMiRBaseHostGFF());
                     
                     StepInputData siodDiffExpr = new StepInputData(diffExpressionAnalysisParams, this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), this.getSampleData());
                     DEwithEdgeRStep edgeRDE = new DEwithEdgeRStep(siodDiffExpr);

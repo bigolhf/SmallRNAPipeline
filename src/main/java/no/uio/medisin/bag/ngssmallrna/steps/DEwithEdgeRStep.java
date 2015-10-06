@@ -11,15 +11,20 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.security.SecureRandom;
+import java.util.Random;
+
 import no.uio.medisin.bag.ngssmallrna.pipeline.IsomiRSet;
 import no.uio.medisin.bag.ngssmallrna.pipeline.MiRNAFeature;
+import no.uio.medisin.bag.ngssmallrna.pipeline.MirBaseSet;
 import no.uio.medisin.bag.ngssmallrna.pipeline.SampleDataEntry;
+import org.apache.commons.lang3.StringUtils;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -42,6 +47,8 @@ public class DEwithEdgeRStep extends NGSStep{
     
     private static final String         inFolder                    = "mirna_isomir_analysis";
     private static final String         deAnalysisOutFolder         = "de_analysis";
+    private              String         pathToDEAnalysisOutputFolder= "";
+    private              String         rScriptFilename             = "";
     
     
     private static final String         infileExtension             = ".trim.clp.gen.sam";
@@ -54,7 +61,7 @@ public class DEwithEdgeRStep extends NGSStep{
     private StepInputData               stepInputData;
     private StepResultData              stepResultData;
     
-
+    private MirBaseSet                  miRBaseMiRNAList            = new MirBaseSet();
     private List<MiRNAFeature>          miRNAList                   = new ArrayList<>();
     private List<MiRNAFeature>          miRNAHitList;
     private ArrayList<IsomiRSet>        isomiRList;
@@ -71,6 +78,8 @@ public class DEwithEdgeRStep extends NGSStep{
     public void execute(){
         /*
             diffExpressionAnalysisParams.put("pvalue", this.getDiffExpressionPVal());
+            diffExpressionAnalysisParams.put("host", this.getBowtieMappingReferenceGenome());
+            diffExpressionAnalysisParams.put("miRBaseHostGFFFile", this.getMiRBaseHostGFF());
         */
         try{
             stepInputData.verifyInputData();            
@@ -79,33 +88,37 @@ public class DEwithEdgeRStep extends NGSStep{
             logger.info("exception parsing InputData" + exIO);
         }
     
+        
+        
         /*
             1. read in all sample count files and merge
             2. output merged count file
             3. generate R script to perform DE using EdgeR
             4. process EdgeR output file 
-        try{
-            this.loadMiRBaseData((String) stepInputData.getStepParams().get("host"), (String) stepInputData.getStepParams().get("miRBaseHostGFFFile"));
-        }
-        catch(IOException ex){
-            logger.error("error reading miRBase reference file <" + (String) stepInputData.getStepParams().get("miRBaseHostGFFFile") + ">\n" + ex.toString());
-        }
         */
+        try{
+            miRBaseMiRNAList.loadMiRBaseData((String) stepInputData.getStepParams().get("host"), (String) stepInputData.getStepParams().get("miRBaseHostGFFFile"));
+        }
+        catch(IOException exIO){
+            logger.error("error reading miRBase reference file <" + (String) stepInputData.getStepParams().get("miRBaseHostGFFFile") + ">\n" + exIO.toString());
+        }
         
         
         String pathToData = stepInputData.getProjectRoot() + FileSeparator + stepInputData.getProjectID();
         String miRNAInputFolder = pathToData + FileSeparator + inFolder;
-        String deAnalysisOutputFolder = pathToData + FileSeparator + deAnalysisOutFolder;
+        pathToDEAnalysisOutputFolder = pathToData + FileSeparator + deAnalysisOutFolder;
         
-        deAnalysisOutputFolder = deAnalysisOutputFolder.replace(FileSeparator + FileSeparator, FileSeparator).trim();
-        Boolean fA = new File(deAnalysisOutputFolder).mkdir();       
-        if (fA) logger.info("created output folder <" + deAnalysisOutputFolder + "> for results" );
+        pathToDEAnalysisOutputFolder = pathToDEAnalysisOutputFolder.replace(FileSeparator + FileSeparator, FileSeparator).trim();
+        Boolean fA = new File(pathToDEAnalysisOutputFolder).mkdir();       
+        if (fA) logger.info("created output folder <" + pathToDEAnalysisOutputFolder + "> for results" );
         
         Iterator itSD = this.stepInputData.getSampleData().iterator();
 
         
         logger.info("Merging Count Files");
-        String[] countStrings = new String[miRNAList.size()];
+        String[] countStrings = new String[miRBaseMiRNAList.getNumberOfEntries()];
+        Arrays.fill(countStrings, "");
+        itSD = this.stepInputData.getSampleData().iterator();
         while (itSD.hasNext()){
             SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
             String  miRCountsFile  = miRNAInputFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", miRCountsExtension);
@@ -115,7 +128,7 @@ public class DEwithEdgeRStep extends NGSStep{
                 BufferedReader brmiRCounts  = new BufferedReader(new FileReader(new File(miRCountsFile)));
                     String countLine = "";
                     while((countLine = brmiRCounts.readLine()) != null){
-                        countStrings[m] = countStrings[m].concat(countLine.split("\t")[1].trim());
+                        countStrings[m] = countStrings[m].concat("\t" + countLine.split("\t")[1].trim() );
                         m++;
                     }
                 brmiRCounts.close();
@@ -126,12 +139,13 @@ public class DEwithEdgeRStep extends NGSStep{
         }
         
         logger.info("Writing merged count files");
-        String mergedCountsFile      = deAnalysisOutputFolder + FileSeparator + stepInputData.getProjectID() + ".merged.mirna_counts.tsv";    
+        String mergedCountsFile      = pathToDEAnalysisOutputFolder + FileSeparator + stepInputData.getProjectID() + ".merged.mirna_counts.tsv";    
         try{
             BufferedWriter bwMc = new BufferedWriter(new FileWriter(new File(mergedCountsFile)));
             int m=0;
-            for(MiRNAFeature miR: this.miRNAList){
-                bwMc.write(miR.getMimatID() + ":" + miR.getName() + "\t" + countStrings[m]);
+            for(MiRNAFeature miR: miRBaseMiRNAList.getMiRBaseMiRNAList()){
+                bwMc.write(miR.getMimatID() + ":" + miR.getName() + countStrings[m] + "\n");
+                m++;
             }
             
             bwMc.close();
@@ -143,10 +157,73 @@ public class DEwithEdgeRStep extends NGSStep{
     }
     
     
+    /**
+     * construct the R script to perform DE analysis for this dataset
+     * 
+     * need to generate the input files based on the specified groups
+     * 
+     */
+    private void buildRScript(){
+
+        BigInteger big = new BigInteger(130, new Random());
+        rScriptFilename = pathToDEAnalysisOutputFolder + FileSeparator + new BigInteger(130, new SecureRandom()).toString(32) + ".R";
+        rScriptFilename = rScriptFilename.replace(FileSeparator + FileSeparator, FileSeparator);
+        
+        ArrayList<String> cmd = new ArrayList<>();
+
+        cmd.add("Rscript");
+        cmd.add(rScriptFilename);
+         
+    }
     
     
     
-    
+    private void executeRScript(){
+        
+
+        String pathToData = stepInputData.getProjectRoot() + FileSeparator + stepInputData.getProjectID();
+        ArrayList<String> cmd = new ArrayList<>();
+
+        cmd.add("Rscript");
+        cmd.add(rScriptFilename);
+
+
+        String cmdRunRScript = StringUtils.join(cmd, " ");
+        cmdRunRScript = cmdRunRScript.replace(FileSeparator + FileSeparator, FileSeparator);
+        logger.info("Rscript command:\t" + cmdRunRScript);
+
+        try{
+            Runtime rt = Runtime.getRuntime();
+            Process proc = rt.exec(cmdRunRScript);
+            BufferedReader brAStdin  = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+            BufferedReader brAStdErr = new BufferedReader(new InputStreamReader(proc.getErrorStream()));
+
+                String line = null;
+                logger.info("<OUTPUT>");
+                while ((line = brAStdin.readLine()) != null)
+                    logger.info(line);
+                logger.info("</OUTPUT>");
+
+                logger.info("<ERROR>");
+                while ( (line = brAStdErr.readLine()) != null){
+                    logger.info(line);
+                }
+                // need to parse the output from Bowtie to get the mapping summary
+                logger.info("</ERROR>");
+
+                int exitVal = proc.waitFor();            
+                logger.info("Process exitValue: " + exitVal);   
+
+            brAStdin.close();
+            brAStdErr.close();        
+        }
+        catch(IOException exIO){
+            logger.info("error executing RScript command\n" + exIO);
+        }
+        catch(InterruptedException exIE){
+            logger.info("error executing RScript command\n" + exIE);            
+        }
+    }
     
     
     /**
@@ -178,102 +255,6 @@ public class DEwithEdgeRStep extends NGSStep{
         // does input file have the same extension as expected for the output file?
     }
     
-    /**
-     * 1. 
-     * load miRNA specs (name and Chromosome position) from GFF file
-     * downloaded from miRBase
-     * Because different releases of miRBase use different releases of
-     * reference genome, we have to track both miRBase and genome reference IDs
-     * 2.
-     * Load Sequence from Mature.fa file
-     * 
-     * @param host              String : 3 char abbreviation for host
-     * @param miRBaseGFFFile    String : absolute path to file
-     * @throws IOException
-     * 
-     */
-    public void loadMiRBaseData(String host, String miRBaseGFFFile) throws IOException{
-
-        HashMap <String, String> miRBaseSeq = new HashMap();
-        String matureFAFile = new File(miRBaseGFFFile).getParent() + FileSeparator + "mature.fa";
-        BufferedReader brFA = new BufferedReader(new FileReader(new File(matureFAFile)));
-        String lineFA = null;
-        while ((lineFA = brFA.readLine())!=null){
-
-            String seq = brFA.readLine().trim();
-            String entryHost = lineFA.split(" ")[0].substring(1).split("-")[0].trim();
-            if(entryHost.equals(host)){
-                String mimatID = lineFA.split(" ")[1].trim();
-                miRBaseSeq.put(mimatID, seq);
-            }
-            
-        }
-        
-        
-        
-        String line = null;
-        BufferedReader brMiR = new BufferedReader(new FileReader(new File(miRBaseGFFFile)));
-            while((line = brMiR.readLine())!= null){
-                
-                if(line.startsWith("#")) continue;
-                if(line.contains("miRNA_primary_transcript")) continue;
-                /*
-                    chr1            chromosome
-                    source          n/a here
-                    miRNA           feature type (n/a)
-                    start pos
-                    end pos
-                    score           n/a here               
-                    strand          (+/-)
-                    frame           n/a here
-                    attributes      e.g. ID=MIMAT0027619;Alias=MIMAT0027619;Name=hsa-miR-6859-3p;Derives_from=MI0022705
-                
-                */
-                String chr = line.split("\t")[0].trim();
-                if(chr.contains("chr")) chr = chr.replace("chr", "");
-                int startPos = Integer.parseInt(line.split("\t")[3].trim());
-                int endPos = Integer.parseInt(line.split("\t")[4].trim());
-                String strand = line.split("\t")[6].trim();
-                
-                String id = "";
-                String name = "";
-                String parent = "";
-                String attribs[] = line.split("\t")[8].split(";");
-                
-                for (String attribStr: attribs){
-                    String attribType = attribStr.split("=")[0].trim();
-                    String attribValue = attribStr.split("=")[1].trim();
-                    switch (attribType){
-                        case "ID":
-                            id = attribValue;
-                            break;
-                            
-                        case "Alias":                            
-                            break;
-                            
-                        case "Name":
-                            name = attribValue;
-                            break;
-                            
-                        case "Derives_from":
-                            parent = attribValue;
-                            break;
-                            
-                        default:
-                            logger.warn("unknown attribute in parsing miRNA entry from GFF file " + miRBaseGFFFile + ">");
-                            break;
-                    }
-                }
-                String seq = miRBaseSeq.get(id);
-                if(seq != null) 
-                    this.miRNAList.add(new MiRNAFeature(name, chr, startPos, endPos, strand, id, parent, seq));
-                else
-                    logger.warn("no sequence found for entry <" + id + ">. Skipping");
-            }
-        brMiR.close();
-        logger.info("read " + miRNAList.size() + "miRNA entries");
-        
-    }
     
     
     

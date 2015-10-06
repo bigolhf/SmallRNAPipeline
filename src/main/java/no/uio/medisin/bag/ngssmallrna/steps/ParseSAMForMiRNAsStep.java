@@ -12,6 +12,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -56,7 +57,7 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
     private StepResultData              stepResultData;
     
 
-    private List<MiRNAFeature>          miRNAList                   = new ArrayList<>();
+    private List<MiRNAFeature>          miRBaseMiRNAList                   = new ArrayList<>();
     private List<MiRNAFeature>          miRNAHitList;
     private ArrayList<IsomiRSet>        isomiRList;
     /**
@@ -75,8 +76,7 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
             parseSAMmiRNAsParams.put("miRBaseHostGFFFile", this.getMiRBaseHostGFF());
             parseSAMmiRNAsParams.put("miRBaseRootFolder", this.getMirBaseVersionRoot());
             parseSAMmiRNAsParams.put("host", this.getBowtieMappingReferenceGenome());
-            parseSAMmiRNAsParams.put("baseline_percent", this.getSamParseForMiRNAsBaselinePercent());
-        
+            parseSAMmiRNAsParams.put("baseline_percent", this.getSamParseForMiRNAsBaselinePercent());        
         */
         try{
             stepInputData.verifyInputData();            
@@ -221,17 +221,17 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
                     String  miRCountsFile  = miRNAAnalysisOutputFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", miRCountsExtension);
                     
                     BufferedWriter brCounts  = new BufferedWriter(new FileWriter(new File(miRCountsFile)));
-                        for(MiRNAFeature miR: this.miRNAList){
+                        for(MiRNAFeature miR: this.miRBaseMiRNAList){
                             if(miRNAHitList.contains(miR)){
                                 for(MiRNAFeature miRHit: this.miRNAHitList){
                                     if(miRHit.equals(miR)){
-                                        brCounts.write(miR.getMimatID() + ":" + miR.getName() + "\t" + miR.getTotalCounts());
+                                        brCounts.write(miR.getMimatID() + ":" + miR.getName() + "\t" + miRHit.getTotalCounts() + "\n");
                                         break;
                                     }
                                 }
                             }
                             else{
-                                brCounts.write(miR.getMimatID() + ":" + miR.getName() + "\t" + 0);                                
+                                brCounts.write(miR.getMimatID() + ":" + miR.getName() + "\t" + 0 + "\n");                                
                             }
                         }
                     brCounts.close();
@@ -266,41 +266,6 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
         }
 
         
-        logger.info("Merging Count Files");
-        String[] countStrings = new String[miRNAList.size()];
-        itSD = this.stepInputData.getSampleData().iterator();
-        while (itSD.hasNext()){
-            SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
-            String  miRCountsFile  = miRNAAnalysisOutputFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", miRCountsExtension);
-            try{
-                int m=0;
-                BufferedReader brmiRCounts  = new BufferedReader(new FileReader(new File(miRCountsFile)));
-                    String countLine = "";
-                    while((countLine = brmiRCounts.readLine()) != null){
-                        countStrings[m] = countStrings[m].concat(countLine.split("\t")[1].trim());
-                        m++;
-                    }
-                brmiRCounts.close();
-            }
-            catch(IOException ex){
-                logger.error("error reading count files for merging <" + miRCountsFile + "> \n" + ex.toString());
-            }
-        }
-        
-        logger.info("Writing merged count files");
-        String mergedCountsFile      = miRNAAnalysisOutputFolder + FileSeparator + stepInputData.getProjectID() + ".merged.mirna_counts.tsv";    
-        try{
-            BufferedWriter bwMc = new BufferedWriter(new FileWriter(new File(mergedCountsFile)));
-            int m=0;
-            for(MiRNAFeature miR: this.miRNAList){
-                bwMc.write(miR.getMimatID() + ":" + miR.getName() + "\t" + countStrings[m]);
-            }
-            
-            bwMc.close();
-        }
-        catch(IOException exIO){
-            logger.info("error writing merged counts File <" + mergedCountsFile + ">\n" + exIO);        
-        }
         
     }
     
@@ -321,7 +286,7 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
      */
     public MiRNAFeature doesReadOverlapKnownMiRNA(int start, int stop, String chr, String strand, int bleed){
         
-        for(MiRNAFeature miRBaseEntry: this.miRNAList){
+        for(MiRNAFeature miRBaseEntry: this.miRBaseMiRNAList){
             if (miRBaseEntry.chromosomeMatch(chr)){
                 if(strand.equals(miRBaseEntry.getStrand())){
                     
@@ -461,12 +426,12 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
                 }
                 String seq = miRBaseSeq.get(id);
                 if(seq != null) 
-                    this.miRNAList.add(new MiRNAFeature(name, chr, startPos, endPos, strand, id, parent, seq));
+                    this.miRBaseMiRNAList.add(new MiRNAFeature(name, chr, startPos, endPos, strand, id, parent, seq));
                 else
                     logger.warn("no sequence found for entry <" + id + ">. Skipping");
             }
         brMiR.close();
-        logger.info("read " + miRNAList.size() + "miRNA entries");
+        logger.info("read " + miRBaseMiRNAList.size() + "miRNA entries");
         
     }
     
