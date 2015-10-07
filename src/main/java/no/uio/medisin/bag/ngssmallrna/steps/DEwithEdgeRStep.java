@@ -165,6 +165,51 @@ public class DEwithEdgeRStep extends NGSStep{
      */
     private void buildRScript(){
 
+        /*
+          build groups file
+          this has the format:
+            File               Source	Condition   Time	Note
+            SRR1642941.fastq	P1	U           NA	(U|44|CR|M|IF)
+            SRR1642942.fastq	P1	T           NA	(T|44|CR|M|IF)
+            SRR1642943.fastq	P2	U           NA	(U|52|NC|M|IF)
+            SRR1642944.fastq	P2	T           NA	(T|51|NC|M|IF)
+        
+            i.e., Condition is equivalent to Group
+        
+            Need the file in the format
+            Group	U   T   U   T
+            sample names    SRR1642941  SRR1642942  SRR1642943  SRR1642944
+            
+            I could write the R to parse the sample file, but it makes the code
+            harder to understand
+        */
+        
+        Iterator itSD = this.stepInputData.getSampleData().iterator();
+        ArrayList<String> groups = new ArrayList<>();
+        ArrayList<String> samples = new ArrayList<>();
+        
+        while (itSD.hasNext()){           
+            SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
+            groups.add(sampleData.getCondition());
+            samples.add(sampleData.getDataFile().replace(".fastq", ""));
+        }
+        
+        
+        String groupsFile = this.stepInputData.getProjectID();
+        try{
+            BufferedWriter bwGF = new BufferedWriter(new FileWriter(new File(groupsFile)));
+                bwGF.write(StringUtils.join(groups, "\t") + "\n");
+                bwGF.write(StringUtils.join(samples, "\t") + "\n");
+            bwGF.close();
+        }
+        catch(IOException exIO){
+            logger.error("IOException thrown trying to write groupsFile for EdgeR DE analysis");
+            logger.error(exIO);
+        }
+        
+        
+        
+        
         BigInteger big = new BigInteger(130, new Random());
         rScriptFilename = pathToDEAnalysisOutputFolder + FileSeparator + new BigInteger(130, new SecureRandom()).toString(32) + ".R";
         rScriptFilename = rScriptFilename.replace(FileSeparator + FileSeparator, FileSeparator);
