@@ -18,6 +18,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.security.SecureRandom;
+import java.util.Date;
 import java.util.Random;
 
 import no.uio.medisin.bag.ngssmallrna.pipeline.IsomiRSet;
@@ -55,6 +56,11 @@ public class DEwithEdgeRStep extends NGSStep{
     private static final String         groupsFileExtension         = ".groups.tsv";
     private static final String         isomirPrettyExtension       = ".trim.clp.gen.iso_pretty.tsv";
     private static final String         miRCountsExtension          = ".trim.clp.gen.mircounts.tsv";
+    private static final String         deResultsExtension          = ".DE.edgeR.sort.csv";
+    
+    private String                      mergedCountsFile;
+    private String                      groupsFile;
+    private String                      deResultsFile;
     
     
     
@@ -116,11 +122,13 @@ public class DEwithEdgeRStep extends NGSStep{
 
         
         logger.info("Merging Count Files");
+        String headerLine = "name";
         String[] countStrings = new String[miRBaseMiRNAList.getNumberOfEntries()];
         Arrays.fill(countStrings, "");
         itSD = this.stepInputData.getSampleData().iterator();
         while (itSD.hasNext()){
             SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
+            headerLine = headerLine.concat("\t" + sampleData.getDataFile().replace(".fastq", ""));
             String  miRCountsFile  = miRNAInputFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", miRCountsExtension);
             miRCountsFile = miRCountsFile.replace(FileSeparator + FileSeparator, FileSeparator).trim();
             try{
@@ -139,12 +147,14 @@ public class DEwithEdgeRStep extends NGSStep{
         }
         
         logger.info("Writing merged count files");
-        String mergedCountsFile      = pathToDEAnalysisOutputFolder + FileSeparator + stepInputData.getProjectID() + ".merged.mirna_counts.tsv";    
+        mergedCountsFile        = pathToDEAnalysisOutputFolder + FileSeparator + stepInputData.getProjectID() + ".merged.mirna_counts.tsv";    
+        deResultsFile           = pathToDEAnalysisOutputFolder + FileSeparator + stepInputData.getProjectID() + ".merged.mirna_counts.tsv";    
         try{
             BufferedWriter bwMc = new BufferedWriter(new FileWriter(new File(mergedCountsFile)));
+            bwMc.write(headerLine + "\n");
             int m=0;
             for(MiRNAFeature miR: miRBaseMiRNAList.getMiRBaseMiRNAList()){
-                bwMc.write(miR.getMimatID() + ":" + miR.getName() + countStrings[m] + "\n");
+                bwMc.write(miR.getMimatID() + "|" + miR.getName() + countStrings[m] + "\n");
                 m++;
             }
             
@@ -154,6 +164,7 @@ public class DEwithEdgeRStep extends NGSStep{
             logger.info("error writing merged counts File <" + mergedCountsFile + ">\n" + exIO);        
         }
         generateGroupsFile();
+        buildRScript();
         
     }
     
@@ -165,13 +176,31 @@ public class DEwithEdgeRStep extends NGSStep{
      * samples in the experiment.
      * 
      * Grouping is according to the Condition column in the data file
+
+          this has the format:
+            File               Source	Condition   Time	Note
+            SRR1642941.fastq	P1	U           NA	(U|44|CR|M|IF)
+            SRR1642942.fastq	P1	T           NA	(T|44|CR|M|IF)
+            SRR1642943.fastq	P2	U           NA	(U|52|NC|M|IF)
+            SRR1642944.fastq	P2	T           NA	(T|51|NC|M|IF)
+        
+            i.e., Condition is equivalent to Group
+        
+            Need the file in the format
+            Group	U   T   U   T
+            sample names    SRR1642941  SRR1642942  SRR1642943  SRR1642944
+            
+            We could write the R to parse the sample file, but it makes the code
+            harder to understand
+
      * 
      */
     private void generateGroupsFile(){
         
-        String groupString = "group";
-        String sampleString = "samole names";
-        
+
+        String groupString = "Group";
+        String sampleString = "sample names";
+
         Iterator itSD = this.stepInputData.getSampleData().iterator();
         while (itSD.hasNext()){
             SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
@@ -179,16 +208,20 @@ public class DEwithEdgeRStep extends NGSStep{
             sampleString = sampleString.concat("\t" + sampleData.getDataFile().replace(".fastq", ""));
         }        
         
-        String groupsFile = pathToDEAnalysisOutputFolder + FileSeparator + stepInputData.getProjectID() + groupsFileExtension;
+        groupsFile = pathToDEAnalysisOutputFolder + FileSeparator + stepInputData.getProjectID() + groupsFileExtension;
         logger.info("writing groups file "  + groupsFile);
         try{
             BufferedWriter bwGF = new BufferedWriter(new FileWriter(new File(groupsFile)));    
+                bwGF.write(groupString + "\n");
+                bwGF.write(sampleString + "\n");
             bwGF.close();
         }
         catch(IOException exGF){
             logger.error("error writing groups file "  + groupsFile);
             logger.error(exGF);
         }
+
+                
     }
     
     
@@ -206,62 +239,51 @@ public class DEwithEdgeRStep extends NGSStep{
      */
     private void buildRScript(){
 
-        /*
-          build groups file
-          this has the format:
-            File               Source	Condition   Time	Note
-            SRR1642941.fastq	P1	U           NA	(U|44|CR|M|IF)
-            SRR1642942.fastq	P1	T           NA	(T|44|CR|M|IF)
-            SRR1642943.fastq	P2	U           NA	(U|52|NC|M|IF)
-            SRR1642944.fastq	P2	T           NA	(T|51|NC|M|IF)
-        
-            i.e., Condition is equivalent to Group
-        
-            Need the file in the format
-            Group	U   T   U   T
-            sample names    SRR1642941  SRR1642942  SRR1642943  SRR1642944
-            
-            I could write the R to parse the sample file, but it makes the code
-            harder to understand
-        */
-        
-        Iterator itSD = this.stepInputData.getSampleData().iterator();
-        ArrayList<String> groups = new ArrayList<>();
-        ArrayList<String> samples = new ArrayList<>();
-        
-        while (itSD.hasNext()){           
-            SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
-            groups.add(sampleData.getCondition());
-            samples.add(sampleData.getDataFile().replace(".fastq", ""));
-        }
-        
-        
-        String groupsFile = this.stepInputData.getProjectID();
-        try{
-            BufferedWriter bwGF = new BufferedWriter(new FileWriter(new File(groupsFile)));
-                bwGF.write(StringUtils.join(groups, "\t") + "\n");
-                bwGF.write(StringUtils.join(samples, "\t") + "\n");
-            bwGF.close();
-        }
-        catch(IOException exIO){
-            logger.error("IOException thrown trying to write groupsFile for EdgeR DE analysis");
-            logger.error(exIO);
-        }
-        
-        
-        
-        
+
         BigInteger big = new BigInteger(130, new Random());
         rScriptFilename = pathToDEAnalysisOutputFolder + FileSeparator + new BigInteger(130, new SecureRandom()).toString(32) + ".R";
         rScriptFilename = rScriptFilename.replace(FileSeparator + FileSeparator, FileSeparator);
-        
-        ArrayList<String> cmd = new ArrayList<>();
+        int minCounts = 10;
+        ArrayList<String> cmdSet = new ArrayList<>();
 
-        cmd.add("Rscript");
-        cmd.add(rScriptFilename);
-        
-        
-         
+        cmdSet.add("#");
+        cmdSet.add("#   Rscript generated for project " + this.stepInputData.getProjectID());
+        cmdSet.add("#   created: " + new Date());
+        cmdSet.add("#");
+        cmdSet.add("#");
+        cmdSet.add("library(edgeR)");
+        cmdSet.add("RawCounts<-read.delim(\"" + mergedCountsFile + "\", row.names=\"name\")");
+        cmdSet.add("g<-read.csv(\"" + groupsFile + "\", header=FALSE, sep=\"\\t\", row.names=1)");
+        cmdSet.add("sampleGroups <- unname(unlist(g[\"Group\",]))");
+        cmdSet.add("CountsDGE <- DGEList(counts=RawCounts, group=sampleGroups)");
+        cmdSet.add("");
+        cmdSet.add("CountsAboveNoise <- rowSums(cpm(CountsDGE)>" + minCounts + ") >= 2");
+        cmdSet.add("CountsLessNoiseDGE <- CountsDGE[CountsAboveNoise,]");
+        cmdSet.add("CountsLessNoiseDGE$samples$lib.size <- colSums(CountsLessNoiseDGE$counts)");
+        cmdSet.add("");
+        cmdSet.add("NormFactors <- calcNormFactors(CountsLessNoiseDGE)");
+        cmdSet.add("");
+        cmdSet.add("CommonDispersion <- estimateCommonDisp(NormFactors, verbose=TRUE)");
+        cmdSet.add("TagwiseDispersion <- estimateTagwiseDisp(CommonDispersion, trend=\"none\")");
+        cmdSet.add("");
+        cmdSet.add("ExactTestTagDisp <- exactTest(TagwiseDispersion)");
+        cmdSet.add("");
+        cmdSet.add("resultFile<-" + deResultsFile);
+        cmdSet.add("write.table(ExactTestTagDisp$table[with(ExactTestTagDisp$table, order(PValue)), ], file=" + deResultsFile + ", sep=\",\", row.names=TRUE\")");
+        cmdSet.add("");
+        cmdSet.add("");
+
+        try{
+            BufferedWriter bwRC = new BufferedWriter(new FileWriter(new File(rScriptFilename)));
+                for(String cmd: cmdSet){
+                    bwRC.write(cmd + "\n");
+                }
+            bwRC.close();
+        }
+        catch(IOException exIO){
+            logger.error("error writing generated RScript to file <" + rScriptFilename + ">");
+            logger.error(exIO);
+        }
     }
     
     
