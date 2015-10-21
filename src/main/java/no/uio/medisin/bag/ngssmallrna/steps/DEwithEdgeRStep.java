@@ -52,7 +52,7 @@ public class DEwithEdgeRStep extends NGSStep{
     
     
     private static final String         infileExtension             = ".trim.clp.gen.sam";
-    private static final String         isomirSummaryExtension      = ".trim.clp.gen.iso_summary.tsv";
+    private static final String         groupsFileExtension         = ".groups.tsv";
     private static final String         isomirPrettyExtension       = ".trim.clp.gen.iso_pretty.tsv";
     private static final String         miRCountsExtension          = ".trim.clp.gen.mircounts.tsv";
     
@@ -153,12 +153,53 @@ public class DEwithEdgeRStep extends NGSStep{
         catch(IOException exIO){
             logger.info("error writing merged counts File <" + mergedCountsFile + ">\n" + exIO);        
         }
+        generateGroupsFile();
         
     }
     
     
+    
+    /**
+     * 
+     * generates the a file that contains all the grouping information for all
+     * samples in the experiment.
+     * 
+     * Grouping is according to the Condition column in the data file
+     * 
+     */
+    private void generateGroupsFile(){
+        
+        String groupString = "group";
+        String sampleString = "samole names";
+        
+        Iterator itSD = this.stepInputData.getSampleData().iterator();
+        while (itSD.hasNext()){
+            SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
+            groupString = groupString.concat("\t" + sampleData.getCondition());
+            sampleString = sampleString.concat("\t" + sampleData.getDataFile().replace(".fastq", ""));
+        }        
+        
+        String groupsFile = pathToDEAnalysisOutputFolder + FileSeparator + stepInputData.getProjectID() + groupsFileExtension;
+        logger.info("writing groups file "  + groupsFile);
+        try{
+            BufferedWriter bwGF = new BufferedWriter(new FileWriter(new File(groupsFile)));    
+            bwGF.close();
+        }
+        catch(IOException exGF){
+            logger.error("error writing groups file "  + groupsFile);
+            logger.error(exGF);
+        }
+    }
+    
+    
+    
+    
+    
     /**
      * construct the R script to perform DE analysis for this dataset
+     * Need to create a new R script for each analysis and give it a
+     * unique name so we can go back and check what parameters were
+     * used in the analysis.
      * 
      * need to generate the input files based on the specified groups
      * 
@@ -173,6 +214,8 @@ public class DEwithEdgeRStep extends NGSStep{
 
         cmd.add("Rscript");
         cmd.add(rScriptFilename);
+        
+        
          
     }
     
