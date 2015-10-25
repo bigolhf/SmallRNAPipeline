@@ -99,6 +99,7 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
         miRNAAnalysisOutputFolder = miRNAAnalysisOutputFolder.replace(FileSeparator + FileSeparator, FileSeparator).trim();
         Boolean fA = new File(miRNAAnalysisOutputFolder).mkdir();       
         if (fA) logger.info("created output folder <" + miRNAAnalysisOutputFolder + "> for results" );
+        String samLine = null;
         
         Iterator itSD = this.stepInputData.getSampleData().iterator();
         while (itSD.hasNext()){
@@ -114,7 +115,7 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
                 int preMatchCount5 = 0;
                 int preMatchCount3 = 0;
                 int totalCounts = 0;
-                String samLine = null;
+                samLine = null;
                 BufferedReader brSAM = new BufferedReader(new FileReader(new File(samInputFile)));
                     isomiRList = new ArrayList<>();
                     miRNAHitList = new ArrayList<>();
@@ -243,6 +244,10 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
             }
             catch(IOException ex){
                 logger.error("error executing parse SAM for miRNAs command\n" + ex.toString());
+            }
+            catch(ArrayIndexOutOfBoundsException exBnd){
+                logger.error("error parsing line " + samLine);
+                logger.error(exBnd);
             }
         }
         

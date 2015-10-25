@@ -148,7 +148,7 @@ public class DEwithEdgeRStep extends NGSStep{
         
         logger.info("Writing merged count files");
         mergedCountsFile        = pathToDEAnalysisOutputFolder + FileSeparator + stepInputData.getProjectID() + ".merged.mirna_counts.tsv";    
-        deResultsFile           = pathToDEAnalysisOutputFolder + FileSeparator + stepInputData.getProjectID() + ".merged.mirna_counts.tsv";    
+        deResultsFile           = pathToDEAnalysisOutputFolder + FileSeparator + stepInputData.getProjectID() + ".de.mirna_counts.tsv";    
         try{
             BufferedWriter bwMc = new BufferedWriter(new FileWriter(new File(mergedCountsFile)));
             bwMc.write(headerLine + "\n");
@@ -268,8 +268,8 @@ public class DEwithEdgeRStep extends NGSStep{
         cmdSet.add("");
         cmdSet.add("ExactTestTagDisp <- exactTest(TagwiseDispersion)");
         cmdSet.add("");
-        cmdSet.add("resultFile<-" + deResultsFile);
-        cmdSet.add("write.table(ExactTestTagDisp$table[with(ExactTestTagDisp$table, order(PValue)), ], file=" + deResultsFile + ", sep=\",\", row.names=TRUE\")");
+        cmdSet.add("resultFile<-\"" + deResultsFile + "\"");
+        cmdSet.add("write.table(ExactTestTagDisp$table[with(ExactTestTagDisp$table, order(PValue)), ], file=\"" + deResultsFile + "\", sep=\",\", row.names=TRUE)");
         cmdSet.add("");
         cmdSet.add("");
 

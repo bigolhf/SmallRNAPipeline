@@ -47,6 +47,7 @@ public class SmallNGSPipeline {
     private String                      adapterTrimmingSoftware = "";
     private String                      fastq2fastaSoftware = "";
     private String                      collapseFastaSoftware = "";
+    private String                      mappingCommand = "";
     
     private String                      genomeRootFolder = "";
     private String                      mirbaseRootFolder = "";
@@ -158,6 +159,7 @@ public class SmallNGSPipeline {
                 case "BowtieMapReads":
                     
                     HashMap bowtieMapReadsParams = new HashMap();
+                    bowtieMapReadsParams.put("bowtieMappingCommand", this.getMappingCommand());
                     bowtieMapReadsParams.put("bowtieMapGenomeRootFolder", this.getGenomeRootFolder());
                     bowtieMapReadsParams.put("bowtieReferenceGenome", this.getBowtieMappingReferenceGenome());
                     bowtieMapReadsParams.put("bowtieMapAlignMode", this.getBowtieMappingAlignMode());
@@ -305,6 +307,7 @@ public class SmallNGSPipeline {
         this.setAdapterTrimmingSoftware((String) softwareOptions.get("adapter_trimming"));
         this.setFastq2fastaSoftware((String) softwareOptions.get("fastq_to_fasta"));
         this.setCollapseFastaSoftware((String) softwareOptions.get("fastx_collapser"));
+        this.setMappingCommand((String) softwareOptions.get("mapping_command"));
         
         HashMap trimAdapterOptions = (HashMap) pipelineConfiguration.get("adapter_trimming");
         this.setTrimAdapterFile((String) trimAdapterOptions.get("adapter_file"));
@@ -783,6 +786,20 @@ public class SmallNGSPipeline {
      */
     public void setDiffExpressionPVal(double diffExpressionPVal) {
         this.diffExpressionPVal = diffExpressionPVal;
+    }
+
+    /**
+     * @return the mappingCommand
+     */
+    public String getMappingCommand() {
+        return mappingCommand;
+    }
+
+    /**
+     * @param mappingCommand the mappingCommand to set
+     */
+    public void setMappingCommand(String mappingCommand) {
+        this.mappingCommand = mappingCommand;
     }
     
     

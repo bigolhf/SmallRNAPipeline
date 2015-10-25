@@ -76,7 +76,8 @@ public class CollapseReadsStep extends NGSStep{
             collapseReadsParams.put("collapseFasta", this.getCollapseFastaSoftware());
 
         */
-        
+        String cmdFQ2FA = "";
+        String cmdClp = "";
         Iterator itSD = this.stepInputData.getSampleData().iterator();
         while (itSD.hasNext()){
             try{
@@ -111,10 +112,9 @@ public class CollapseReadsStep extends NGSStep{
                 cmdQ2A.add("-Q33");
 
 
-                String cmdFQ2FA = StringUtils.join(cmdQ2A, " ");
+                cmdFQ2FA = StringUtils.join(cmdQ2A, " ");
                 cmdFQ2FA = cmdFQ2FA.replace(FileSeparator + FileSeparator, FileSeparator);
                 logger.info("Fastq to Fasta command:\t" + cmdFQ2FA);
-
                 Runtime rt = Runtime.getRuntime();
                 Process proc = rt.exec(cmdFQ2FA);
                 BufferedReader brStdin  = new BufferedReader(new InputStreamReader(proc.getInputStream()));
@@ -162,7 +162,7 @@ public class CollapseReadsStep extends NGSStep{
                 cmd2.add(clpOutputFile);
                 
 
-                String cmdClp = StringUtils.join(cmd2, " ");
+                cmdClp = StringUtils.join(cmd2, " ");
                 cmdClp = cmdClp.replace(FileSeparator + FileSeparator, FileSeparator);
                 logger.info("Fastq to Fasta command:\t" + cmdClp);
 
@@ -190,8 +190,11 @@ public class CollapseReadsStep extends NGSStep{
                 brStdErrClp.close();
             
             }
-            catch(IOException|InterruptedException ex){
-                logger.error("error executing AdapterTrimming command\n" + ex.toString());
+            catch(IOException|InterruptedException exIE){
+                logger.error("error executing CollapseReads command\n");
+                logger.error("CMD1 is " + cmdFQ2FA);
+                logger.error("CMD2 is " + cmdClp);
+                logger.error(exIE.toString());
             }
         }
         

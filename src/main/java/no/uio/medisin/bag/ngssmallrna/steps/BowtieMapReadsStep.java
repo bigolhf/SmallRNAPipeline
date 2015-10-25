@@ -78,13 +78,14 @@ public class BowtieMapReadsStep extends NGSStep{
 
             bowtie <ref_genome> <fasta_file>
         */
-        
+        String mappingCmd = (String) stepInputData.getStepParams().get("bowtieMappingCommand");
+        logger.info("Mapping command is " + mappingCmd);
         Iterator itSD = this.stepInputData.getSampleData().iterator();
         while (itSD.hasNext()){
+            ArrayList<String> cmd = new ArrayList<>();
             try{
                 SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
                 String pathToData = stepInputData.getProjectRoot() + FileSeparator + stepInputData.getProjectID();
-                ArrayList<String> cmd = new ArrayList<>();
                 
                 /*
                 bowtie -a -v 2 e_coli --suppress 1,5,6,7 -c ATGCATCATGCGCCA
@@ -106,7 +107,7 @@ public class BowtieMapReadsStep extends NGSStep{
                 /*
                     Map Abundant Reads
                 */
-                cmd.add("bowtie");
+                cmd.add(mappingCmd);
                 String pathToBowtieIndex = stepInputData.getStepParams().get("bowtieMapGenomeRootFolder") 
                     + FileSeparator + stepInputData.getStepParams().get("bowtieReferenceGenome") + "/Sequence/AbundantSequences/abundant";
                 cmd.add(pathToBowtieIndex);
@@ -177,7 +178,7 @@ public class BowtieMapReadsStep extends NGSStep{
                     Map Genome Reads
                 */
                 cmd = new ArrayList<>();
-                cmd.add("bowtie");
+                cmd.add(mappingCmd);
                 String pathToBowtieGenomeIndex = stepInputData.getStepParams().get("bowtieMapGenomeRootFolder") 
                     + FileSeparator + stepInputData.getStepParams().get("bowtieReferenceGenome") + "/Sequence/BowtieIndex/genome";
                 cmd.add(pathToBowtieGenomeIndex);
@@ -243,7 +244,9 @@ public class BowtieMapReadsStep extends NGSStep{
                 
             }
             catch(IOException|InterruptedException ex){
-                logger.error("error executing AdapterTrimming command\n" + ex.toString());
+                logger.error("error executing Bowtie Mapping command\n");
+                logger.error(cmd);
+                logger.error(ex.toString());
             }
         }
         

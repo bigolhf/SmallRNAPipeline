@@ -10,7 +10,7 @@
                 <goal>org.codehaus.mojo:exec-maven-plugin:1.2.1:exec</goal>
             </goals>
             <properties>
-                <exec.args>-Dlog4j.configurationFile=file:/data/ngsdata/liver/log4j2.xml -classpath %classpath no.uio.medisin.bag.ngssmallrna.pipeline.SmallNGSCmd -r /data/ngsdata/liver/small_ngs.config.yaml -p /data/ngsdata/liver/liver.pipe.json -d /data/ngsdata/liver/liver.data.960.tsv</exec.args>
+                <exec.args>-Dlog4j.configurationFile=file:/data/ngsdata/thyroid/log4j2.xml -classpath %classpath no.uio.medisin.bag.ngssmallrna.pipeline.SmallNGSCmd -r /data/ngsdata/thyroid/small_ngs.config.yaml -p /data/ngsdata/thyroid/thyroid.pipe.json -d /data/ngsdata/thyroid/thyroid.data.tsv</exec.args>
                 <exec.executable>java</exec.executable>
             </properties>
         </action>
@@ -24,7 +24,7 @@
                 <goal>org.codehaus.mojo:exec-maven-plugin:1.2.1:exec</goal>
             </goals>
             <properties>
-                <exec.args>-Xdebug -Xrunjdwp:transport=dt_socket,server=n,address=${jpda.address} -Dlog4j.configurationFile=file:/data/ngsdata/liver/log4j2.xml -classpath %classpath no.uio.medisin.bag.ngssmallrna.pipeline.SmallNGSCmd -r /data/ngsdata/liver/small_ngs.config.yaml -p /data/ngsdata/liver/liver.pipe.json -d /data/ngsdata/liver/liver.data.960.tsv</exec.args>
+                <exec.args>-Xdebug -Xrunjdwp:transport=dt_socket,server=n,address=${jpda.address} -Dlog4j.configurationFile=file:/data/ngsdata/thyroid/log4j2.xml -classpath %classpath no.uio.medisin.bag.ngssmallrna.pipeline.SmallNGSCmd -r /data/ngsdata/thyroid/small_ngs.config.yaml -p /data/ngsdata/thyroid/thyroid.pipe.json -d /data/ngsdata/thyroid/thyroid.data.tsv</exec.args>
                 <exec.executable>java</exec.executable>
                 <jpda.listen>true</jpda.listen>
             </properties>
@@ -39,7 +39,7 @@
                 <goal>org.codehaus.mojo:exec-maven-plugin:1.2.1:exec</goal>
             </goals>
             <properties>
-                <exec.args>-Dlog4j.configurationFile=file:/data/ngsdata/liver/log4j2.xml -classpath %classpath no.uio.medisin.bag.ngssmallrna.pipeline.SmallNGSCmd -r /data/ngsdata/liver/small_ngs.config.yaml -p /data/ngsdata/liver/liver.pipe.json -d /data/ngsdata/liver/liver.data.960.tsv</exec.args>
+                <exec.args>-Dlog4j.configurationFile=file:/data/ngsdata/thyroid/log4j2.xml -classpath %classpath no.uio.medisin.bag.ngssmallrna.pipeline.SmallNGSCmd -r /data/ngsdata/thyroid/small_ngs.config.yaml -p /data/ngsdata/thyroid/thyroid.pipe.json -d /data/ngsdata/thyroid/thyroid.data.tsv</exec.args>
                 <exec.executable>java</exec.executable>
             </properties>
         </action>
