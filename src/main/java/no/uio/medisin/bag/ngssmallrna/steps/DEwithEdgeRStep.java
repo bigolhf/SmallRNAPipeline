@@ -57,11 +57,26 @@ public class DEwithEdgeRStep extends NGSStep{
     private static final String         isomirPrettyExtension       = ".trim.clp.gen.iso_pretty.tsv";
     private static final String         miRCountsExtension          = ".trim.clp.gen.mircounts.tsv";
     private static final String         deResultsExtension          = ".DE.edgeR.sort.csv";
+    private static final String         deSampleCountsExtension     = ".DE.edgeR.cbs.csv";
+    private static final String         deSummaryExtension          = ".DE.edgeR.summary.txt";
+    private static final String         dePlotMDSExtension          = ".DE.edgeR.MDS.";
+    private static final String         dePlotBCVExtension          = ".DE.edgeR.BCV.";
+    private static final String         dePlotSmearExtension        = ".DE.edgeR.Smear.";
+    
     
     private String                      mergedCountsFile;
     private String                      groupsFile;
     private String                      deResultsFile;
+    private String                      deCountsBySampleFile;
+    private String                      deSummaryFile;
+    private String                      dePlotBCVfile;
+    private String                      dePlotMDSfile;
+    private String                      dePlotSmearfile;
     
+    private static final int            width                       = 8;
+    private static final int            height                      = 8;
+    private static final String         units                       = "in";
+    private static final int            resolution                  = 300;
     
     
     private StepInputData               stepInputData;
@@ -148,7 +163,6 @@ public class DEwithEdgeRStep extends NGSStep{
         
         logger.info("Writing merged count files");
         mergedCountsFile        = pathToDEAnalysisOutputFolder + FileSeparator + stepInputData.getProjectID() + ".merged.mirna_counts.tsv";    
-        deResultsFile           = pathToDEAnalysisOutputFolder + FileSeparator + stepInputData.getProjectID() + ".de.mirna_counts.tsv";    
         try{
             BufferedWriter bwMc = new BufferedWriter(new FileWriter(new File(mergedCountsFile)));
             bwMc.write(headerLine + "\n");
@@ -241,8 +255,14 @@ public class DEwithEdgeRStep extends NGSStep{
 
 
         BigInteger big = new BigInteger(130, new Random());
-        rScriptFilename = pathToDEAnalysisOutputFolder + FileSeparator + new BigInteger(130, new SecureRandom()).toString(32) + ".R";
+        String randomName = new BigInteger(130, new SecureRandom()).toString(32);
+        rScriptFilename = pathToDEAnalysisOutputFolder + FileSeparator + randomName + ".R";
         rScriptFilename = rScriptFilename.replace(FileSeparator + FileSeparator, FileSeparator);
+        
+        deResultsFile           = pathToDEAnalysisOutputFolder + FileSeparator + stepInputData.getProjectID() + deResultsExtension;    
+        deCountsBySampleFile    = pathToDEAnalysisOutputFolder + FileSeparator + stepInputData.getProjectID() + deSampleCountsExtension;
+        deSummaryFile           = pathToDEAnalysisOutputFolder + FileSeparator + stepInputData.getProjectID() + deSummaryExtension;
+        
         int minCounts = 10;
         ArrayList<String> cmdSet = new ArrayList<>();
 
@@ -272,13 +292,34 @@ public class DEwithEdgeRStep extends NGSStep{
         cmdSet.add("");
         cmdSet.add("");
         cmdSet.add("resultFile<-\"" + deResultsFile + "\"");
-//        cmdSet.add("write.table(ExactTestTagDisp$table[with(ExactTestTagDisp$table, order(PValue)), ], file=\"" + deResultsFile + "\", sep=\",\", row.names=TRUE)");
-        cmdSet.add("write.table(tTags[tTags$table$PValue<=0.05], file=" + deResultsFile + ", " + " sep=\",\", row.names=TRUE)");
+        cmdSet.add("write.table(tTags[tTags$table$PValue<=" + this.stepInputData.getStepParams().get("pvalue") + ", ], file=\"" + deResultsFile + "\", " + " sep=\",\", row.names=TRUE)");
         
-        // 
+        cmdSet.add("deTags<-rownames(tTags[tTags$table$PValue<=" + this.stepInputData.getStepParams().get("pvalue") + ", ])");
         cmdSet.add("");
+        cmdSet.add("write.table(cpm(TagwiseDispersion)[deTags,], file=\"" + deCountsBySampleFile + "\", " + " sep=\",\", row.names=TRUE)");
+        cmdSet.add("");
+        cmdSet.add("write.table(summary(decideTestsDGE(ExactTestTagDisp, p=" + this.stepInputData.getStepParams().get("pvalue") + ", adjust=\"BH\")), file=\"" + deSummaryFile + "\", " + " sep=\",\")");
+        cmdSet.add("");
+        
+        
+        dePlotBCVfile           = pathToDEAnalysisOutputFolder + FileSeparator + stepInputData.getProjectID() + dePlotBCVExtension + "png";
+        cmdSet.add("png(\"" + dePlotBCVfile + "\", width=" + width + ", height=" + height + ", units=\"" + units + "\", res=" + resolution + ")");
+        cmdSet.add("plotBCV(TagwiseDispersion)");
+        cmdSet.add("dev.off()");
+        cmdSet.add("");
+        
+        dePlotMDSfile           = pathToDEAnalysisOutputFolder + FileSeparator + stepInputData.getProjectID() + dePlotMDSExtension + "png";
+        cmdSet.add("png(\"" + dePlotMDSfile + "\", width=" + width + ", height=" + height + ", units=\"" + units + "\", res=" + resolution + ")");
+        cmdSet.add("plotMDS(TagwiseDispersion)");
+        cmdSet.add("dev.off()");
         cmdSet.add("");
 
+        dePlotSmearfile           = pathToDEAnalysisOutputFolder + FileSeparator + stepInputData.getProjectID() + dePlotSmearExtension + "png";
+        cmdSet.add("png(\"" + dePlotSmearfile + "\", width=" + width + ", height=" + height + ", units=\"" + units + "\", res=" + resolution + ")");
+        cmdSet.add("plotSmear(TagwiseDispersion)");
+        cmdSet.add("dev.off()");        
+        cmdSet.add("");
+        
         try{
             BufferedWriter bwRC = new BufferedWriter(new FileWriter(new File(rScriptFilename)));
                 for(String cmd: cmdSet){

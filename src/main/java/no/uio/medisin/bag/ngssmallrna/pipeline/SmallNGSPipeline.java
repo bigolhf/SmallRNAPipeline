@@ -223,6 +223,7 @@ public class SmallNGSPipeline {
                     Need to add:
                         Number of Tags to report
                         minimum counts for cut off
+                        plot size: width and height, resolution
                         
                     */
                 case "differentialExpression":
