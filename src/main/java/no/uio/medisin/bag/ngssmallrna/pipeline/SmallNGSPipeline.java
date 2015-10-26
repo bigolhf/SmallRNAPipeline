@@ -218,7 +218,13 @@ public class SmallNGSPipeline {
                     analyzeIsomiRDispersions.execute();
                     
                     break;
-                    
+
+                    /*
+                    Need to add:
+                        Number of Tags to report
+                        minimum counts for cut off
+                        
+                    */
                 case "differentialExpression":
                     HashMap diffExpressionAnalysisParams = new HashMap();
                     diffExpressionAnalysisParams.put("pvalue", this.getDiffExpressionPVal());

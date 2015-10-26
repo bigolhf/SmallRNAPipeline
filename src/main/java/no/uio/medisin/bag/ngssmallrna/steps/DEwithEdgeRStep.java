@@ -268,8 +268,14 @@ public class DEwithEdgeRStep extends NGSStep{
         cmdSet.add("");
         cmdSet.add("ExactTestTagDisp <- exactTest(TagwiseDispersion)");
         cmdSet.add("");
+        cmdSet.add("tTags <- topTags(ExactTestTagDisp, n=Inf)");
+        cmdSet.add("");
+        cmdSet.add("");
         cmdSet.add("resultFile<-\"" + deResultsFile + "\"");
-        cmdSet.add("write.table(ExactTestTagDisp$table[with(ExactTestTagDisp$table, order(PValue)), ], file=\"" + deResultsFile + "\", sep=\",\", row.names=TRUE)");
+//        cmdSet.add("write.table(ExactTestTagDisp$table[with(ExactTestTagDisp$table, order(PValue)), ], file=\"" + deResultsFile + "\", sep=\",\", row.names=TRUE)");
+        cmdSet.add("write.table(tTags[tTags$table$PValue<=0.05], file=" + deResultsFile + ", " + " sep=\",\", row.names=TRUE)");
+        
+        // 
         cmdSet.add("");
         cmdSet.add("");
 
