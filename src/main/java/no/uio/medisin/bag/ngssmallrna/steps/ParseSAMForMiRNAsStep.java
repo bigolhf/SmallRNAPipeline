@@ -43,7 +43,6 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
     
     private static final String         inFolder                    = "bowtie_genome_mapped";
     private static final String         miRNAAnalysisOutFolder      = "mirna_isomir_analysis";
-    private static final String         genomeReadsOutFolder        = "bowtie_genome_mapped";
     
     
     private static final String         infileExtension             = ".trim.clp.gen.sam";

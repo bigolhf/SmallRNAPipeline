@@ -44,7 +44,7 @@ import org.apache.logging.log4j.Logger;
 public class DEwithEdgeRStep extends NGSStep{
     
     static Logger                       logger                      = LogManager.getLogger();
-    static  String                      FileSeparator               = System.getProperty("file.separator");
+    static String                       FileSeparator               = System.getProperty("file.separator");
     
     private static final String         inFolder                    = "mirna_isomir_analysis";
     private static final String         deAnalysisOutFolder         = "de_analysis";
@@ -54,7 +54,6 @@ public class DEwithEdgeRStep extends NGSStep{
     
     private static final String         infileExtension             = ".trim.clp.gen.sam";
     private static final String         groupsFileExtension         = ".groups.tsv";
-    private static final String         isomirPrettyExtension       = ".trim.clp.gen.iso_pretty.tsv";
     private static final String         miRCountsExtension          = ".trim.clp.gen.mircounts.tsv";
     private static final String         deResultsExtension          = ".DE.edgeR.sort.csv";
     private static final String         deSampleCountsExtension     = ".DE.edgeR.cbs.csv";
@@ -179,6 +178,7 @@ public class DEwithEdgeRStep extends NGSStep{
         }
         generateGroupsFile();
         buildRScript();
+        executeRScript();
         
     }
     
@@ -341,7 +341,7 @@ public class DEwithEdgeRStep extends NGSStep{
         String pathToData = stepInputData.getProjectRoot() + FileSeparator + stepInputData.getProjectID();
         ArrayList<String> cmd = new ArrayList<>();
 
-        cmd.add("Rscript");
+        cmd.add("/usr/local/bin/Rscript");
         cmd.add(rScriptFilename);
 
 
@@ -375,7 +375,8 @@ public class DEwithEdgeRStep extends NGSStep{
             brAStdErr.close();        
         }
         catch(IOException exIO){
-            logger.info("error executing RScript command\n" + exIO);
+            logger.info("error executing RScript command\n" + cmdRunRScript);
+            logger.info(exIO);
         }
         catch(InterruptedException exIE){
             logger.info("error executing RScript command\n" + exIE);            
