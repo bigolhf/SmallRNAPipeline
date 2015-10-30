@@ -9,17 +9,34 @@ package no.uio.medisin.bag.ngssmallrna.pipeline;
  *
  * @author simonray
  */
-public class MappedRead {
+public class MappedRead implements Comparable<MappedRead>{
     private int startPos;
     private int endPos;
     private String chr;
+    private String strand;
 
     
     
-    public MappedRead(int s, int e, String c){
+    public MappedRead(int s, int e, String c, String t){
         startPos = s;
         endPos = s;
         chr = c;
+        strand = t;
+    }
+    
+    
+    @Override
+    public int compareTo(MappedRead mappedRead){
+        if (mappedRead.chr.equals(chr) )
+        {
+            return mappedRead.startPos - startPos;
+        }
+        int i=0;
+        while(mappedRead.chr.charAt(i)!=(chr.charAt(i))){
+            i++;
+        }
+        return mappedRead.chr.charAt(i) - chr.charAt(i);
+        
     }
     
     /**
@@ -41,6 +58,13 @@ public class MappedRead {
      */
     public String getChr() {
         return chr;
+    }
+
+    /**
+     * @return the strand
+     */
+    public String getStrand() {
+        return strand;
     }
     
 }

@@ -68,6 +68,7 @@ public class SmallNGSPipeline {
     private String                      samParseForMiRNAsMiRBaseVersion = "21";
     
     private int                         samParseStartPosBleed = 2;
+    private int                         samParseFeatureSeparation = 10;
     private ArrayList<String>           samParseFeatureTypes = new ArrayList<>();
     
     private double                      analyzeIsomiRDispPVal = 0.05;
@@ -193,9 +194,12 @@ public class SmallNGSPipeline {
 
                     HashMap analyzeSAMStartPositionsParams = new HashMap();
                     analyzeSAMStartPositionsParams.put("bleed", this.getSamParseStartPosBleed());
+                    analyzeSAMStartPositionsParams.put("separation", this.getSamParseStartPosBleed());
                     analyzeSAMStartPositionsParams.put("feature_types", this.getSamParseFeatureTypes());
                     analyzeSAMStartPositionsParams.put("host", this.getBowtieMappingReferenceGenome());
                     analyzeSAMStartPositionsParams.put("genomeReferenceGFFFile", this.getGenomeAnnotationGFF());
+                    analyzeSAMStartPositionsParams.put("bowtieMapGenomeRootFolder", this.getGenomeRootFolder());
+                    analyzeSAMStartPositionsParams.put("bowtieReferenceGenome", this.getBowtieMappingReferenceGenome());
 
                     StepInputData sidStart = new StepInputData(analyzeSAMStartPositionsParams, this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), this.getSampleData());
                     AnalyzeSAMStartPositions ngsAnalyzeSAMStartPos = new AnalyzeSAMStartPositions(sidStart);
@@ -336,6 +340,7 @@ public class SmallNGSPipeline {
         
         HashMap processSAMStartPosOptions = (HashMap) pipelineConfiguration.get("sam_startpos_processing");
         this.setSamParseStartPosBleed((int) processSAMStartPosOptions.get("bleed"));
+        this.setSamParseFeatureSeparation((int) processSAMStartPosOptions.get("separation"));
         this.setSamParseFeatureTypes((ArrayList<String>)processSAMStartPosOptions.get("feature_types"));
         
         HashMap analyzeIsomiRDispersionOptions = (HashMap) pipelineConfiguration.get("analyze_isomir_dispersion");
@@ -807,6 +812,20 @@ public class SmallNGSPipeline {
      */
     public void setMappingCommand(String mappingCommand) {
         this.mappingCommand = mappingCommand;
+    }
+
+    /**
+     * @return the samParseFeatureSeparation
+     */
+    public int getSamParseFeatureSeparation() {
+        return samParseFeatureSeparation;
+    }
+
+    /**
+     * @param samParseFeatureSeparation the samParseFeatureSeparation to set
+     */
+    public void setSamParseFeatureSeparation(int samParseFeatureSeparation) {
+        this.samParseFeatureSeparation = samParseFeatureSeparation;
     }
     
     

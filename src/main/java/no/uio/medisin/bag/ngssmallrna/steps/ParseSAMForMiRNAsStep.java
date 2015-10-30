@@ -39,7 +39,7 @@ import org.apache.logging.log4j.Logger;
 public class ParseSAMForMiRNAsStep extends NGSStep{
     
     static Logger                       logger                      = LogManager.getLogger();
-    static  String                      FileSeparator               = System.getProperty("file.separator");
+    static String                       FileSeparator               = System.getProperty("file.separator");
     
     private static final String         inFolder                    = "bowtie_genome_mapped";
     private static final String         miRNAAnalysisOutFolder      = "mirna_isomir_analysis";

@@ -12,7 +12,9 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
+import no.uio.medisin.bag.ngssmallrna.pipeline.GFFSet;
 import no.uio.medisin.bag.ngssmallrna.pipeline.MappedRead;
 import no.uio.medisin.bag.ngssmallrna.pipeline.SAMEntry;
 import no.uio.medisin.bag.ngssmallrna.pipeline.SampleDataEntry;
@@ -57,9 +59,12 @@ public class StepAnalyzeReadPositions extends NGSStep{
     private static final String         positionsExtension          = ".trim.clp.gen.pos.tsv";
     
     
-    private StepInputData stepInputData;
+    private StepInputData               stepInputData;
     
-    private ArrayList<MappedRead> mappedReads ;
+    private GFFSet                      gffSet                      = new GFFSet();    
+    private ArrayList<MappedRead>       mappedReads                 = new ArrayList<>();
+    private ArrayList<MappedRead>       filteredReads               = new ArrayList<>(); // generated from mappedReads
+   /*
     int[][] startPositions = new int[169100][9];
     int[][] readLengths = new int[169100][9];
     
@@ -67,49 +72,25 @@ public class StepAnalyzeReadPositions extends NGSStep{
     int[][] mrnaStopPositions  = new int[4665][9];
     
     int[] chrFeatureCount = new int[10];
-    
+    */
     public StepAnalyzeReadPositions()
     {
        
     }
     
     
-    /**
-     * read GFF file containing feature information
-     * 
-     * @param filename
-     * @throws IOException 
-     */
-    public void readGFF(String filename) throws IOException
-    {
-        String line = null;
-        int lineCount = 0;
-        BufferedReader br = new BufferedReader(new FileReader(new File(filename)));
-	while ((line = br.readLine()) != null) {
-            logger.debug(line);
-
-            String chrName = line.split("\t")[0];
-            chrName = chrName.replace("chr", "");
-            int chr = 0;
-            
-            if (chrName.equals("M") == false) {
-                chr = Integer.parseInt(chrName);
-            }
-            
-            String startPos = line.split("\t")[3];
-            String stopPos = line.split("\t")[4];
-            
-            mrnaStartPositions[chrFeatureCount[chr]][chr] = Integer.parseInt(startPos);
-            mrnaStopPositions[chrFeatureCount[chr]][chr] = Integer.parseInt(stopPos);
-            chrFeatureCount[chr] ++;
-            
-            
-        }        
-    }
     
     
     /**
      * parse out SAM file to retrieve start and stop information for each read
+     * 
+        analyzeSAMStartPositionsParams.put("bleed", this.getSamParseStartPosBleed());
+        analyzeSAMStartPositionsParams.put("feature_types", this.getSamParseFeatureTypes());
+        analyzeSAMStartPositionsParams.put("host", this.getBowtieMappingReferenceGenome());
+        analyzeSAMStartPositionsParams.put("genomeReferenceGFFFile", this.getGenomeAnnotationGFF());
+        analyzeSAMStartPositionsParams.put("bowtieMapGenomeRootFolder", this.getGenomeRootFolder());
+        analyzeSAMStartPositionsParams.put("bowtieReferenceGenome", this.getBowtieMappingReferenceGenome());
+     *  
      * 
      * @param filename
      * @throws IOException 
@@ -124,6 +105,32 @@ public class StepAnalyzeReadPositions extends NGSStep{
             logger.info("exception parsing InputData" + exIO);
         }
 
+        /**
+            read genes.gtf or genes.gff3 file
+        */
+        String annotationFile = "";
+        String pathToAnnotation = stepInputData.getStepParams().get("bowtieMapGenomeRootFolder") 
+            + FileSeparator + stepInputData.getStepParams().get("bowtieReferenceGenome") + "/Annotation/Genes";
+        if(new File(pathToAnnotation + "genes.gtf").exists())
+            annotationFile = pathToAnnotation + "genes.gtf";
+        else        
+            if(new File(pathToAnnotation + "genes.gtf").exists())
+                annotationFile = pathToAnnotation + "genes.gtf";
+        
+        try{
+            if(annotationFile == null)
+                throw new IOException("no annotation file was found for reference genome " 
+                        + stepInputData.getStepParams().get("bowtieReferenceGenome"));
+            gffSet.readGFF(annotationFile);
+        }
+        catch(IOException exIO){
+            logger.error("Exception trying to read Annotation file ");
+            logger.error(exIO);
+        }
+        
+        /**
+         *  read and parse the SAM files
+         */
         String pathToData = stepInputData.getProjectRoot() + FileSeparator + stepInputData.getProjectID();
         Iterator itSD = this.stepInputData.getSampleData().iterator();
         String samLine = null;
@@ -137,96 +144,66 @@ public class StepAnalyzeReadPositions extends NGSStep{
             logger.info("results will be written to " + positionFile);
             
             samLine = null;
-            int matchCount5 = 0;
-            int matchCount3 = 0;
-            int preMatchCount5 = 0;
-            int preMatchCount3 = 0;
-            int totalCounts = 0;
         
             int lineCount = 0;
             try{
                 BufferedReader brSAM = new BufferedReader(new FileReader(new File(samInputFile)));
-                while ((samLine = brSAM.readLine()) != null) {
-                    
-                    logger.debug(samLine);
-                    SAMEntry e;
-                    SAMEntry samEntry = new SAMEntry(samLine);
-                    mappedReads.add(new MappedRead(samEntry.getStartPos(), samEntry.getEndPos(), samEntry.getqName()));
+                    while ((samLine = brSAM.readLine()) != null) {
 
-                    if (samLine.startsWith("@")) continue;
+                        logger.debug(samLine);
+                        SAMEntry e;
+                        SAMEntry samEntry = new SAMEntry(samLine);
+                        mappedReads.add(new MappedRead(samEntry.getStartPos(), samEntry.getEndPos(), 
+                                samEntry.getqName(), samEntry.getStrand()));
 
-                    String qname = samLine.split("\t")[0];
-
-                    int flag = Integer.parseInt(samLine.split("\t")[1]);
-                    String rname = samLine.split("\t")[2];
-                    if (rname.equals("*")) continue;
-                    rname = rname.replace("chr", "");
-                    int chr = 0;
-
-                    if (rname.equals("M") == false) {
-                        chr = Integer.parseInt(rname);
                     }
-
-
-                    int pos = Integer.parseInt(samLine.split("\t")[3]);
-
-                    int mapq = Integer.parseInt(samLine.split("\t")[4]);
-                    String cigar = samLine.split("\t")[5];
-                    String rnext = samLine.split("\t")[6];
-                    int pnext = Integer.parseInt(samLine.split("\t")[7]);
-                    int tlen = Integer.parseInt(samLine.split("\t")[8]);
-                    String sequence = samLine.split("\t")[9];
-                    String qual = samLine.split("\t")[10];
-
-                    if ((flag & 0x4) == 0x4) continue;
-
-                    startPositions[lineCount][chr] = pos;
-                    readLengths[lineCount][chr] = Integer.parseInt(cigar.replace("M",""));
-                    logger.debug(qname + ":\t" + "(" + flag + ")\t" + pos + "\t" + pos + tlen + "\t" + sequence.length());
-
-                    lineCount ++;
-                }
-
-            brSAM.close();
+                brSAM.close();
+                logger.debug("read " + mappedReads.size() + " mapped entries");
 
             }
             catch(IOException smIO){
-
+                logger.error("error parsing SAM file " + samInputFile);
+                logger.error(smIO);
             }
         
+            
+            /**
+             * investigate the mapped reads
+             * condense overlapping reads into single feature, i.e., those which have start/stop positions
+             * that vary by <= bleed
+             * 
+             * if a read is going to be used to identify a feature, then it is probably sufficient for it to arise
+             * in only one sample, because it won´t be identified in a differential expression analysis anyway
+             * 
+             */
             try{
-                for(int currentChr=0; currentChr<9; currentChr++){
-                    String chrInMrnaFileName = samInputFile.replace(".sam", ".chr" + currentChr + ".inreads.tab");
-                    String chrOutMrnaFileName = samInputFile.replace(".sam", ".chr" + currentChr + ".outreads.tab");
-                    logger.info(chrInMrnaFileName);
-                    BufferedWriter bwInReads = new BufferedWriter(new FileWriter(new File(chrInMrnaFileName)));
-                    BufferedWriter bwOutReads = new BufferedWriter(new FileWriter(new File(chrOutMrnaFileName)));
-                        lineCount = 0;
-                        for(int l=0; l<169100; l++){
-        //                    logger.debug(startPositions[lineCount][i]);
-                            if (startPositions[lineCount][currentChr] != 0) {
-                                // does this read hit an mRNA feature?
-                                for(int currentMrna=0;currentMrna<chrFeatureCount[currentChr];currentMrna++){
-                                    if(startPositions[lineCount][currentChr] > mrnaStartPositions[currentMrna][currentChr] 
-                                      && startPositions[lineCount][currentChr] < mrnaStopPositions[currentMrna][currentChr]){
-                                        int readStartPosInMrna = startPositions[lineCount][currentChr] - mrnaStartPositions[currentMrna][currentChr];
-                                        bwInReads.write(readStartPosInMrna + "\n");
-                                    }
-                                    else{
-                                        String lineOut = startPositions[lineCount][currentChr] + "\t" + readLengths[lineCount][currentChr] + "\n";
-                                        bwOutReads.write(lineOut);
-                                    }
-                                }
-        //                        String lineOut = startPositions[lineCount][currentChr] + "\t" + readLengths[lineCount][currentChr] + "\n";
-                            }
-                            lineCount ++;            
-                        }
-                    bwOutReads.close();
-                    bwInReads.close();
+                Collections.sort(mappedReads);
+                
+                int bleed = (int) stepInputData.getStepParams().get("bleed");
+                int separation = (int) stepInputData.getStepParams().get("separation");
+                
+                int matchCount5 = 0;
+                int matchCount3 = 0;
+                int preMatchCount5 = 0;
+                int preMatchCount3 = 0;
+                int totalCounts = 0;
+
+                MappedRead mappedRead = ((MappedRead)mappedReads.get(0));
+                String currentChr       = mappedRead.getChr();
+                int currentStart        = mappedRead.getStartPos();
+                int currentStop         = mappedRead.getEndPos();
+                String currentStrand    = mappedRead.getStrand();
+                
+                Iterator itMR = mappedReads.iterator();
+                while(itMR.hasNext()){
+                    mappedRead = (MappedRead)itMR.next();
+                    if ( mappedRead.getStartPos() - currentStart > separation){
+                        // time to start a new feature
+                    }
                 }
             }
-            catch(IOException smIO){
-
+            catch(Exception ex){
+                logger.error(ex);
             }
            
         
@@ -236,11 +213,11 @@ public class StepAnalyzeReadPositions extends NGSStep{
     public static void main(String args[]){
         StepAnalyzeReadPositions readPos = new StepAnalyzeReadPositions();
         try{
-            readPos.readGFF("/home/sr/research/sweden/msy2.mrna.gff");
+            //readPos.readGFF("/home/sr/research/sweden/msy2.mrna.gff");
             readPos.execute();
 //            readPos.execute("/home/sr/research/sweden/2726_S10.trim.gen.PB1.sam");        
         }
-        catch(IOException exIO){
+        catch(Exception exIO){
             logger.info("error reading SAM file");
         }
            
