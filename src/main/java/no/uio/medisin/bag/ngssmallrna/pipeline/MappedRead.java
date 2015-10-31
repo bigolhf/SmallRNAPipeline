@@ -14,14 +14,16 @@ public class MappedRead implements Comparable<MappedRead>{
     private int endPos;
     private String chr;
     private String strand;
+    private int count;
 
     
     
-    public MappedRead(int s, int e, String c, String t){
+    public MappedRead(int s, int e, String c, String t, int n){
         startPos = s;
         endPos = s;
         chr = c;
         strand = t;
+        count = n;
     }
     
     
@@ -38,6 +40,21 @@ public class MappedRead implements Comparable<MappedRead>{
         return mappedRead.chr.charAt(i) - chr.charAt(i);
         
     }
+    
+    /**
+     * print the mapped read information
+     * 
+     * @return 
+     */
+    @Override
+    public String toString(){
+        return    "chr "    + chr + "\n" 
+                + "start "  + startPos + "\n"
+                + "end "    + endPos + "\n"
+                + "strand " + strand + "\n"
+                + "count "  + getCount() + "\n";
+    }
+    
     
     /**
      * @return the startPos
@@ -65,6 +82,13 @@ public class MappedRead implements Comparable<MappedRead>{
      */
     public String getStrand() {
         return strand;
+    }
+
+    /**
+     * @return the count
+     */
+    public int getCount() {
+        return count;
     }
     
 }

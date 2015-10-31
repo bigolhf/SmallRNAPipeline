@@ -69,6 +69,7 @@ public class SmallNGSPipeline {
     
     private int                         samParseStartPosBleed = 2;
     private int                         samParseFeatureSeparation = 10;
+    private int                         samParseLongestFeature = 200;
     private ArrayList<String>           samParseFeatureTypes = new ArrayList<>();
     
     private double                      analyzeIsomiRDispPVal = 0.05;
@@ -195,6 +196,7 @@ public class SmallNGSPipeline {
                     HashMap analyzeSAMStartPositionsParams = new HashMap();
                     analyzeSAMStartPositionsParams.put("bleed", this.getSamParseStartPosBleed());
                     analyzeSAMStartPositionsParams.put("separation", this.getSamParseStartPosBleed());
+                    analyzeSAMStartPositionsParams.put("longest_feature", this.getSamParseLongestFeature());                    
                     analyzeSAMStartPositionsParams.put("feature_types", this.getSamParseFeatureTypes());
                     analyzeSAMStartPositionsParams.put("host", this.getBowtieMappingReferenceGenome());
                     analyzeSAMStartPositionsParams.put("genomeReferenceGFFFile", this.getGenomeAnnotationGFF());
@@ -341,6 +343,7 @@ public class SmallNGSPipeline {
         HashMap processSAMStartPosOptions = (HashMap) pipelineConfiguration.get("sam_startpos_processing");
         this.setSamParseStartPosBleed((int) processSAMStartPosOptions.get("bleed"));
         this.setSamParseFeatureSeparation((int) processSAMStartPosOptions.get("separation"));
+        this.setSamParseLongestFeature((int) processSAMStartPosOptions.get("longest_feature"));
         this.setSamParseFeatureTypes((ArrayList<String>)processSAMStartPosOptions.get("feature_types"));
         
         HashMap analyzeIsomiRDispersionOptions = (HashMap) pipelineConfiguration.get("analyze_isomir_dispersion");
@@ -826,6 +829,20 @@ public class SmallNGSPipeline {
      */
     public void setSamParseFeatureSeparation(int samParseFeatureSeparation) {
         this.samParseFeatureSeparation = samParseFeatureSeparation;
+    }
+
+    /**
+     * @return the samParseLongestFeature
+     */
+    public int getSamParseLongestFeature() {
+        return samParseLongestFeature;
+    }
+
+    /**
+     * @param samParseLongestFeature the samParseLongestFeature to set
+     */
+    public void setSamParseLongestFeature(int samParseLongestFeature) {
+        this.samParseLongestFeature = samParseLongestFeature;
     }
     
     

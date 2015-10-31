@@ -26,6 +26,11 @@ public class GFFEntry {
     private static final    int GFF_PHASE  = 7;
     private static final    int GFF_ATTR   = 8;
     
+    public static final     String  PLUSSTRAND  = "+";
+    public static final     String  NEGSTRAND   = "-";
+    public static final     String  UNKSTRAND   = "?";
+    
+    
     private                 String  seqID;
     private                 String  src;
     private                 String  type;
@@ -60,7 +65,7 @@ public class GFFEntry {
         if(line.split("\t")[GFF_SCORE].isEmpty() == false)
             score   = Float.parseFloat(line.split("\t")[GFF_SCORE]);
         
-        strand  = line.split("\t")[GFF_STRAND];
+        strand  = GFFEntry.findStrand(line.split("\t")[GFF_STRAND]);
         
         if(line.split("\t")[GFF_PHASE].isEmpty() == false)
             phase   = Integer.parseInt(line.split("\t")[GFF_PHASE]);
@@ -71,6 +76,18 @@ public class GFFEntry {
         
     }
 
+    /**
+     * There are many different ways to write the strand. 
+     * Make a best guess by parsing the input String
+     * 
+     * @param strandString
+     * @return the guessed Strand
+     */
+    static public String findStrand(String strandString){
+        if (strandString.contains(PLUSSTRAND)) return PLUSSTRAND;
+        if (strandString.contains(NEGSTRAND))  return NEGSTRAND;
+        return UNKSTRAND;
+    }
     /**
      * @return the seqID
      */

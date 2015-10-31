@@ -14,10 +14,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
+import no.uio.medisin.bag.ngssmallrna.pipeline.GFFEntry;
 import no.uio.medisin.bag.ngssmallrna.pipeline.GFFSet;
 import no.uio.medisin.bag.ngssmallrna.pipeline.MappedRead;
 import no.uio.medisin.bag.ngssmallrna.pipeline.SAMEntry;
 import no.uio.medisin.bag.ngssmallrna.pipeline.SampleDataEntry;
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -35,28 +37,20 @@ import org.apache.logging.log4j.Logger;
 public class StepAnalyzeReadPositions extends NGSStep{
     
     
-    public static final int QNAME = 1;
-    public static final int FLAG = 2;
-    public static final int RNAME = 3;
-    public static final int POS = 4;
-    public static final int MAPQ = 5;
-    public static final int CIGAR = 6;
-    public static final int RNEXT = 7;
-    public static final int PNEXT = 8;
-    public static final int TLEN = 9;
-    public static final int SEQ = 10;
-    public static final int QUAL = 11;
+   
+    private static final int            COVERAGE_SPAN = 200;
     
     static Logger                       logger                      = LogManager.getLogger();
     static String                       FileSeparator               = System.getProperty("file.separator");
 
     
     private static final String         inFolder                    = "bowtie_genome_mapped";
-    private static final String         posAnalysisFolder           = "position_analysis";
+    private static final String         posAnalysisOutFolder           = "position_analysis";
 
     
     private static final String         infileExtension             = ".trim.clp.gen.sam";
     private static final String         positionsExtension          = ".trim.clp.gen.pos.tsv";
+    private static final String         featuresExtension           = ".trim.clp.gen.features.tsv";
     
     
     private StepInputData               stepInputData;
@@ -64,6 +58,10 @@ public class StepAnalyzeReadPositions extends NGSStep{
     private GFFSet                      gffSet                      = new GFFSet();    
     private ArrayList<MappedRead>       mappedReads                 = new ArrayList<>();
     private ArrayList<MappedRead>       filteredReads               = new ArrayList<>(); // generated from mappedReads
+    
+    int[] coverage5 = new int[COVERAGE_SPAN]; 
+    int[] coverage3 = new int[COVERAGE_SPAN];
+    
    /*
     int[][] startPositions = new int[169100][9];
     int[][] readLengths = new int[169100][9];
@@ -86,6 +84,7 @@ public class StepAnalyzeReadPositions extends NGSStep{
      * 
         analyzeSAMStartPositionsParams.put("bleed", this.getSamParseStartPosBleed());
         analyzeSAMStartPositionsParams.put("feature_types", this.getSamParseFeatureTypes());
+        analyzeSAMStartPositionsParams.put("longest_feature", this.getSamParseLongestFeature());                    
         analyzeSAMStartPositionsParams.put("host", this.getBowtieMappingReferenceGenome());
         analyzeSAMStartPositionsParams.put("genomeReferenceGFFFile", this.getGenomeAnnotationGFF());
         analyzeSAMStartPositionsParams.put("bowtieMapGenomeRootFolder", this.getGenomeRootFolder());
@@ -114,8 +113,8 @@ public class StepAnalyzeReadPositions extends NGSStep{
         if(new File(pathToAnnotation + "genes.gtf").exists())
             annotationFile = pathToAnnotation + "genes.gtf";
         else        
-            if(new File(pathToAnnotation + "genes.gtf").exists())
-                annotationFile = pathToAnnotation + "genes.gtf";
+            if(new File(pathToAnnotation + "genes.gff3").exists())
+                annotationFile = pathToAnnotation + "genes.gtf3";
         
         try{
             if(annotationFile == null)
@@ -132,12 +131,16 @@ public class StepAnalyzeReadPositions extends NGSStep{
          *  read and parse the SAM files
          */
         String pathToData = stepInputData.getProjectRoot() + FileSeparator + stepInputData.getProjectID();
+        String posAnalysisOutputFolder = pathToData + FileSeparator + posAnalysisOutFolder;
+        posAnalysisOutputFolder = posAnalysisOutputFolder.replace(FileSeparator + FileSeparator, FileSeparator).trim();
+        Boolean fA = new File(posAnalysisOutputFolder).mkdir();       
+        if (fA) logger.info("created output folder <" + posAnalysisOutputFolder + "> for results" );
         Iterator itSD = this.stepInputData.getSampleData().iterator();
         String samLine = null;
         while (itSD.hasNext()){
             SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
             
-            String positionFile  = posAnalysisFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", positionsExtension);
+            String positionFile  = posAnalysisOutFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", positionsExtension);
             String samInputFile = pathToData + FileSeparator + inFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", infileExtension);
             
             logger.info("sam input file is " + samInputFile);
@@ -154,7 +157,7 @@ public class StepAnalyzeReadPositions extends NGSStep{
                         SAMEntry e;
                         SAMEntry samEntry = new SAMEntry(samLine);
                         mappedReads.add(new MappedRead(samEntry.getStartPos(), samEntry.getEndPos(), 
-                                samEntry.getqName(), samEntry.getStrand()));
+                                samEntry.getqName(), samEntry.getStrand(), Integer.parseInt(samEntry.getrName().split("-")[1])));
 
                     }
                 brSAM.close();
@@ -168,12 +171,15 @@ public class StepAnalyzeReadPositions extends NGSStep{
         
             
             /**
-             * investigate the mapped reads
-             * condense overlapping reads into single feature, i.e., those which have start/stop positions
-             * that vary by <= bleed
+             * 
+             * condense overlapping reads into single features, i.e., those which have start/stop positions
+             * that vary by <= ´bleed´. Start a new feature when the separation between current read and feature is
+             * great than ´separation´.
              * 
              * if a read is going to be used to identify a feature, then it is probably sufficient for it to arise
              * in only one sample, because it won´t be identified in a differential expression analysis anyway
+             * 
+             * need to accommodate the possibility of two features in the same position but on different strands
              * 
              */
             try{
@@ -190,20 +196,108 @@ public class StepAnalyzeReadPositions extends NGSStep{
 
                 MappedRead mappedRead = ((MappedRead)mappedReads.get(0));
                 String currentChr       = mappedRead.getChr();
-                int currentStart        = mappedRead.getStartPos();
-                int currentStop         = mappedRead.getEndPos();
                 String currentStrand    = mappedRead.getStrand();
                 
+                /*
+                    need to accommodate the possibility of two features in the
+                    same position but on different strands
+                */
+                int currentStart5       = 100000000;
+                int currentStop5        = -1;
+                int currentStart3       = 100000000;
+                int currentStop3        = -1;
+                
+                /*
+                    using an int array might not be the best way to proceed, but try for now
+                */
+                int coverage5Start;
+                int coverage3Start;
+
+                        
+                if(currentStrand.equals(GFFEntry.PLUSSTRAND)){
+                    currentStart5       = mappedRead.getStartPos();
+                    currentStop5        = mappedRead.getEndPos();
+                    coverage5Start      = currentStart5 - COVERAGE_SPAN/2;
+                    coverage3Start      = coverage5Start + COVERAGE_SPAN;
+                }else{
+                    currentStart3       = mappedRead.getStartPos();
+                    currentStop3        = mappedRead.getEndPos();                    
+                    coverage3Start      = currentStart3 + COVERAGE_SPAN;
+                    coverage5Start      = coverage3Start - COVERAGE_SPAN/2;
+                }
+                
+                
+                
+                String featureOutFile = pathToData + FileSeparator + posAnalysisOutFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", featuresExtension);
+                int featureCount = 0;
+                BufferedWriter bwFT = new BufferedWriter(new FileWriter(new File(featureOutFile)));
                 Iterator itMR = mappedReads.iterator();
                 while(itMR.hasNext()){
                     mappedRead = (MappedRead)itMR.next();
-                    if ( mappedRead.getStartPos() - currentStart > separation){
-                        // time to start a new feature
+                    Boolean startNewFeature = false;
+                    if (mappedRead.getChr().equals(currentChr)==false){
+                        startNewFeature = true;
+                    }else{
+                        switch(currentStrand){
+                            case GFFEntry.PLUSSTRAND:
+                                if ( mappedRead.getStartPos() - currentStart5 > separation){
+                                    startNewFeature = true;
+                                }else{
+                                    if(mappedRead.getStartPos() < currentStart5){
+                                        currentStart5 = mappedRead.getStartPos();
+                                    }
+                                    if(mappedRead.getEndPos() > currentStop5){
+                                        currentStop5 = mappedRead.getEndPos();
+                                    }
+                                    for(int i=currentStart5-coverage5Start; i<mappedRead.getEndPos()-coverage5Start; i++){
+                                        coverage5[i] += mappedRead.getCount();
+                                    }
+                                }
+                                
+                            case GFFEntry.NEGSTRAND:
+                                if ( mappedRead.getStartPos() - currentStart5 < separation){
+                                    startNewFeature = true;
+                                }else{
+                                    if(mappedRead.getStartPos() > currentStart5){
+                                        currentStart5 = mappedRead.getStartPos();
+                                    }
+                                    if(mappedRead.getEndPos() < currentStop5){
+                                        currentStop5 = mappedRead.getEndPos();
+                                    }
+                                    for(int i=currentStart3-coverage3Start; i>mappedRead.getEndPos()-coverage3Start; i--){
+                                        coverage3[i] += mappedRead.getCount();
+                                    }
+                                }
+                            
+                            case GFFEntry.UNKSTRAND:
+                                logger.error("no Strand information for read, cannot process ");
+                                logger.error(mappedRead.toString());
+                                
+                                
+                        }
+                        int longestFeature = (int) stepInputData.getStepParams().get("longest_feature");
+                        if(startNewFeature){
+                            bwFT.write(featureCount + "\t" + currentStart5 + "\t" + currentStop5 + "\t" 
+                                + (currentStop5 - currentStart5 + 1) + "\t" + this.countCoverage5(currentStart5, currentStop5)
+                                + "\t" + this.countDispersion5(currentStart5, currentStop5) + "\n");
+                            // have to write out both strands
+                            // 5' strand
+                            // for now, add all features so I can understand 
+                            // how they vary in terms of characteristics
+                            // length, average reads, dispersion
+                            if(currentStop5 - currentStart5 < longestFeature){
+                                
+                            }
+                            featureCount++;
+                        }
+                        
+                             
                     }
+                    
                 }
             }
-            catch(Exception ex){
-                logger.error(ex);
+            catch(IOException exIO){
+                logger.error(exIO);
             }
            
         
@@ -223,6 +317,70 @@ public class StepAnalyzeReadPositions extends NGSStep{
            
     }
 
+    /**
+     * calculate average count across the mapped region for + Strand
+     * 
+     * @param start
+     * @param stop
+     * @return 
+     */
+    private double countCoverage5(int start, int stop){
+        int countTotal = 0;
+        for(int i=start; i<stop; i++){
+            countTotal += coverage5[i];
+        }
+        return (double)countTotal/(double)(stop-start+1);
+    }
+    
+    
+    /**
+     * calculate average count across the mapped region for - Strand
+     * 
+     * @param start
+     * @param stop
+     * @return 
+     */
+    private double countCoverage3(int start, int stop){
+        int countTotal = 0;
+        for(int i=start; i<stop; i++){
+            countTotal += coverage3[i];
+        }
+        return (double)countTotal/(double)(stop-start+1);
+    }
+    
+    
+    /**
+     * estimate dispersion of counts across the feature for + strand
+     * 
+     * @param start
+     * @param stop
+     * @return 
+     */
+    private double countDispersion5(int start, int stop){
+        DescriptiveStatistics stats = new DescriptiveStatistics();
+        for(int i=start; i<stop; i++){
+            stats.addValue(coverage5[i]);
+        }
+        return stats.getStandardDeviation();
+    }
+    
+    
+    
+    /**
+     * estimate dispersion of counts across the feature for - strand
+     * 
+     * @param start
+     * @param stop
+     * @return 
+     */
+    private double countDisperation3(int start, int stop){
+        DescriptiveStatistics stats = new DescriptiveStatistics();
+        for(int i=start; i<stop; i++){
+            stats.addValue(coverage3[i]);
+        }
+        return stats.getStandardDeviation();
+    }
+    
     
     /**
      * Verify Input Data for parsing SAM file for miRNAs

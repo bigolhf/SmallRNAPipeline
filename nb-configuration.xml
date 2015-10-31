@@ -11,6 +11,7 @@ Without this configuration present, some functionality in the IDE may be limited
             <configuration id="Rtest" profiles=""/>
             <configuration id="liver" profiles=""/>
             <configuration id="thyroid" profiles=""/>
+            <configuration id="sweden" profiles=""/>
         </configurations>
     </config-data>
 </project-shared-configuration>

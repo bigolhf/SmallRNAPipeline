@@ -19,9 +19,11 @@ import org.apache.logging.log4j.Logger;
  */
 public class GFFSet {
     static Logger logger = LogManager.getLogger();
+    private final ArrayList<GFFEntry> GFFEntries;
     
-    private ArrayList<GFFEntry> GFFEntries = new ArrayList<>();
-    
+    public GFFSet(){
+        GFFEntries = new ArrayList<>();
+    }
     /**
      * add GFFEntry to the set
      * 
