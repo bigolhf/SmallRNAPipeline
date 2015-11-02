@@ -62,13 +62,21 @@ public class GFFEntry {
             logger.error(ex);       
             
         }
-        if(line.split("\t")[GFF_SCORE].isEmpty() == false)
+        try{
             score   = Float.parseFloat(line.split("\t")[GFF_SCORE]);
+        }
+        catch(NumberFormatException exNF){
+            score = 0;
+        }
         
         strand  = GFFEntry.findStrand(line.split("\t")[GFF_STRAND]);
         
-        if(line.split("\t")[GFF_PHASE].isEmpty() == false)
+        try{
             phase   = Integer.parseInt(line.split("\t")[GFF_PHASE]);
+        }
+        catch(NumberFormatException exNF){
+            phase = 0;
+        }
         
         if(line.split("\t")[GFF_ATTR].isEmpty() == false)
             attr    = line.split("\t")[GFF_ATTR];

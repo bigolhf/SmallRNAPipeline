@@ -64,6 +64,8 @@ public final class SAMEntry {
     private String                      seq;
     private String                      qual;
     private String                      mdString;
+    private Boolean                     header;
+    private Boolean                     mapped;
     
     private Boolean                     fullInfo = true;
     public SAMEntry(String samLine){
@@ -91,12 +93,20 @@ public final class SAMEntry {
     public void parseLine(String samLine){
 
         try{
-            if(samLine.startsWith("@")) return;
-
+            if(samLine.startsWith("@")) {
+                header = true;
+                return;
+               
+            }
+ 
+            header = false;
             flags = Short.parseShort(samLine.split("\t")[FLAG]);
-            if ((flags & UNMAPPED) == UNMAPPED) return;
-
-
+            if ((flags & UNMAPPED) == UNMAPPED) {
+                mapped = false;
+                return;                
+            }
+            
+            mapped = true;
 
 
             qName = samLine.split("\t")[QNAME];
@@ -235,6 +245,20 @@ public final class SAMEntry {
      */
     public int getpNext() {
         return pNext;
+    }
+
+    /**
+     * @return the header
+     */
+    public Boolean isHeaderLine() {
+        return header;
+    }
+
+    /**
+     * @return the mapped
+     */
+    public Boolean isMappedRead() {
+        return mapped;
     }
 
 }

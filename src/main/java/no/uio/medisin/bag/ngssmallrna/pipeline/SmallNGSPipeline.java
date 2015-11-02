@@ -19,8 +19,8 @@ import no.uio.medisin.bag.ngssmallrna.steps.CollapseReadsStep;
 import no.uio.medisin.bag.ngssmallrna.steps.NGSStep;
 import no.uio.medisin.bag.ngssmallrna.steps.NGSRunStepData;
 import no.uio.medisin.bag.ngssmallrna.steps.ParseSAMForMiRNAsStep;
-import no.uio.medisin.bag.ngssmallrna.steps.AnalyzeSAMStartPositions;
 import no.uio.medisin.bag.ngssmallrna.steps.DEwithEdgeRStep;
+import no.uio.medisin.bag.ngssmallrna.steps.StepAnalyzeMappedReads;
 import no.uio.medisin.bag.ngssmallrna.steps.StepInputData;
 import no.uio.medisin.bag.ngssmallrna.steps.TrimAdaptersStep;
 import org.yaml.snakeyaml.Yaml;
@@ -195,7 +195,7 @@ public class SmallNGSPipeline {
 
                     HashMap analyzeSAMStartPositionsParams = new HashMap();
                     analyzeSAMStartPositionsParams.put("bleed", this.getSamParseStartPosBleed());
-                    analyzeSAMStartPositionsParams.put("separation", this.getSamParseStartPosBleed());
+                    analyzeSAMStartPositionsParams.put("separation", this.getSamParseFeatureSeparation());
                     analyzeSAMStartPositionsParams.put("longest_feature", this.getSamParseLongestFeature());                    
                     analyzeSAMStartPositionsParams.put("feature_types", this.getSamParseFeatureTypes());
                     analyzeSAMStartPositionsParams.put("host", this.getBowtieMappingReferenceGenome());
@@ -204,7 +204,7 @@ public class SmallNGSPipeline {
                     analyzeSAMStartPositionsParams.put("bowtieReferenceGenome", this.getBowtieMappingReferenceGenome());
 
                     StepInputData sidStart = new StepInputData(analyzeSAMStartPositionsParams, this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), this.getSampleData());
-                    AnalyzeSAMStartPositions ngsAnalyzeSAMStartPos = new AnalyzeSAMStartPositions(sidStart);
+                    StepAnalyzeMappedReads ngsAnalyzeSAMStartPos = new StepAnalyzeMappedReads(sidStart);
                     ngsAnalyzeSAMStartPos.verifyInputData();
                     ngsAnalyzeSAMStartPos.execute();
                     

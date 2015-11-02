@@ -20,7 +20,7 @@ public class MappedRead implements Comparable<MappedRead>{
     
     public MappedRead(int s, int e, String c, String t, int n){
         startPos = s;
-        endPos = s;
+        endPos = e;
         chr = c;
         strand = t;
         count = n;
@@ -33,8 +33,9 @@ public class MappedRead implements Comparable<MappedRead>{
         {
             return mappedRead.startPos - startPos;
         }
+        int l = Math.min(mappedRead.chr.length(), chr.length());
         int i=0;
-        while(mappedRead.chr.charAt(i)!=(chr.charAt(i))){
+        while(mappedRead.chr.charAt(i)==(chr.charAt(i)) && i<l){
             i++;
         }
         return mappedRead.chr.charAt(i) - chr.charAt(i);
@@ -48,10 +49,10 @@ public class MappedRead implements Comparable<MappedRead>{
      */
     @Override
     public String toString(){
-        return    "chr "    + chr + "\n" 
-                + "start "  + startPos + "\n"
-                + "end "    + endPos + "\n"
-                + "strand " + strand + "\n"
+        return    "chr "    + chr + "\t" 
+                + "start "  + startPos + "\t"
+                + "end "    + endPos + "\t"
+                + "strand " + strand + "\t"
                 + "count "  + getCount() + "\n";
     }
     
