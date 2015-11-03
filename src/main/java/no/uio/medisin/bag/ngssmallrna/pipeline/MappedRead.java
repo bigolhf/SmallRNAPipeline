@@ -26,19 +26,34 @@ public class MappedRead implements Comparable<MappedRead>{
         count = n;
     }
     
-    
+    /**
+     * sort by chromosome, strand and then position
+     * 
+     * @param mappedRead
+     * @return 
+     */
     @Override
     public int compareTo(MappedRead mappedRead){
-        if (mappedRead.chr.equals(chr) )
+        
+        if (mappedRead.chr.equals(chr) && mappedRead.strand.equals(strand))
         {
-            return mappedRead.startPos - startPos;
+            return startPos - mappedRead.startPos ;
         }
+        
+        if(mappedRead.strand.equals(strand)==false){
+            if(strand.equals("+") && mappedRead.strand.equals("-")){
+                return -1;
+            }else{
+                return +1;
+            }            
+        }
+            
         int l = Math.min(mappedRead.chr.length(), chr.length());
         int i=0;
         while(mappedRead.chr.charAt(i)==(chr.charAt(i)) && i<l){
             i++;
         }
-        return mappedRead.chr.charAt(i) - chr.charAt(i);
+        return  chr.charAt(i) - mappedRead.chr.charAt(i) ;
         
     }
     
@@ -53,7 +68,7 @@ public class MappedRead implements Comparable<MappedRead>{
                 + "start "  + startPos + "\t"
                 + "end "    + endPos + "\t"
                 + "strand " + strand + "\t"
-                + "count "  + getCount() + "\n";
+                + "count "  + getCount();
     }
     
     
