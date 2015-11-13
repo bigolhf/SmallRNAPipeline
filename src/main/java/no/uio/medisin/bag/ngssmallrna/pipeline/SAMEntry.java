@@ -122,7 +122,7 @@ public final class SAMEntry {
                 mapQ = Integer.parseInt(samLine.split("\t")[MAPQ]);
                 startPos = Integer.parseInt(samLine.split("\t")[POS]);
                 String cigarStr = samLine.split("\t")[CIGAR].replace("M", "").trim();
-                endPos = getStartPos() + Integer.parseInt(cigarStr);
+                endPos = getStartPos() + Integer.parseInt(cigarStr) - 1;
                 rName= samLine.split("\t")[RNAME].trim();
                 mdString = samLine.split("\t")[MDSTR];
                 cigar = samLine.split("\t")[CIGAR];
