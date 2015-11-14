@@ -83,7 +83,58 @@ public class GFFEntry {
         
         
     }
+    
+    
+    /**
+     * create a new GFFEntry from a limited information set
+     * 
+     * @param id
+     * @param s
+     * @param c
+     * @param b
+     * @param e 
+     */
+    public GFFEntry(String id, String s, String c, int b, int e){
+        start = b;
+        stop = e;
+        src = c;
+        strand = s;
+        seqID = id;
+        attr = id;
+    }
 
+    
+
+    public String toGFF3String(){
+        /*
+            chr1            chromosome
+            source          n/a here
+            miRNA           feature type (n/a)
+            start pos
+            end pos
+            score           n/a here               
+            strand          (+/-)
+            frame           n/a here
+            attributes      e.g. ID=MIMAT0027619;Alias=MIMAT0027619;Name=hsa-miR-6859-3p;Derives_from=MI0022705
+
+        */
+        String gff3String = this.src + "\t"
+                + "." + "\t"
+                + "smallRNA" + "\t"
+                + start + "\t"
+                + stop + "\t"
+                + "." + "\t"
+                + strand + "\t"
+                + "." + "\t"
+                + "ID=" + seqID + ";" + "Alias=" + seqID + ";" + "Name=" + seqID;
+        return gff3String;
+    }
+    
+    
+    
+    
+    
+    
     /**
      * There are many different ways to write the strand. 
      * Make a best guess by parsing the input String

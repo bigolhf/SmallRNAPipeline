@@ -6,10 +6,12 @@
 package no.uio.medisin.bag.ngssmallrna.pipeline;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -59,5 +61,79 @@ public class GFFSet {
             return lineCount;
         }
         return lineCount;
+    }
+    
+    
+    
+
+    /**
+     * 
+     * return entry within the specified region
+     * 
+     * @param start
+     * @param stop
+     * @param strand
+     * @param chr
+     * @param bleed
+     * @return 
+     */
+    public GFFEntry findMatch(int start, int stop, String strand, String chr, int bleed){
+        Iterator itGF = GFFEntries.iterator();
+        while(itGF.hasNext()){
+            GFFEntry gffEntry = (GFFEntry)itGF.next();
+            if(gffEntry.getStrand().equals(strand)
+                && gffEntry.getAttr().equals(chr)
+                && Math.abs(gffEntry.getStart()-start) < bleed 
+                && Math.abs(gffEntry.getStop() - stop) < bleed
+                    ){
+                return gffEntry;
+            }
+        }
+        return null;
+    }
+    
+    
+    
+    
+    /**
+     * Does the specified region contain a feature?
+     * 
+     * @param start
+     * @param stop
+     * @param strand
+     * @param chr
+     * @param bleed
+     * @return 
+     */
+    public Boolean doesRegionContainFeature(int start, int stop, String strand, String chr, int bleed){
+        Iterator itGF = GFFEntries.iterator();
+        while(itGF.hasNext()){
+            GFFEntry gffEntry = (GFFEntry)itGF.next();
+            if(gffEntry.getStrand().equals(strand)
+                && gffEntry.getSrc().equals(chr)
+                && Math.abs(gffEntry.getStart()-start) < bleed 
+                && Math.abs(gffEntry.getStop() - stop) < bleed
+                    ){
+                return true;
+            }
+        }
+        return false;
+        
+    }
+    
+    
+    
+    /**
+     * write out the features in GFF format
+     * 
+     * @param bwFT
+     * @throws IOException 
+     */
+    public void writeFeaturesAsGFF3(BufferedWriter bwFT) throws IOException{
+        Iterator itGF = GFFEntries.iterator();
+        while(itGF.hasNext()){
+            GFFEntry gffEntry = (GFFEntry)itGF.next();            
+            bwFT.write(gffEntry.toGFF3String() + "\n");
+        }
     }
 }

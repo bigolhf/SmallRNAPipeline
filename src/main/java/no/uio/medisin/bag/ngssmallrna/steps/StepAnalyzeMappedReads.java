@@ -56,6 +56,8 @@ public class StepAnalyzeMappedReads extends NGSStep {
     
     int[] coverage5 = new int[COVERAGE_SPAN];    
     int[] coverage3 = new int[COVERAGE_SPAN];
+    
+    private GFFSet featureSet = new GFFSet();
 
     /*
      int[][] startPositions = new int[169100][9];
@@ -370,6 +372,9 @@ public class StepAnalyzeMappedReads extends NGSStep {
                             bwFT.write(featureCount + "\t" + currentChr + "\t" + currentStrand + "\t" + currentStart5 + "\t" + currentStop5 + "\t"
                                     + (currentStop5 - currentStart5 + 1) + "\t" + this.countCoverage5(currentStart5 - coverage5Start, currentStop5 - coverage5Start)
                                     + "\t" + this.countDispersion5(currentStart5 - coverage5Start, currentStop5 - coverage5Start) + "\n");
+                            if(featureSet.doesRegionContainFeature(currentStart5, currentStop5, currentStrand, currentChr, bleed)==false)
+                                featureSet.addEntry(new GFFEntry(Integer.toString(featureCount), currentStrand, currentChr, currentStart5, currentStop5));
+                                
                             
                         }
                         
@@ -422,6 +427,8 @@ public class StepAnalyzeMappedReads extends NGSStep {
                                 bwFT.write(featureCount + "\t" + currentChr + "\t" + currentStrand + "\t" + currentStart3 + "\t" + currentStop3 + "\t"
                                         + (currentStop3 - currentStart3 + 1) + "\t" + this.countCoverage3(coverage3Start - currentStop3, coverage3Start - currentStart3)
                                         + "\t" + this.countDispersion3(coverage3Start - currentStop3, coverage3Start - currentStart3) + "\n");
+                                if(featureSet.doesRegionContainFeature(currentStart3, currentStop3, currentStrand, currentChr, bleed)==false)
+                                    featureSet.addEntry(new GFFEntry(Integer.toString(featureCount), currentStrand, currentChr, currentStart3, currentStop3));
                                 
                             }
                             
@@ -452,6 +459,18 @@ public class StepAnalyzeMappedReads extends NGSStep {
                 logger.error(exIO);
             }
             
+        }
+        
+        String featureFile = pathToData + FileSeparator + posAnalysisOutFolder + FileSeparator + stepInputData.getProjectID() + ".features.tsv";
+        featureFile = featureFile.replace(FileSeparator + FileSeparator, FileSeparator).trim();
+        try{
+            BufferedWriter bwFT = new BufferedWriter(new FileWriter(new File(featureFile)));
+                featureSet.writeFeaturesAsGFF3(bwFT);
+            bwFT.close();
+        }
+        catch(IOException exIO){
+            logger.error("error writing feature file <" + featureFile + ">");
+            logger.error(exIO);
         }
     }
 
