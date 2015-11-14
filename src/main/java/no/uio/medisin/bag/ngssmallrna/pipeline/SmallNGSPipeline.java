@@ -69,7 +69,9 @@ public class SmallNGSPipeline {
     
     private int                         samParseStartPosBleed = 2;
     private int                         samParseFeatureSeparation = 10;
-    private int                         samParseLongestFeature = 200;
+    private int                         samParseLongestFeature = 40;
+    private int                         samParseShortestFeature = 14;
+    private int                         samParseMinCounts = 10;
     private ArrayList<String>           samParseFeatureTypes = new ArrayList<>();
     
     private double                      analyzeIsomiRDispPVal = 0.05;
@@ -196,7 +198,9 @@ public class SmallNGSPipeline {
                     HashMap analyzeSAMStartPositionsParams = new HashMap();
                     analyzeSAMStartPositionsParams.put("bleed", this.getSamParseStartPosBleed());
                     analyzeSAMStartPositionsParams.put("separation", this.getSamParseFeatureSeparation());
-                    analyzeSAMStartPositionsParams.put("longest_feature", this.getSamParseLongestFeature());                    
+                    analyzeSAMStartPositionsParams.put("shortest_feature", this.getSamParseShortestFeature());    
+                    analyzeSAMStartPositionsParams.put("longest_feature", this.getSamParseLongestFeature());    
+                    analyzeSAMStartPositionsParams.put("min_counts", this.getSamParseMinCounts());
                     analyzeSAMStartPositionsParams.put("feature_types", this.getSamParseFeatureTypes());
                     analyzeSAMStartPositionsParams.put("host", this.getBowtieMappingReferenceGenome());
                     analyzeSAMStartPositionsParams.put("genomeReferenceGFFFile", this.getGenomeAnnotationGFF());
@@ -343,7 +347,9 @@ public class SmallNGSPipeline {
         HashMap processSAMStartPosOptions = (HashMap) pipelineConfiguration.get("sam_startpos_processing");
         this.setSamParseStartPosBleed((int) processSAMStartPosOptions.get("bleed"));
         this.setSamParseFeatureSeparation((int) processSAMStartPosOptions.get("separation"));
+        this.setSamParseShortestFeature((int) processSAMStartPosOptions.get("shortest_feature"));
         this.setSamParseLongestFeature((int) processSAMStartPosOptions.get("longest_feature"));
+        this.setSamParseMinCounts((int) processSAMStartPosOptions.get("min_counts"));
         this.setSamParseFeatureTypes((ArrayList<String>)processSAMStartPosOptions.get("feature_types"));
         
         HashMap analyzeIsomiRDispersionOptions = (HashMap) pipelineConfiguration.get("analyze_isomir_dispersion");
@@ -843,6 +849,34 @@ public class SmallNGSPipeline {
      */
     public void setSamParseLongestFeature(int samParseLongestFeature) {
         this.samParseLongestFeature = samParseLongestFeature;
+    }
+
+    /**
+     * @return the samParseMinCounts
+     */
+    public int getSamParseMinCounts() {
+        return samParseMinCounts;
+    }
+
+    /**
+     * @param samParseMinCounts the samParseMinCounts to set
+     */
+    public void setSamParseMinCounts(int samParseMinCounts) {
+        this.samParseMinCounts = samParseMinCounts;
+    }
+
+    /**
+     * @return the samParseShortestFeature
+     */
+    public int getSamParseShortestFeature() {
+        return samParseShortestFeature;
+    }
+
+    /**
+     * @param samParseShortestFeature the samParseShortestFeature to set
+     */
+    public void setSamParseShortestFeature(int samParseShortestFeature) {
+        this.samParseShortestFeature = samParseShortestFeature;
     }
     
     

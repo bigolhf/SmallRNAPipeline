@@ -73,22 +73,16 @@ public class StepAnalyzeMappedReads extends NGSStep {
     /**
      * parse out SAM file to retrieve start and stop information for each read
      *
-     * analyzeSAMStartPositionsParams.put("bleed",
-     * this.getSamParseStartPosBleed());
-     * analyzeSAMStartPositionsParams.put("separation",
-     * this.getSamParseFeatureSeparation());
-     * analyzeSAMStartPositionsParams.put("feature_types",
-     * this.getSamParseFeatureTypes());
-     * analyzeSAMStartPositionsParams.put("longest_feature",
-     * this.getSamParseLongestFeature());
-     * analyzeSAMStartPositionsParams.put("host",
-     * this.getBowtieMappingReferenceGenome());
-     * analyzeSAMStartPositionsParams.put("genomeReferenceGFFFile",
-     * this.getGenomeAnnotationGFF());
-     * analyzeSAMStartPositionsParams.put("bowtieMapGenomeRootFolder",
-     * this.getGenomeRootFolder());
-     * analyzeSAMStartPositionsParams.put("bowtieReferenceGenome",
-     * this.getBowtieMappingReferenceGenome());
+     * analyzeSAMStartPositionsParams.put("bleed",this.getSamParseStartPosBleed());
+     * analyzeSAMStartPositionsParams.put("separation",this.getSamParseFeatureSeparation());
+     * analyzeSAMStartPositionsParams.put("feature_types", this.getSamParseFeatureTypes());
+     * analyzeSAMStartPositionsParams.put("shortest_feature", this.getSamParseShortestFeature());
+     * analyzeSAMStartPositionsParams.put("longest_feature",this.getSamParseLongestFeature());
+     * analyzeSAMStartPositionsParams.put("min_counts", this.getSamParseMinCounts());
+     * analyzeSAMStartPositionsParams.put("host", this.getBowtieMappingReferenceGenome());
+     * analyzeSAMStartPositionsParams.put("genomeReferenceGFFFile",this.getGenomeAnnotationGFF());
+     * analyzeSAMStartPositionsParams.put("bowtieMapGenomeRootFolder",this.getGenomeRootFolder());
+     * analyzeSAMStartPositionsParams.put("bowtieReferenceGenome",this.getBowtieMappingReferenceGenome());
      *
      *
      * @param filename
@@ -129,7 +123,9 @@ public class StepAnalyzeMappedReads extends NGSStep {
         /**
          * read and parse the SAM files
          */
-        int longestFeature = (int) stepInputData.getStepParams().get("longest_feature");
+        int shortestFeature = (int) stepInputData.getStepParams().get("shortest_feature");
+        int longestFeature  = (int) stepInputData.getStepParams().get("longest_feature");
+        int minCounts       = (int) stepInputData.getStepParams().get("min_counts");
         
         String pathToData = stepInputData.getProjectRoot() + FileSeparator + stepInputData.getProjectID();
         String posAnalysisOutputFolder = pathToData + FileSeparator + posAnalysisOutFolder;
@@ -156,7 +152,6 @@ public class StepAnalyzeMappedReads extends NGSStep {
                 BufferedReader brSAM = new BufferedReader(new FileReader(new File(samInputFile)));
                 while ((samLine = brSAM.readLine()) != null) {
                     
-                    logger.debug(samLine);
                     SAMEntry e;
                     SAMEntry samEntry = new SAMEntry(samLine);
                     if (samEntry.isHeaderLine() == false && samEntry.isMappedRead()) {
@@ -170,6 +165,7 @@ public class StepAnalyzeMappedReads extends NGSStep {
                 
             } catch (IOException smIO) {
                 logger.error("error parsing SAM file " + samInputFile);
+                logger.error(samLine);
                 logger.error(smIO);
             }
 
@@ -212,7 +208,7 @@ public class StepAnalyzeMappedReads extends NGSStep {
                 int totalCounts = 0;
                 
                 MappedRead mappedRead = ((MappedRead) mappedReads.get(0));
-                logger.debug(mappedRead.toString());
+                //logger.debug(mappedRead.toString());
                 String currentChr = mappedRead.getChr();
                 String currentStrand = mappedRead.getStrand();
 
@@ -246,15 +242,17 @@ public class StepAnalyzeMappedReads extends NGSStep {
                 int featureCount = 0;
                 
                 BufferedWriter bwFT = new BufferedWriter(new FileWriter(new File(featureOutFile)));
+                bwFT.write("ID\tChr\t \tStart\tStop\tLength\tCoverage\tDispersion\n");
+
                 Iterator itMR = mappedReads.iterator();
                 Boolean startNewFeature3 = false;
                 Boolean startNewFeature5 = false;
                 while (itMR.hasNext()) {
                     mappedRead = (MappedRead) itMR.next();
-                    logger.info(mappedRead.toString());
+                    //logger.info(mappedRead.toString());
                     if (mappedRead.getChr().equals(currentChr) == false || mappedRead.getStrand().equals(currentStrand) == false) {
                         if (mappedRead.getChr().equals(currentChr) == false) {
-                            logger.debug("different chr. start new feature");
+                            //logger.debug("different chr. start new feature");
                         }
                         if (mappedRead.getStrand().equals(currentStrand) == false) {
                             logger.debug("different strand. start new feature");                            
@@ -263,13 +261,13 @@ public class StepAnalyzeMappedReads extends NGSStep {
                         currentChr = mappedRead.getChr();
                         if (currentStrand.equals(GFFEntry.PLUSSTRAND)) {
                             startNewFeature3 = false;
-                            startNewFeature5 = true;
+                            startNewFeature5 = false;
                             currentStart5 = mappedRead.getStartPos();
                             currentStop5 = mappedRead.getEndPos();
                             coverage5Start = currentStart5 - COVERAGE_SPAN / 2;
                             addCounts5(currentStart5 - coverage5Start, mappedRead.getEndPos() - coverage5Start, mappedRead.getCount());
                         } else {
-                            startNewFeature3 = true;
+                            startNewFeature3 = false;
                             startNewFeature5 = false;
                             currentStart3 = mappedRead.getStartPos();
                             currentStop3 = mappedRead.getEndPos();
@@ -281,52 +279,63 @@ public class StepAnalyzeMappedReads extends NGSStep {
                         switch (currentStrand) {
                             case GFFEntry.PLUSSTRAND:
                                 if (mappedRead.getStartPos() - currentStart5 > separation) {
-                                    logger.debug("read too far away. start new 5' feature");                                    
+                                    //logger.debug("read too far away. start new 5' feature");                                    
                                     startNewFeature5 = true;
                                 } else {
                                     if (mappedRead.getStartPos() < currentStart5) {
-                                        logger.debug("extend 5´ start from " + currentStart5 + " to " + mappedRead.getStartPos());
+                                        //logger.debug("extend 5´ start from " + currentStart5 + " to " + mappedRead.getStartPos());
                                         currentStart5 = mappedRead.getStartPos();
+                                        if( currentStart5 <= coverage5Start)
+                                            startNewFeature5 = true;
                                     }
                                     if (mappedRead.getEndPos() > currentStop5) {
-                                        logger.debug("extend 5´ end from " + currentStop5 + " to " + mappedRead.getEndPos());
+                                        //logger.debug("extend 5´ end from " + currentStop5 + " to " + mappedRead.getEndPos());
                                         currentStop5 = mappedRead.getEndPos();
+                                        if( currentStop5 >= coverage5Start + COVERAGE_SPAN )
+                                            startNewFeature5 = true;
                                     }
                                     try {
-                                        logger.debug(printCoverage5(currentStart5 - coverage5Start, mappedRead.getEndPos() - coverage5Start, "|"));
+                                        //logger.debug(printCoverage5(currentStart5 - coverage5Start, mappedRead.getEndPos() - coverage5Start, "|"));
                                         this.addCounts5(currentStart5 - coverage5Start, mappedRead.getEndPos() - coverage5Start, mappedRead.getCount());
-                                        logger.debug(printCoverage5(currentStart5 - coverage5Start, mappedRead.getEndPos() - coverage5Start, "|"));
+                                        //logger.debug(printCoverage5(currentStart5 - coverage5Start, mappedRead.getEndPos() - coverage5Start, "|"));
                                     } catch (ArrayIndexOutOfBoundsException exAB) {
                                         logger.error("5' Array out of bounds");
                                     }
                                 }
                                 break;
                             
+                                
                             case GFFEntry.NEGSTRAND:
                                 if ((mappedRead.getStartPos() - currentStart3 > separation) || (currentStop3 - mappedRead.getEndPos() > separation)) {
-                                    logger.debug("read too far away. start new 3' feature");
+                                    //logger.debug("read too far away. start new 3' feature");
                                     startNewFeature3 = true;
                                 } else {
-                                    logger.debug("add read to existing feature");
+                                    //logger.debug("add read to existing feature");
                                     if (mappedRead.getStartPos() > currentStart3) {
-                                        logger.debug("extend 3´ start from " + currentStart3 + " to " + mappedRead.getStartPos());
+                                        //logger.debug("extend 3´ start from " + currentStart3 + " to " + mappedRead.getStartPos());
                                         currentStart3 = mappedRead.getStartPos();
+                                        if(currentStart3 <= coverage3Start)
+                                            startNewFeature3 = true;
                                     }
                                     if (mappedRead.getEndPos() < currentStop3) {
-                                        logger.debug("extend 3´ end from " + currentStop3 + " to " + mappedRead.getEndPos());
+                                        //logger.debug("extend 3´ end from " + currentStop3 + " to " + mappedRead.getEndPos());
                                         currentStop3 = mappedRead.getEndPos();
+                                        if(currentStop3 >= coverage3Start + COVERAGE_SPAN) 
+                                            startNewFeature3 = true;
                                     }
                                     try {
-                                        logger.debug(printCoverage3(coverage3Start - currentStop3, coverage3Start - currentStart3, "|"));
+                                        //logger.debug(printCoverage3(coverage3Start - currentStop3, coverage3Start - currentStart3, "|"));
                                         this.addCounts3(coverage3Start - mappedRead.getStartPos(), coverage3Start - mappedRead.getEndPos(), mappedRead.getCount());
-                                        logger.debug(printCoverage3(coverage3Start - currentStop3, coverage3Start - currentStart3, "|"));
+                                        //logger.debug(printCoverage3(coverage3Start - currentStop3, coverage3Start - currentStart3, "|"));
                                     } catch (ArrayIndexOutOfBoundsException exAB) {
                                         logger.error("3' Array out of bounds");
+                                        logger.error(mappedRead.toString());
                                         logger.error(exAB);
                                     }
                                 }
                                 break;
                             
+                                
                             case GFFEntry.UNKSTRAND:
                                 logger.error("no Strand information for read, cannot process ");
                                 logger.error(mappedRead.toString());
@@ -337,33 +346,44 @@ public class StepAnalyzeMappedReads extends NGSStep {
                     }
                     
                     if (startNewFeature5) {
-                        logger.debug("write out 5' feature");
-                        if (currentStop5 - currentStart5 < longestFeature) {
-                            bwFT.write("KEEP:\t");
+                        /*
+                        if (currentStop5 - currentStart5 < longestFeature && currentStop5 - currentStart5 > shortestFeature) {
+                            logger.debug("5' PASS length filter:\n");
                         } else {
-                            bwFT.write("DROP:\t");
+                            logger.debug("5' FAIL length filter:\n");
                         }
+                        if(countCoverage5(currentStart5 - coverage5Start, currentStop5 - coverage5Start) >= minCounts){
+                            logger.debug("5' PASS count filter:\n");
+                        } else {
+                            logger.debug("5' FAIL count filter:\n");
+                        }
+                        */
+                        /*
                         logger.debug(featureCount + "\t" + currentStart5 + "\t" + currentStop5 + "\t"
                                 + (currentStop5 - currentStart5 + 1));
                         logger.debug(this.countCoverage5(currentStart5 - coverage5Start, currentStop5 - coverage5Start));
                         logger.debug(countDispersion5(currentStart5 - coverage5Start, currentStop5 - coverage5Start));
                         logger.debug(printCoverage5(currentStart5 - coverage5Start, currentStop5 - coverage5Start, "|"));
-                        bwFT.write(featureCount + "\t" + currentChr + "\t" + currentStrand + "\t" + currentStart5 + "\t" + currentStop5 + "\t"
-                                + (currentStop5 - currentStart5 + 1) + "\t" + this.countCoverage5(currentStart5 - coverage5Start, currentStop5 - coverage5Start)
-                                + "\t" + this.countDispersion5(currentStart5 - coverage5Start, currentStop5 - coverage5Start) + "\t"
-                                + this.printCoverage5(currentStart5 - coverage5Start, currentStop5 - coverage5Start, "|") + "\n");
+                        */
+                        if(currentStop5 - currentStart5 < longestFeature && countCoverage5(currentStart5 - coverage5Start, currentStop5 - coverage5Start) >= minCounts){
+                            //logger.debug("write out 5' feature");
+                            bwFT.write(featureCount + "\t" + currentChr + "\t" + currentStrand + "\t" + currentStart5 + "\t" + currentStop5 + "\t"
+                                    + (currentStop5 - currentStart5 + 1) + "\t" + this.countCoverage5(currentStart5 - coverage5Start, currentStop5 - coverage5Start)
+                                    + "\t" + this.countDispersion5(currentStart5 - coverage5Start, currentStop5 - coverage5Start) + "\n");
+                            
+                        }
                         
-                        logger.debug("set currentStart5 from " + currentStart5 + " to " + mappedRead.getStartPos());
-                        logger.debug("set currentStop5 from " + currentStop5 + " to " + mappedRead.getEndPos());
+                        //logger.debug("set currentStart5 from " + currentStart5 + " to " + mappedRead.getStartPos());
+                        //logger.debug("set currentStop5 from " + currentStop5 + " to " + mappedRead.getEndPos());
                         currentStart5 = mappedRead.getStartPos();
                         currentStop5 = mappedRead.getEndPos();
-                        logger.debug("set coverage range from " + (currentStart5 - COVERAGE_SPAN / 2) + " to " + (currentStart5 + COVERAGE_SPAN / 2));
+                        //logger.debug("set coverage range from " + (currentStart5 - COVERAGE_SPAN / 2) + " to " + (currentStart5 + COVERAGE_SPAN / 2));
                         coverage5Start = currentStart5 - COVERAGE_SPAN / 2;
                         clearCoverage5();
                         try {
-                            logger.debug(printCoverage5(currentStart5 - coverage5Start, currentStop5 - coverage5Start, "|"));
+                            //logger.debug(printCoverage5(currentStart5 - coverage5Start, currentStop5 - coverage5Start, "|"));
                             this.addCounts5(mappedRead.getStartPos() - coverage5Start, mappedRead.getEndPos() - coverage5Start, mappedRead.getCount());
-                            logger.debug(printCoverage5(currentStart5 - coverage5Start, currentStop5 - coverage5Start, "|"));
+                            //logger.debug(printCoverage5(currentStart5 - coverage5Start, currentStop5 - coverage5Start, "|"));
                         } catch (ArrayIndexOutOfBoundsException exAB) {
                             logger.error("5' Array out of bounds when writing data");
                         }
@@ -374,37 +394,48 @@ public class StepAnalyzeMappedReads extends NGSStep {
                         startNewFeature5 = false;
                         
                     } else {
-                        
-                        if (startNewFeature3) {
-                            logger.debug("write out 3' feature");
-                            if (currentStop3 - currentStart3 < longestFeature) {
-                                logger.debug("KEEP:\n");
-                                bwFT.write("KEEP:\t");
+                                         
+                        if (startNewFeature3 ) {
+                            /*
+                            if (currentStop3 - currentStart3 < longestFeature && currentStop3 - currentStart3 > shortestFeature) {
+                                logger.debug("3' PASS length filter:\n");
                             } else {
-                                logger.debug("DROP:\n");
-                                bwFT.write("DROP:\t");
+                                logger.debug("3' FAIL length filter:\n");
                             }
+
+                            if (countCoverage3(coverage3Start - currentStop3, coverage3Start - currentStart3) > minCounts ) {
+                                logger.debug("3' PASS count filter:\n");
+                            } else {
+                                logger.debug("3' FAIL count filter:\n");
+                            }
+                            */
+                            /*
                             logger.debug(featureCount + "\t" + currentChr + "\t" + currentStrand + "\t" + "\t" + currentStart3 + "\t" + currentStop3 + "\t"
                                     + (currentStop3 - currentStart3 + 1));
                             logger.debug(this.countCoverage3(coverage3Start - currentStop3, coverage3Start - currentStart3));
                             logger.debug(countDispersion3(coverage3Start - currentStop3, coverage3Start - currentStart3));
                             logger.debug(printCoverage3(coverage3Start - currentStop3, coverage3Start - currentStart3, "|"));
-                            bwFT.write(featureCount + "\t" + currentChr + "\t" + currentStrand + "\t" + "\t" + currentStart3 + "\t" + currentStop3 + "\t"
-                                    + (currentStop3 - currentStart3 + 1) + "\t" + this.countCoverage3(coverage3Start - currentStop3, coverage3Start - currentStart3)
-                                    + "\t" + this.countDispersion3(coverage3Start - currentStop3, coverage3Start - currentStart3) + "\t"
-                                    + this.printCoverage3(coverage3Start - currentStop3, coverage3Start - currentStart3, "|"));
+                            */
+                            if(currentStop3 - currentStart3 < longestFeature 
+                                && countCoverage3(coverage3Start - currentStop3, coverage3Start - currentStart3) > minCounts){
+                                //logger.debug("write out 3' feature");
+                                bwFT.write(featureCount + "\t" + currentChr + "\t" + currentStrand + "\t" + currentStart3 + "\t" + currentStop3 + "\t"
+                                        + (currentStop3 - currentStart3 + 1) + "\t" + this.countCoverage3(coverage3Start - currentStop3, coverage3Start - currentStart3)
+                                        + "\t" + this.countDispersion3(coverage3Start - currentStop3, coverage3Start - currentStart3) + "\n");
+                                
+                            }
                             
-                            logger.debug("set currentStart3 from " + currentStart3 + " to " + mappedRead.getStartPos());
-                            logger.debug("set currentStop3 from " + currentStop3 + " to " + mappedRead.getEndPos());
+                            //logger.debug("set currentStart3 from " + currentStart3 + " to " + mappedRead.getStartPos());
+                            //logger.debug("set currentStop3 from " + currentStop3 + " to " + mappedRead.getEndPos());
                             currentStart3 = mappedRead.getStartPos();
                             currentStop3 = mappedRead.getEndPos();
-                            logger.debug("set coverage range from " + (currentStart3 + COVERAGE_SPAN / 2) + " to " + (currentStart3 - COVERAGE_SPAN / 2));
+                            //logger.debug("set coverage range from " + (currentStart3 + COVERAGE_SPAN / 2) + " to " + (currentStart3 - COVERAGE_SPAN / 2));
                             coverage3Start = currentStart3 + COVERAGE_SPAN / 2;
                             clearCoverage3();
                             try {
-                                logger.debug(printCoverage3(coverage3Start - currentStop3, coverage3Start - currentStart3, "|"));
+                                //logger.debug(printCoverage3(coverage3Start - currentStop3, coverage3Start - currentStart3, "|"));
                                 this.addCounts3(coverage3Start - mappedRead.getStartPos(), coverage3Start - mappedRead.getEndPos(), mappedRead.getCount());
-                                logger.debug(printCoverage3(coverage3Start - currentStop3, coverage3Start - currentStart3, "|"));
+                                //logger.debug(printCoverage3(coverage3Start - currentStop3, coverage3Start - currentStart3, "|"));
                             } catch (ArrayIndexOutOfBoundsException exAB) {
                                 logger.error("3' Array out of bounds when writing data");
                             }

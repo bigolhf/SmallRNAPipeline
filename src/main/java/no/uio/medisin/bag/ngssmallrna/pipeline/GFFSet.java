@@ -47,7 +47,6 @@ public class GFFSet {
         try{
             BufferedReader br = new BufferedReader(new FileReader(new File(filename)));
             while ((line = br.readLine()) != null) {
-                logger.debug(line);
                 this.addEntry(new GFFEntry(line));
                 lineCount ++;
             }
@@ -55,6 +54,7 @@ public class GFFSet {
         catch(IOException exIO){
             logger.error("error parsing GFF file " + filename);
             logger.error("exception thrown on line " + lineCount);
+            logger.error(line);
             logger.error(exIO);
             return lineCount;
         }
