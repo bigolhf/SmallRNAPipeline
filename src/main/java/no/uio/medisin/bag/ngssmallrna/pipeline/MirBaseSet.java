@@ -47,7 +47,8 @@ public class MirBaseSet {
     public void loadMiRBaseData(String host, String miRBaseGFFFile) throws IOException{
 
         HashMap <String, String> miRBaseSeq = new HashMap();
-        String matureFAFile = new File(miRBaseGFFFile).getParent() + FileSeparator + "mature.fa";
+        String matureFAFile = miRBaseGFFFile.replace("gff3", "mature.fa");
+        //String matureFAFile = new File(miRBaseGFFFile).getParent() + FileSeparator + "mature.fa";
         BufferedReader brFA = new BufferedReader(new FileReader(new File(matureFAFile)));
         String lineFA = null;
         while ((lineFA = brFA.readLine())!=null){
@@ -117,9 +118,9 @@ public class MirBaseSet {
                     }
                 }
                 String seq = miRBaseSeq.get(id);
-                if(seq != null) 
-                    this.getMiRBaseMiRNAList().add(new MiRNAFeature(name, chr, startPos, endPos, strand, id, parent, seq));
-                else
+                // this may need revising. In some cases we dont care if there is no sequence, we still want the feature
+                this.miRBaseMiRNAList.add(new MiRNAFeature(name, chr, startPos, endPos, strand, id, parent, seq));
+                if(seq == null) 
                     logger.warn("no sequence found for entry <" + id + ">. Skipping");
             }
         brMiR.close();

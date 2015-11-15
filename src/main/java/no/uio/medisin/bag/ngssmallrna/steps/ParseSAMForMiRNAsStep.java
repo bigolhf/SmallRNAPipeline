@@ -75,7 +75,8 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
             parseSAMmiRNAsParams.put("miRBaseHostGFFFile", this.getMiRBaseHostGFF());
             parseSAMmiRNAsParams.put("miRBaseRootFolder", this.getMirBaseVersionRoot());
             parseSAMmiRNAsParams.put("host", this.getBowtieMappingReferenceGenome());
-            parseSAMmiRNAsParams.put("baseline_percent", this.getSamParseForMiRNAsBaselinePercent());        
+            parseSAMmiRNAsParams.put("baseline_percent", this.getSamParseForMiRNAsBaselinePercent());
+            parseSAMmiRNAsParams.put("analyze_isomirs", this.getSamParseForMiRNAsAnalyzeIsomirs());
         */
         try{
             stepInputData.verifyInputData();            
@@ -92,7 +93,8 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
             logger.error("error reading miRBase reference file <" + (String) stepInputData.getStepParams().get("miRBaseHostGFFFile") + ">\n" + ex.toString());
         }
         
-        
+        Boolean analyzeIsomirs = (Boolean) stepInputData.getStepParams().get("analyze_isomirs");
+
         String pathToData = stepInputData.getProjectRoot() + FileSeparator + stepInputData.getProjectID();
         String miRNAAnalysisOutputFolder = pathToData + FileSeparator + miRNAAnalysisOutFolder;
         miRNAAnalysisOutputFolder = miRNAAnalysisOutputFolder.replace(FileSeparator + FileSeparator, FileSeparator).trim();
@@ -156,7 +158,7 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
                             MiRNAFeature miRNAFeature = this.doesReadOverlapKnownMiRNA(startPos, endPos, chr, strand, bleed);
                             if (miRNAFeature != null){
                                 MiRNAFeature miRNAHit = new MiRNAFeature(miRNAFeature);
-                                logger.debug(miRNAHit.getName());
+                                //logger.debug(miRNAHit.getName());
                                 String name = samLine.split("\t")[0];
                                 String sequence = samLine.split("\t")[9];
                                 if(miRNAHitList.contains(miRNAHit)){ 
@@ -188,33 +190,34 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
                     Double minCounts = (double) totalCounts /100000.0;
                     logger.info((matchCount5 + matchCount3) + " reads (" + matchCount5 + " 5'" + "/" + matchCount3 + " 3' ) were mapped");
                     
-                    logger.info("  calculate isomiR dispersions");
-                    for(MiRNAFeature miRHit: miRNAHitList){
-                        if (miRHit.getTotalCounts() > minCounts.intValue()){
-                            ArrayList isomirPtsAsHash = miRHit.characterizeIsomiRs((int) stepInputData.getStepParams().get("baseline_percent"), minCounts.intValue());
-                            this.isomiRList.add(new IsomiRSet(miRHit.getMimatID(), sampleData.getNote(), sampleData.getDataFile().replace(".fastq", ""), isomirPtsAsHash));
-                        }
-                    }
-                    
-            
-                    
-                    logger.info("  write isomiRs");
-
-                    String  isoDetailsFile = miRNAAnalysisOutputFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", isomirSummaryExtension);
-                    String  isoPrettyFile  = miRNAAnalysisOutputFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", isomirPrettyExtension);
-                    
-                    BufferedWriter brDetails = new BufferedWriter(new FileWriter(new File(isoDetailsFile)));
-                    BufferedWriter brPretty  = new BufferedWriter(new FileWriter(new File(isoPrettyFile)));
-                        for(MiRNAFeature miRHit: this.miRNAHitList){
+                    if(analyzeIsomirs){
+                        logger.info("  calculate isomiR dispersions");
+                        for(MiRNAFeature miRHit: miRNAHitList){
                             if (miRHit.getTotalCounts() > minCounts.intValue()){
-                                logger.debug(miRHit.getName());
-                                brDetails.write(miRHit.reportIsomiRs((int) stepInputData.getStepParams().get("baseline_percent"), minCounts.intValue()));
-                                brPretty.write(miRHit.prettyReportIsomiRs((int) stepInputData.getStepParams().get("baseline_percent"), minCounts.intValue()));
+                                ArrayList isomirPtsAsHash = miRHit.characterizeIsomiRs((int) stepInputData.getStepParams().get("baseline_percent"), minCounts.intValue());
+                                this.isomiRList.add(new IsomiRSet(miRHit.getMimatID(), sampleData.getNote(), sampleData.getDataFile().replace(".fastq", ""), isomirPtsAsHash));
                             }
                         }
-                    brPretty.close();
-                    brDetails.close();
-                    
+
+
+
+                        logger.info("  write isomiRs");
+
+                        String  isoDetailsFile = miRNAAnalysisOutputFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", isomirSummaryExtension);
+                        String  isoPrettyFile  = miRNAAnalysisOutputFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", isomirPrettyExtension);
+
+                        BufferedWriter brDetails = new BufferedWriter(new FileWriter(new File(isoDetailsFile)));
+                        BufferedWriter brPretty  = new BufferedWriter(new FileWriter(new File(isoPrettyFile)));
+                            for(MiRNAFeature miRHit: this.miRNAHitList){
+                                if (miRHit.getTotalCounts() > minCounts.intValue()){
+                                    logger.debug(miRHit.getName());
+                                    brDetails.write(miRHit.reportIsomiRs((int) stepInputData.getStepParams().get("baseline_percent"), minCounts.intValue()));
+                                    brPretty.write(miRHit.prettyReportIsomiRs((int) stepInputData.getStepParams().get("baseline_percent"), minCounts.intValue()));
+                                }
+                            }
+                        brPretty.close();
+                        brDetails.close();
+                    }
                     
                     logger.info("  write miRNA counts");
 
@@ -250,25 +253,26 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
             }
         }
         
-        String dispersionFile   = miRNAAnalysisOutputFolder + FileSeparator + stepInputData.getProjectID() + ".disp.tsv";
-        String summaryFile      = miRNAAnalysisOutputFolder + FileSeparator + stepInputData.getProjectID() + ".disp.summary.tsv";
-        logger.info("write dispersions to file <" + dispersionFile + ">");
-        try{
-            BufferedWriter bwDp = new BufferedWriter(new FileWriter(new File(dispersionFile)));
-            BufferedWriter bwSm = new BufferedWriter(new FileWriter(new File(summaryFile)));   
-                bwSm.write(IsomiRSet.printSummaryHeader());
-                for(IsomiRSet isomiRset: isomiRList){
-                    isomiRset.calcDistParameters();
-                    bwSm.write(isomiRset.printSummary());
-                    bwDp.write(isomiRset.tabReportIsomiRSet());                
-                }
-            bwSm.close();
-            bwDp.close();
+        if(analyzeIsomirs){
+            String dispersionFile   = miRNAAnalysisOutputFolder + FileSeparator + stepInputData.getProjectID() + ".disp.tsv";
+            String summaryFile      = miRNAAnalysisOutputFolder + FileSeparator + stepInputData.getProjectID() + ".disp.summary.tsv";
+            logger.info("write dispersions to file <" + dispersionFile + ">");
+            try{
+                BufferedWriter bwDp = new BufferedWriter(new FileWriter(new File(dispersionFile)));
+                BufferedWriter bwSm = new BufferedWriter(new FileWriter(new File(summaryFile)));   
+                    bwSm.write(IsomiRSet.printSummaryHeader());
+                    for(IsomiRSet isomiRset: isomiRList){
+                        isomiRset.calcDistParameters();
+                        bwSm.write(isomiRset.printSummary());
+                        bwDp.write(isomiRset.tabReportIsomiRSet());                
+                    }
+                bwSm.close();
+                bwDp.close();
+            }
+            catch(IOException exIO){
+                logger.info("error writing isomiR dispersion File <" + dispersionFile + ">\n" + exIO);
+            }
         }
-        catch(IOException exIO){
-            logger.info("error writing isomiR dispersion File <" + dispersionFile + ">\n" + exIO);
-        }
-
         
         
     }
@@ -359,7 +363,8 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
     public void loadMiRBaseData(String host, String miRBaseGFFFile) throws IOException{
 
         HashMap <String, String> miRBaseSeq = new HashMap();
-        String matureFAFile = new File(miRBaseGFFFile).getParent() + FileSeparator + "mature.fa";
+        String matureFAFile = miRBaseGFFFile.replace("gff3", "mature.fa");
+        //String matureFAFile = new File(miRBaseGFFFile).getParent() + FileSeparator + "mature.fa";
         BufferedReader brFA = new BufferedReader(new FileReader(new File(matureFAFile)));
         String lineFA = null;
         while ((lineFA = brFA.readLine())!=null){
@@ -428,14 +433,15 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
                             break;
                     }
                 }
+                // this may need revising. In some cases we dont care if there is no sequence, we still want the feature
                 String seq = miRBaseSeq.get(id);
-                if(seq != null) 
-                    this.miRBaseMiRNAList.add(new MiRNAFeature(name, chr, startPos, endPos, strand, id, parent, seq));
-                else
+                this.miRBaseMiRNAList.add(new MiRNAFeature(name, chr, startPos, endPos, strand, id, parent, seq));
+                if(seq == null) 
                     logger.warn("no sequence found for entry <" + id + ">. Skipping");
+
             }
         brMiR.close();
-        logger.info("read " + miRBaseMiRNAList.size() + "miRNA entries");
+        logger.info("read " + miRBaseMiRNAList.size() + " miRNA entries");
         
     }
     

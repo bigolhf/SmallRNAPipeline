@@ -66,6 +66,7 @@ public class SmallNGSPipeline {
     private int                         samParseForMiRNAsBleed = 2;
     private int                         samParseForMiRNAsBaselinePercent = 5;
     private String                      samParseForMiRNAsMiRBaseVersion = "21";
+    private Boolean                     samParseForMiRNAsAnalyzeIsomirs = false;
     
     private int                         samParseStartPosBleed = 2;
     private int                         samParseFeatureSeparation = 10;
@@ -185,6 +186,7 @@ public class SmallNGSPipeline {
                     parseSAMmiRNAsParams.put("baseline_percent", this.getSamParseForMiRNAsBaselinePercent());
                     parseSAMmiRNAsParams.put("host", this.getBowtieMappingReferenceGenome());
                     parseSAMmiRNAsParams.put("miRBaseHostGFFFile", this.getMiRBaseHostGFF());
+                    parseSAMmiRNAsParams.put("analyze_isomirs", this.getSamParseForMiRNAsAnalyzeIsomirs());
 
                     StepInputData sidSAM = new StepInputData(parseSAMmiRNAsParams, this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), this.getSampleData());
                     ParseSAMForMiRNAsStep ngsParseSAMForMiRNAs = new ParseSAMForMiRNAsStep(sidSAM);
@@ -343,6 +345,7 @@ public class SmallNGSPipeline {
         this.setSamParseForMiRNAsBleed((int) processSAMForMiRNAsOptions.get("bleed"));
         this.setSamParseForMiRNAsMiRBaseVersion( String.valueOf(processSAMForMiRNAsOptions.get("mirbase_release")));
         this.setSamParseForMiRNAsBaselinePercent((int) processSAMForMiRNAsOptions.get("baseline_percent"));
+        this.setSamParseForMiRNAsAnalyzeIsomirs((Boolean) processSAMForMiRNAsOptions.get("analyze_isomirs"));
         
         HashMap processSAMStartPosOptions = (HashMap) pipelineConfiguration.get("sam_startpos_processing");
         this.setSamParseStartPosBleed((int) processSAMStartPosOptions.get("bleed"));
@@ -877,6 +880,20 @@ public class SmallNGSPipeline {
      */
     public void setSamParseShortestFeature(int samParseShortestFeature) {
         this.samParseShortestFeature = samParseShortestFeature;
+    }
+
+    /**
+     * @return the samParseForMiRNAsAnalyzeIsomirs
+     */
+    public Boolean getSamParseForMiRNAsAnalyzeIsomirs() {
+        return samParseForMiRNAsAnalyzeIsomirs;
+    }
+
+    /**
+     * @param samParseForMiRNAsAnalyzeIsomirs the samParseForMiRNAsAnalyzeIsomirs to set
+     */
+    public void setSamParseForMiRNAsAnalyzeIsomirs(Boolean samParseForMiRNAsAnalyzeIsomirs) {
+        this.samParseForMiRNAsAnalyzeIsomirs = samParseForMiRNAsAnalyzeIsomirs;
     }
     
     
