@@ -216,4 +216,31 @@ public class GFFEntry {
     public String getAttr() {
         return attr;
     }
+    
+    
+    
+    /**
+     * add a sequence by appending to the attribute string
+     * 
+     * @param seq 
+     */
+    public void setSequence(String seq){
+        attr = attr.concat("seq=" + seq + ";");            
+    }
+    
+    
+    
+    /**
+     * extract sequence from the attribute string
+     * 
+     * @return 
+     */
+    public String getSequence(){
+        if(attr.contains("seq=")){
+            int startPos = attr.indexOf("seq=")+4;
+            int stopPos = attr.indexOf(";", startPos);
+            return attr.substring(startPos, startPos);
+        }
+        return "";
+    }
 }

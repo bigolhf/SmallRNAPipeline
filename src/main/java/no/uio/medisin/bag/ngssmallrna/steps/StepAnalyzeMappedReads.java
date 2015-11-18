@@ -57,7 +57,8 @@ public class StepAnalyzeMappedReads extends NGSStep {
     int[] coverage5 = new int[COVERAGE_SPAN];    
     int[] coverage3 = new int[COVERAGE_SPAN];
     
-    private GFFSet featureSet = new GFFSet();
+    private GFFSet featureSet = new GFFSet(); // stores the identified features
+    
 
     /*
      int[][] startPositions = new int[169100][9];
@@ -372,8 +373,12 @@ public class StepAnalyzeMappedReads extends NGSStep {
                             bwFT.write(featureCount + "\t" + currentChr + "\t" + currentStrand + "\t" + currentStart5 + "\t" + currentStop5 + "\t"
                                     + (currentStop5 - currentStart5 + 1) + "\t" + this.countCoverage5(currentStart5 - coverage5Start, currentStop5 - coverage5Start)
                                     + "\t" + this.countDispersion5(currentStart5 - coverage5Start, currentStop5 - coverage5Start) + "\n");
-                            if(featureSet.doesRegionContainFeature(currentStart5, currentStop5, currentStrand, currentChr, bleed)==false)
-                                featureSet.addEntry(new GFFEntry(Integer.toString(featureCount), currentStrand, currentChr, currentStart5, currentStop5));
+                            if(featureSet.doesRegionContainFeature(currentStart5, currentStop5, currentStrand, currentChr, bleed)==false){
+                                GFFEntry newEntry = new GFFEntry(Integer.toString(featureCount), currentStrand, currentChr, currentStart5, currentStop5);
+                                //newEntry.setSequence(samLine);
+                                featureSet.addEntry(newEntry);
+                            }
+                            
                                 
                             
                         }
