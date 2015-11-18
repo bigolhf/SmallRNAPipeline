@@ -136,4 +136,21 @@ public class GFFSet {
             bwFT.write(gffEntry.toGFF3String() + "\n");
         }
     }
+    
+    
+    
+    
+    /**
+     * write features in FASTA format, one / line
+     * 
+     * @param bwFA
+     * @throws IOException 
+     */
+    public void writeFeaturesAsFastA(BufferedWriter bwFA) throws IOException{
+        Iterator itGF = GFFEntries.iterator();
+        while(itGF.hasNext()){
+            GFFEntry gffEntry = (GFFEntry)itGF.next();            
+            bwFA.write(gffEntry.toGFF3String() + "\n");
+        }
+    }
 }

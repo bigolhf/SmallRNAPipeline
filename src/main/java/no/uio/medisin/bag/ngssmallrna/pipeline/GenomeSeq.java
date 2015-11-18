@@ -20,6 +20,7 @@ import no.uio.medisin.bag.jmirpara.SimpleSeq;
 public class GenomeSeq {
     private String genomeName;
     private ArrayList<SimpleSeq> genomeSeq = new ArrayList<>();
+    private int noOfBases;
     
     
     public GenomeSeq(String name){
@@ -58,6 +59,7 @@ public class GenomeSeq {
                 totalBases+= line.length()+1;
                 if(line.startsWith(">")==true){
                     genomeSeq.add(new SimpleSeq(headerLine, seq.toString()));
+                    noOfBases += seq.toString().length();
                     headerLine = line.substring(1, line.length());
                     seq = new StringBuilder();
                 }
@@ -67,6 +69,7 @@ public class GenomeSeq {
                 }
             }
             genomeSeq.add(new SimpleSeq(headerLine, seq.toString()));
+            noOfBases += seq.toString().length();
         brGS.close();
         
         return genomeSeq.size();
@@ -124,5 +127,26 @@ public class GenomeSeq {
         catch(IOException exIO){
             System.err.printf(exIO.toString());
         }
+    }
+
+    /**
+     * @return the noOfBases
+     */
+    public int getNoOfBases() {
+        return noOfBases;
+    }
+    
+    
+    
+    
+    /**
+     * return the number of chromosomes in the genome
+     * This may not be chromosomes but rather the number of individual FASTA entries 
+     * that were contained in the input file
+     * 
+     * @return 
+     */
+    public int getNoOfChr(){
+        return genomeSeq.size();
     }
 }

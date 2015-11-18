@@ -14,8 +14,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
+import no.uio.medisin.bag.jmirpara.SimpleSeq;
 import no.uio.medisin.bag.ngssmallrna.pipeline.GFFEntry;
 import no.uio.medisin.bag.ngssmallrna.pipeline.GFFSet;
+import no.uio.medisin.bag.ngssmallrna.pipeline.GenomeSeq;
 import no.uio.medisin.bag.ngssmallrna.pipeline.MappedRead;
 import no.uio.medisin.bag.ngssmallrna.pipeline.SAMEntry;
 import no.uio.medisin.bag.ngssmallrna.pipeline.SampleDataEntry;
@@ -50,9 +52,9 @@ public class StepAnalyzeMappedReads extends NGSStep {
     private StepInputData stepInputData;
     private StepResultData stepResultData;
     
+    private GenomeSeq genomeFasta;
     private GFFSet gffSet = new GFFSet();    
     private ArrayList<MappedRead> mappedReads = new ArrayList<>();
-    private ArrayList<MappedRead> filteredReads = new ArrayList<>(); // generated from mappedReads
     
     int[] coverage5 = new int[COVERAGE_SPAN];    
     int[] coverage3 = new int[COVERAGE_SPAN];
@@ -61,6 +63,9 @@ public class StepAnalyzeMappedReads extends NGSStep {
     
 
     /*
+     dont think i want to go this route, but leave the arrays for now to 
+     jog my memory should I change my mind
+    
      int[][] startPositions = new int[169100][9];
      int[][] readLengths = new int[169100][9];
     
@@ -99,6 +104,25 @@ public class StepAnalyzeMappedReads extends NGSStep {
             logger.info("exception parsing InputData" + exIO);
         }
 
+        /**
+         * read genome fasta
+         */
+        genomeFasta = new GenomeSeq((String) stepInputData.getStepParams().get("bowtieReferenceGenome"));
+        String pathToFasta = stepInputData.getStepParams().get("bowtieMapGenomeRootFolder")
+                + FileSeparator + stepInputData.getStepParams().get("bowtieReferenceGenome") + FileSeparator + "Sequence/WholeGenomeFasta";
+        String genomeFastaFile = pathToFasta + FileSeparator + "genome.fa";
+        genomeFastaFile = genomeFastaFile.replace(FileSeparator + FileSeparator, FileSeparator).trim();
+        try{
+            logger.info("reading genome file + <" + genomeFastaFile + ">");
+            this.genomeFasta.readFastaGenome(genomeFastaFile);
+            logger.info("finished ");
+            logger.info("read " + genomeFasta.getNoOfBases() + " bases");
+            logger.info("spanning " + genomeFasta.getNoOfChr() + " chromosomes");
+        }
+        catch(IOException exIO){
+            logger.error("exception reading Genome reference file + <" + genomeFastaFile + ">");
+            logger.error(exIO.toString());
+        }
         /**
          * read genes.gtf or genes.gff3 file
          */
@@ -375,7 +399,8 @@ public class StepAnalyzeMappedReads extends NGSStep {
                                     + "\t" + this.countDispersion5(currentStart5 - coverage5Start, currentStop5 - coverage5Start) + "\n");
                             if(featureSet.doesRegionContainFeature(currentStart5, currentStop5, currentStrand, currentChr, bleed)==false){
                                 GFFEntry newEntry = new GFFEntry(Integer.toString(featureCount), currentStrand, currentChr, currentStart5, currentStop5);
-                                //newEntry.setSequence(samLine);
+                                String featureSeq = genomeFasta.getSubSeq(currentChr, currentStart5, currentStop5);
+                                newEntry.setSequence(featureSeq);
                                 featureSet.addEntry(newEntry);
                             }
                             
@@ -467,7 +492,7 @@ public class StepAnalyzeMappedReads extends NGSStep {
         }
         
         String featureFile = pathToData + FileSeparator + posAnalysisOutFolder + FileSeparator + stepInputData.getProjectID() + ".features.tsv";
-        featureFile = featureFile.replace(FileSeparator + FileSeparator, FileSeparator).trim();
+        featureFile = featureFile.replace(FileSeparator + FileSeparator, FileSeparator).trim();        
         try{
             BufferedWriter bwFT = new BufferedWriter(new FileWriter(new File(featureFile)));
                 featureSet.writeFeaturesAsGFF3(bwFT);
@@ -475,6 +500,19 @@ public class StepAnalyzeMappedReads extends NGSStep {
         }
         catch(IOException exIO){
             logger.error("error writing feature file <" + featureFile + ">");
+            logger.error(exIO);
+        }
+
+        
+        String fastaFile = pathToData + FileSeparator + posAnalysisOutFolder + FileSeparator + stepInputData.getProjectID() + ".fasta";
+        fastaFile = fastaFile.replace(FileSeparator + FileSeparator, FileSeparator).trim();
+        try{
+            BufferedWriter bwFA = new BufferedWriter(new FileWriter(new File(fastaFile)));
+                featureSet.writeFeaturesAsFastA(bwFA);
+            bwFA.close();
+        }
+        catch(IOException exIO){
+            logger.error("error writing fasta feature file <" + fastaFile + ">");
             logger.error(exIO);
         }
     }

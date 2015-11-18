@@ -30,6 +30,8 @@ public class GFFEntry {
     public static final     String  NEGSTRAND   = "-";
     public static final     String  UNKSTRAND   = "?";
     
+    static String   CR = System.getProperty("line.separator");
+    
     
     private                 String  seqID;
     private                 String  src;
@@ -240,6 +242,23 @@ public class GFFEntry {
             int startPos = attr.indexOf("seq=")+4;
             int stopPos = attr.indexOf(";", startPos);
             return attr.substring(startPos, startPos);
+        }
+        return "";
+    }
+    
+    
+    
+    
+    /**
+     * write the entry as in FASTA format
+     * 
+     * @return 
+     */
+    public String writeAsFastA(){
+        if(attr.contains("seq=")){
+            int startPos = attr.indexOf("seq=")+4;
+            int stopPos = attr.indexOf(";", startPos);
+            return ">" + this.seqID + "|" + this.strand + CR + attr.substring(startPos, startPos);
         }
         return "";
     }
