@@ -150,7 +150,7 @@ public class GFFSet {
         Iterator itGF = GFFEntries.iterator();
         while(itGF.hasNext()){
             GFFEntry gffEntry = (GFFEntry)itGF.next();            
-            bwFA.write(gffEntry.toGFF3String() + "\n");
+            bwFA.write(gffEntry.toFastAString() + "\n");
         }
     }
 }

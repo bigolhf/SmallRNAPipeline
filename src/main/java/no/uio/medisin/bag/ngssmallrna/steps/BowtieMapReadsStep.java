@@ -6,7 +6,10 @@
 package no.uio.medisin.bag.ngssmallrna.steps;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -43,6 +46,7 @@ public class BowtieMapReadsStep extends NGSStep{
     private static final String         fastqGenomeAlnExtension     = ".trim.clp.gen.fasta";
     private static final String         fastqGenomeUnAlnExtension   = ".trim.clp.unmap.fasta";
     private static final String         samGenomeAlnExtension       = ".trim.clp.gen.sam";
+    private static final String         mappingResultExtension      = ".trim.clp.gen.mapping.txt";
     
     
     
@@ -107,15 +111,16 @@ public class BowtieMapReadsStep extends NGSStep{
                 /*
                     Map Abundant Reads
                 */
+                    String fastqRaw2 = pathToData + FileSeparator + "fastq_files" + FileSeparator + sampleData.getDataFile();                    
                 cmd.add(mappingCmd);
                 String pathToBowtieIndex = stepInputData.getStepParams().get("bowtieMapGenomeRootFolder") 
                     + FileSeparator + stepInputData.getStepParams().get("bowtieReferenceGenome") + "/Sequence/AbundantSequences/abundant";
                 cmd.add(pathToBowtieIndex);
                 
-                String fastqInputFile = pathToData + FileSeparator + inFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", infileExtension);
-                fastqInputFile = fastqInputFile.replace(FileSeparator + FileSeparator, FileSeparator).trim();
+                String fastqTrimmedInputFile = pathToData + FileSeparator + inFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", infileExtension);
+                fastqTrimmedInputFile = fastqTrimmedInputFile.replace(FileSeparator + FileSeparator, FileSeparator).trim();
                 cmd.add("-f");
-                cmd.add(fastqInputFile);
+                cmd.add(fastqTrimmedInputFile);
                 
                 cmd.add("-v" + stepInputData.getStepParams().get("bowtieMapNoOfMismatches"));
                 cmd.add("--best");
@@ -183,9 +188,9 @@ public class BowtieMapReadsStep extends NGSStep{
                     + FileSeparator + stepInputData.getStepParams().get("bowtieReferenceGenome") + "/Sequence/BowtieIndex/genome";
                 cmd.add(pathToBowtieGenomeIndex);
                 
-                fastqInputFile = fastqAbundantUnAln;
+//                fastqTrimmedInputFile = fastqAbundantUnAln;
                 cmd.add("-f");
-                cmd.add(fastqInputFile);
+                cmd.add(fastqAbundantUnAln);
                 
                 cmd.add("-v" + stepInputData.getStepParams().get("bowtieMapNoOfMismatches"));
                 cmd.add("--best");
@@ -241,7 +246,75 @@ public class BowtieMapReadsStep extends NGSStep{
                 brAStdin.close();
                 brAStdErr.close();
                 
-                
+
+                String mappingOutputFile    = genomeMapOutputFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", mappingResultExtension);
+                BufferedWriter bwMO = new BufferedWriter(new FileWriter(new File(mappingOutputFile)));
+                    for(String mapLine: mapGenStdErr){
+                        bwMO.write(mapLine + "\n");
+                    }
+                    bwMO.write("\n\n" + "+" + StringUtils.repeat("-", 60) + "+" + "\n");
+                    
+                    String fastqRaw = pathToData + FileSeparator + "fastq_files" + FileSeparator + sampleData.getDataFile();                    
+                    int rawReadsIn = 0;
+                    BufferedReader brFQ = new BufferedReader(new FileReader(fastqRaw));
+                        while (brFQ.readLine() != null) rawReadsIn++;
+                    brFQ.close();
+
+                bwMO.write(fastqRaw + "\n");
+                bwMO.write(fastqTrimmedInputFile + "\n");
+                bwMO.write(fastqGenomeAln + "\n");
+                bwMO.write(fastqAbundantAln + "\n");
+                bwMO.write(fastqGenomeUnAln + "\n");
+
+                    // Input 
+                    int totalInputReads = 0;
+                    String fqLine = "";
+                    BufferedReader brIR = new BufferedReader(new FileReader(new File(fastqTrimmedInputFile)));
+                        while((fqLine = brIR.readLine())!=null){
+                            totalInputReads += Integer.parseInt(fqLine.substring(1).split("-")[1]);
+                            
+                            brIR.readLine();
+                        }
+                    brIR.close();
+                    bwMO.write("total input reads = " + rawReadsIn + "\n");
+                    
+                    // Mapped
+                    int totalMappedReads = 0;
+                    fqLine = "";
+                    BufferedReader brMR = new BufferedReader(new FileReader(new File(fastqGenomeAln)));
+                        while((fqLine = brMR.readLine())!=null){
+                            totalMappedReads += Integer.parseInt(fqLine.substring(1).split("-")[1]);
+                            brMR.readLine();
+                        }
+                    brMR.close();
+                    bwMO.write("total mapped reads = " + totalMappedReads + "\n");
+                    
+                    // Abundant
+                    int totalAbundantReads = 0;
+                    BufferedReader brAR = new BufferedReader(new FileReader(new File(fastqAbundantAln)));
+                        while((fqLine = brAR.readLine())!=null){
+                            totalAbundantReads += Integer.parseInt(fqLine.substring(1).split("-")[1]);
+                            brAR.readLine();
+                        }
+                    brAR.close();
+                    bwMO.write("total abundant reads = " + totalAbundantReads  + "\n");
+
+                    // Unmapped
+                    int totalUnmappedReads = 0;
+                    BufferedReader brUR = new BufferedReader(new FileReader(new File(fastqGenomeUnAln)));
+                        while((fqLine = brUR.readLine())!=null){
+                            totalUnmappedReads += Integer.parseInt(fqLine.substring(1).split("-")[1]);
+                            brUR.readLine();
+                        }
+                    brUR.close();
+                    bwMO.write("total unmapped reads = " + totalUnmappedReads  + "\n");
+                    
+                    bwMO.write("length filtered reads = " 
+                            + (rawReadsIn - totalMappedReads - totalAbundantReads - totalUnmappedReads));
+
+                    bwMO.write("\n\n" + "+" + StringUtils.repeat("-", 60) + "+" + "\n");
+                    
+                bwMO.close();
             }
             catch(IOException|InterruptedException ex){
                 logger.error("error executing Bowtie Mapping command\n");

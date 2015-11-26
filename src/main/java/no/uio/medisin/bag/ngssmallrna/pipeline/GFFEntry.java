@@ -254,11 +254,11 @@ public class GFFEntry {
      * 
      * @return 
      */
-    public String writeAsFastA(){
+    public String toFastAString(){
         if(attr.contains("seq=")){
             int startPos = attr.indexOf("seq=")+4;
             int stopPos = attr.indexOf(";", startPos);
-            return ">" + this.seqID + "|" + this.strand + CR + attr.substring(startPos, startPos);
+            return ">" + this.seqID + "|" + this.strand + CR + attr.substring(startPos, stopPos);
         }
         return "";
     }
