@@ -117,7 +117,7 @@ public class MirBaseSet {
                             break;
                     }
                 }
-                String seq = miRBaseSeq.get(id);
+                String seq = miRBaseSeq.get(id.split("-")[1]);
                 // this may need revising. In some cases we dont care if there is no sequence, we still want the feature
                 this.miRBaseMiRNAList.add(new MiRNAFeature(name, chr, startPos, endPos, strand, id, parent, seq));
                 if(seq == null) 

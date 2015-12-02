@@ -250,15 +250,17 @@ public class GFFEntry {
     
     
     /**
-     * write the entry as in FASTA format
+     * write the entry as in FASTA format as used by MiRBase
+     * for consistency with MiRBAse the header line must have the format
+     * >cel-miR-1-5p MIMAT0020301 Caenorhabditis elegans miR-1-5p
      * 
      * @return 
      */
-    public String toFastAString(){
+    public String toMirbaseFastAString(){
         if(attr.contains("seq=")){
             int startPos = attr.indexOf("seq=")+4;
             int stopPos = attr.indexOf(";", startPos);
-            return ">" + this.seqID + "|" + this.strand + CR + attr.substring(startPos, stopPos);
+            return ">" + this.seqID + " " + this.seqID.split("-")[1] + " " + this.seqID.split("-")[0] + " " + this.seqID.split("-")[1] + CR + attr.substring(startPos, stopPos);
         }
         return "";
     }

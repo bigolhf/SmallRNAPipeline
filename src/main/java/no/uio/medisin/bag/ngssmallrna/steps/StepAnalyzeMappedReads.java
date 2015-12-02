@@ -107,7 +107,8 @@ public class StepAnalyzeMappedReads extends NGSStep {
         /**
          * read genome fasta
          */
-        genomeFasta = new GenomeSeq((String) stepInputData.getStepParams().get("bowtieReferenceGenome"));
+        String hostCode = (String) stepInputData.getStepParams().get("bowtieReferenceGenome");
+        genomeFasta = new GenomeSeq(hostCode);
         String pathToFasta = stepInputData.getStepParams().get("bowtieMapGenomeRootFolder")
                 + FileSeparator + stepInputData.getStepParams().get("bowtieReferenceGenome") + FileSeparator + "Sequence/WholeGenomeFasta";
         String genomeFastaFile = pathToFasta + FileSeparator + "genome.fa";
@@ -162,6 +163,7 @@ public class StepAnalyzeMappedReads extends NGSStep {
             logger.info("created output folder <" + posAnalysisOutputFolder + "> for results");
         }
         Iterator itSD = this.stepInputData.getSampleData().iterator();
+                int featureCount = 0;
         String samLine = null;
         while (itSD.hasNext()) {
             SampleDataEntry sampleData = (SampleDataEntry) itSD.next();
@@ -214,17 +216,7 @@ public class StepAnalyzeMappedReads extends NGSStep {
              */
             try {
                 Collections.sort(mappedReads);
-                /*
-                 Iterator itMR0 = mappedReads.iterator();
-                 int m=0;
-                 while(itMR0.hasNext()){
-                 MappedRead mRead = (MappedRead) itMR0.next();
-                 if(m % 1000 ==0)
-                 logger.debug(mRead.toString());
-                 m++;
-                 if (m > 5000) break;
-                 }
-                 */                
+
                 int bleed = (int) stepInputData.getStepParams().get("bleed");
                 int separation = (int) stepInputData.getStepParams().get("separation");
                 
@@ -266,7 +258,6 @@ public class StepAnalyzeMappedReads extends NGSStep {
                 
                 String featureOutFile = pathToData + FileSeparator + posAnalysisOutFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", featuresExtension);
                 featureOutFile = featureOutFile.replace(FileSeparator + FileSeparator, FileSeparator).trim();
-                int featureCount = 0;
                 
                 BufferedWriter bwFT = new BufferedWriter(new FileWriter(new File(featureOutFile)));
                 bwFT.write("ID\tChr\t \tStart\tStop\tLength\tCoverage\tDispersion\n");
@@ -373,52 +364,25 @@ public class StepAnalyzeMappedReads extends NGSStep {
                     }
                     
                     if (startNewFeature5) {
-                        /*
-                        if (currentStop5 - currentStart5 < longestFeature && currentStop5 - currentStart5 > shortestFeature) {
-                            logger.debug("5' PASS length filter:\n");
-                        } else {
-                            logger.debug("5' FAIL length filter:\n");
-                        }
-                        if(countCoverage5(currentStart5 - coverage5Start, currentStop5 - coverage5Start) >= minCounts){
-                            logger.debug("5' PASS count filter:\n");
-                        } else {
-                            logger.debug("5' FAIL count filter:\n");
-                        }
-                        */
-                        /*
-                        logger.debug(featureCount + "\t" + currentStart5 + "\t" + currentStop5 + "\t"
-                                + (currentStop5 - currentStart5 + 1));
-                        logger.debug(this.countCoverage5(currentStart5 - coverage5Start, currentStop5 - coverage5Start));
-                        logger.debug(countDispersion5(currentStart5 - coverage5Start, currentStop5 - coverage5Start));
-                        logger.debug(printCoverage5(currentStart5 - coverage5Start, currentStop5 - coverage5Start, "|"));
-                        */
                         if(currentStop5 - currentStart5 < longestFeature && countCoverage5(currentStart5 - coverage5Start, currentStop5 - coverage5Start) >= minCounts){
-                            //logger.debug("write out 5' feature");
                             bwFT.write(featureCount + "\t" + currentChr + "\t" + currentStrand + "\t" + currentStart5 + "\t" + currentStop5 + "\t"
                                     + (currentStop5 - currentStart5 + 1) + "\t" + this.countCoverage5(currentStart5 - coverage5Start, currentStop5 - coverage5Start)
                                     + "\t" + this.countDispersion5(currentStart5 - coverage5Start, currentStop5 - coverage5Start) + "\n");
                             if(featureSet.doesRegionContainFeature(currentStart5, currentStop5, currentStrand, currentChr, bleed)==false){
-                                GFFEntry newEntry = new GFFEntry(Integer.toString(featureCount), currentStrand, currentChr, currentStart5, currentStop5);
+                                GFFEntry newEntry = new GFFEntry(hostCode  + "-" + Integer.toString(featureCount) + ":5", currentStrand, currentChr, currentStart5, currentStop5);
                                 String featureSeq = genomeFasta.getSubSeq(currentChr, currentStart5, currentStop5);
                                 newEntry.setSequence(featureSeq);
                                 featureSet.addEntry(newEntry);
-                            }
-                            
-                                
-                            
+                            }                            
                         }
                         
-                        //logger.debug("set currentStart5 from " + currentStart5 + " to " + mappedRead.getStartPos());
-                        //logger.debug("set currentStop5 from " + currentStop5 + " to " + mappedRead.getEndPos());
                         currentStart5 = mappedRead.getStartPos();
                         currentStop5 = mappedRead.getEndPos();
-                        //logger.debug("set coverage range from " + (currentStart5 - COVERAGE_SPAN / 2) + " to " + (currentStart5 + COVERAGE_SPAN / 2));
+
                         coverage5Start = currentStart5 - COVERAGE_SPAN / 2;
                         clearCoverage5();
                         try {
-                            //logger.debug(printCoverage5(currentStart5 - coverage5Start, currentStop5 - coverage5Start, "|"));
                             this.addCounts5(mappedRead.getStartPos() - coverage5Start, mappedRead.getEndPos() - coverage5Start, mappedRead.getCount());
-                            //logger.debug(printCoverage5(currentStart5 - coverage5Start, currentStop5 - coverage5Start, "|"));
                         } catch (ArrayIndexOutOfBoundsException exAB) {
                             logger.error("5' Array out of bounds when writing data");
                         }
@@ -428,51 +392,29 @@ public class StepAnalyzeMappedReads extends NGSStep {
                         featureCount++;
                         startNewFeature5 = false;
                         
-                    } else {
-                                         
+                    } else {                                         
                         if (startNewFeature3 ) {
-                            /*
-                            if (currentStop3 - currentStart3 < longestFeature && currentStop3 - currentStart3 > shortestFeature) {
-                                logger.debug("3' PASS length filter:\n");
-                            } else {
-                                logger.debug("3' FAIL length filter:\n");
-                            }
-
-                            if (countCoverage3(coverage3Start - currentStop3, coverage3Start - currentStart3) > minCounts ) {
-                                logger.debug("3' PASS count filter:\n");
-                            } else {
-                                logger.debug("3' FAIL count filter:\n");
-                            }
-                            */
-                            /*
-                            logger.debug(featureCount + "\t" + currentChr + "\t" + currentStrand + "\t" + "\t" + currentStart3 + "\t" + currentStop3 + "\t"
-                                    + (currentStop3 - currentStart3 + 1));
-                            logger.debug(this.countCoverage3(coverage3Start - currentStop3, coverage3Start - currentStart3));
-                            logger.debug(countDispersion3(coverage3Start - currentStop3, coverage3Start - currentStart3));
-                            logger.debug(printCoverage3(coverage3Start - currentStop3, coverage3Start - currentStart3, "|"));
-                            */
                             if(currentStop3 - currentStart3 < longestFeature 
                                 && countCoverage3(coverage3Start - currentStop3, coverage3Start - currentStart3) > minCounts){
-                                //logger.debug("write out 3' feature");
                                 bwFT.write(featureCount + "\t" + currentChr + "\t" + currentStrand + "\t" + currentStart3 + "\t" + currentStop3 + "\t"
                                         + (currentStop3 - currentStart3 + 1) + "\t" + this.countCoverage3(coverage3Start - currentStop3, coverage3Start - currentStart3)
                                         + "\t" + this.countDispersion3(coverage3Start - currentStop3, coverage3Start - currentStart3) + "\n");
-                                if(featureSet.doesRegionContainFeature(currentStart3, currentStop3, currentStrand, currentChr, bleed)==false)
-                                    featureSet.addEntry(new GFFEntry(Integer.toString(featureCount), currentStrand, currentChr, currentStart3, currentStop3));
+                                if(featureSet.doesRegionContainFeature(currentStart3, currentStop3, currentStrand, currentChr, bleed)==false){
+                                    GFFEntry newEntry = new GFFEntry(hostCode + "-" + Integer.toString(featureCount) + ":3", currentStrand, currentChr, currentStart3, currentStop3);
+                                    String featureSeq = SimpleSeq.complement(genomeFasta.getSubSeq(currentChr, currentStart3, currentStop3));
+                                    newEntry.setSequence(featureSeq);
+                                    featureSet.addEntry(newEntry);                                    
+                                }
                                 
                             }
                             
-                            //logger.debug("set currentStart3 from " + currentStart3 + " to " + mappedRead.getStartPos());
-                            //logger.debug("set currentStop3 from " + currentStop3 + " to " + mappedRead.getEndPos());
                             currentStart3 = mappedRead.getStartPos();
                             currentStop3 = mappedRead.getEndPos();
-                            //logger.debug("set coverage range from " + (currentStart3 + COVERAGE_SPAN / 2) + " to " + (currentStart3 - COVERAGE_SPAN / 2));
+
                             coverage3Start = currentStart3 + COVERAGE_SPAN / 2;
                             clearCoverage3();
                             try {
-                                //logger.debug(printCoverage3(coverage3Start - currentStop3, coverage3Start - currentStart3, "|"));
                                 this.addCounts3(coverage3Start - mappedRead.getStartPos(), coverage3Start - mappedRead.getEndPos(), mappedRead.getCount());
-                                //logger.debug(printCoverage3(coverage3Start - currentStop3, coverage3Start - currentStart3, "|"));
                             } catch (ArrayIndexOutOfBoundsException exAB) {
                                 logger.error("3' Array out of bounds when writing data");
                             }
