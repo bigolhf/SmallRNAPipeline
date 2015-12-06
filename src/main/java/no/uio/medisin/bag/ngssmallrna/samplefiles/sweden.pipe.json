@@ -1,0 +1,17 @@
+{"pipelineName":"pipeline1", 
+ "projectID":"sweden",
+ "projectRoot":"/data/ngsdata/",
+ "stepsData":
+   [
+     {"stepType":"parseSAMForMiRNAs",     "inputFileList":"bowtie_genome_mapped", "outputFileList":"mappedReads"},
+     {"stepType":"differentialExpression", "inputFileList":"mirna_isomir_analysis", "outputFileList":"differentialExpression"},
+   	 {"stepType":"exit"},
+   	 {"stepType":"TrimAdapters",   			"inputFileList":"raw_data", "outputFileList":"trimmed_data"},
+   	 {"stepType":"CollapseReads",  			"inputFileList":"trimmed_data", "outputFileList":"collapsed_reads"},
+   	 {"stepType":"BowtieMapReads", 			"inputFileList":"collapsed_reads", "outputFileList":"mappedReads"},
+     {"stepType":"analyzeStartPositions",  "inputFileList":"bowtie_genome_mapped", "outputFileList":"analyzeStartPositions"},
+   	 {"stepType":"parseSAMForMiRNAs", 		"inputFileList":"bowtie_genome_mapped", "outputFileList":"mappedReads"},
+   	 {"stepType":"differentialExpression", "inputFileList":"mirna_isomir_analysis", "outputFileList":"differentialExpression"},
+   	 {"stepType":"exit"}
+   ]
+}

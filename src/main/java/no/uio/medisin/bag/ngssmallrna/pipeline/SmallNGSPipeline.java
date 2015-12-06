@@ -22,6 +22,7 @@ import no.uio.medisin.bag.ngssmallrna.steps.ParseSAMForMiRNAsStep;
 import no.uio.medisin.bag.ngssmallrna.steps.DEwithEdgeRStep;
 import no.uio.medisin.bag.ngssmallrna.steps.StepAnalyzeMappedReads;
 import no.uio.medisin.bag.ngssmallrna.steps.StepInputData;
+import no.uio.medisin.bag.ngssmallrna.steps.StepUnzipInputFiles;
 import no.uio.medisin.bag.ngssmallrna.steps.TrimAdaptersStep;
 import org.yaml.snakeyaml.Yaml;
 import org.codehaus.jackson.JsonGenerationException;
@@ -44,6 +45,7 @@ public class SmallNGSPipeline {
     private String                      dataFile = "";
     
     private String                      softwareRootFolder = "";
+    private String                      unzipSoftware = "";
     private String                      adapterTrimmingSoftware = "";
     private String                      fastq2fastaSoftware = "";
     private String                      collapseFastaSoftware = "";
@@ -51,6 +53,8 @@ public class SmallNGSPipeline {
     
     private String                      genomeRootFolder = "";
     private String                      mirbaseRootFolder = "";
+    
+    private int                         unzipNoOfThreads = 4;
     
     private String                      trimAdapterFile = "";
     private int                         trimNoOfMismatches = 2;
@@ -128,6 +132,23 @@ public class SmallNGSPipeline {
         for (NGSRunStepData stepData: this.getPipelineData().getStepsData()){
             
             switch (stepData.getStepType()){
+                
+                case "unzipFastq":
+                    
+                    HashMap unzipFastqParams = new HashMap();
+                    unzipFastqParams.put("unzipSoftware",           this.getUnzipSoftware());
+                    unzipFastqParams.put("trimNoOfThreads",         this.getTrimNoOfThreads());
+                    
+                    StepInputData sidUnzip = new StepInputData(unzipFastqParams, this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), this.getSampleData());
+                    StepUnzipInputFiles unzipFastqStep = new StepUnzipInputFiles(sidUnzip);
+                    
+                    unzipFastqStep.verifyInputData();
+                    unzipFastqStep.execute();
+                    
+                    break;
+                    
+                    
+                    
                 case "TrimAdapters":
                     
                     HashMap trimAdapterParams = new HashMap();
@@ -323,10 +344,14 @@ public class SmallNGSPipeline {
 
         HashMap softwareOptions = (HashMap) pipelineConfiguration.get("software");
         this.setSoftwareRootFolder((String) softwareOptions.get("root_folder"));
+        this.setUnzipSoftware((String) softwareOptions.get("unzip"));
         this.setAdapterTrimmingSoftware((String) softwareOptions.get("adapter_trimming"));
         this.setFastq2fastaSoftware((String) softwareOptions.get("fastq_to_fasta"));
         this.setCollapseFastaSoftware((String) softwareOptions.get("fastx_collapser"));
         this.setMappingCommand((String) softwareOptions.get("mapping_command"));
+        
+        HashMap unzipOptions = (HashMap) pipelineConfiguration.get("unzip");
+        this.setUnzipNoOfThreads((int) unzipOptions.get("no_of_threads"));
         
         HashMap trimAdapterOptions = (HashMap) pipelineConfiguration.get("adapter_trimming");
         this.setTrimAdapterFile((String) trimAdapterOptions.get("adapter_file"));
@@ -894,6 +919,34 @@ public class SmallNGSPipeline {
      */
     public void setSamParseForMiRNAsAnalyzeIsomirs(Boolean samParseForMiRNAsAnalyzeIsomirs) {
         this.samParseForMiRNAsAnalyzeIsomirs = samParseForMiRNAsAnalyzeIsomirs;
+    }
+
+    /**
+     * @return the unzipSoftware
+     */
+    public String getUnzipSoftware() {
+        return unzipSoftware;
+    }
+
+    /**
+     * @param unzipSoftware the unzipSoftware to set
+     */
+    public void setUnzipSoftware(String unzipSoftware) {
+        this.unzipSoftware = unzipSoftware;
+    }
+
+    /**
+     * @return the unzipNoOfThreads
+     */
+    public int getUnzipNoOfThreads() {
+        return unzipNoOfThreads;
+    }
+
+    /**
+     * @param unzipNoOfThreads the unzipNoOfThreads to set
+     */
+    public void setUnzipNoOfThreads(int unzipNoOfThreads) {
+        this.unzipNoOfThreads = unzipNoOfThreads;
     }
     
     

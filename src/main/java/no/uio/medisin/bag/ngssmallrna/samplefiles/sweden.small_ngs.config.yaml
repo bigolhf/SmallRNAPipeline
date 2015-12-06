@@ -1,0 +1,64 @@
+paths:
+  installation_folder: /home/sr/NetBeansProjects/MirPara4j
+
+model:
+  folder: models
+
+rnafold:
+  folder: lib
+  dll: RNAFold.dll
+
+data:
+  folder: data
+  data_file: mirbase.dat
+  genome_root_folder: /data/genomes
+  mirbase_folder: /data/mirbase
+
+software:
+  root_folder: /Users/simonray/software/
+  unzip: /usr/local/bin/pigz
+  adapter_trimming: trimmomatic/Trimmomatic-0.33/trimmomatic-0.33.jar
+  fastq_to_fasta: /usr/local/bin/fastq_to_fasta
+  fastx_collapser: /usr/local/bin/fastx_collapser
+  mapping_command: /usr/local/bin/bowtie
+
+unzip:
+  no_of_threads: 4  
+
+adapter_trimming:
+  adapter_file: /Users/simonray/NetBeansProjects/SmallRNAPipeline/test/TruSeqE-SE.fa
+  no_of_mismatches: 2
+  min_align_score: 7
+  no_of_threads: 4
+  min_avg_read_qual: 30
+
+bowtie_mapping:
+  alignment_mode: v
+  no_of_mismatches: 2
+  no_of_threads: 4
+  host: msy
+
+sam_mirna_processing:
+  bleed: 2
+  mirbase_release: 20
+  baseline_percent: 5
+  analyze_isomirs: false
+
+sam_startpos_processing:
+  gff_file: 
+  bleed: 2
+  separation: 10
+  shortest_feature: 14
+  longest_feature: 200
+  min_counts: 1000
+  feature_types:
+    - "one"
+    - "two"
+    - "three"
+
+analyze_isomir_dispersion:
+  pvalue: 0.05
+
+differential_expression:
+  pvalue: 0.05
+
