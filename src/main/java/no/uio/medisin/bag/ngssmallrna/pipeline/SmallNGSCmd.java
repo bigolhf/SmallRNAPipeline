@@ -127,7 +127,7 @@ public class SmallNGSCmd {
     public static void printBanner(){
         logger.info("\n\n\n"
                 + "    =======================================================================\n"
-                + "    |  NGS smallRNA pipeline:                                             |"
+                + "    |  NGS smallRNA pipeline:                                             |\n"
                 + "    |    performs a range of analyses on smallRNA NGS data                |\n"
                 + "    =======================================================================\n\n\n");
         
