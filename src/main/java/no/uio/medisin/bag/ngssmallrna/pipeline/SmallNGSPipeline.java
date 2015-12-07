@@ -13,17 +13,18 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import static no.uio.medisin.bag.ngssmallrna.pipeline.SmallNGSCmd.logger;
-import no.uio.medisin.bag.ngssmallrna.steps.AnalyzeIsomiRDispersionStep;
-import no.uio.medisin.bag.ngssmallrna.steps.BowtieMapReadsStep;
-import no.uio.medisin.bag.ngssmallrna.steps.CollapseReadsStep;
+import no.uio.medisin.bag.ngssmallrna.steps.StepAnalyzeIsomiRDispersion;
+import no.uio.medisin.bag.ngssmallrna.steps.StepBowtieMapReads;
+import no.uio.medisin.bag.ngssmallrna.steps.StepCollapseReads;
 import no.uio.medisin.bag.ngssmallrna.steps.NGSStep;
 import no.uio.medisin.bag.ngssmallrna.steps.NGSRunStepData;
-import no.uio.medisin.bag.ngssmallrna.steps.ParseSAMForMiRNAsStep;
-import no.uio.medisin.bag.ngssmallrna.steps.DEwithEdgeRStep;
+import no.uio.medisin.bag.ngssmallrna.steps.StepParseSAMForMiRNAs;
+import no.uio.medisin.bag.ngssmallrna.steps.StepDEwithEdgeR;
 import no.uio.medisin.bag.ngssmallrna.steps.StepAnalyzeMappedReads;
+import no.uio.medisin.bag.ngssmallrna.steps.StepCleanUp;
 import no.uio.medisin.bag.ngssmallrna.steps.StepInputData;
 import no.uio.medisin.bag.ngssmallrna.steps.StepUnzipInputFiles;
-import no.uio.medisin.bag.ngssmallrna.steps.TrimAdaptersStep;
+import no.uio.medisin.bag.ngssmallrna.steps.StepTrimAdapters;
 import org.yaml.snakeyaml.Yaml;
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.annotate.JsonAutoDetect;
@@ -45,7 +46,7 @@ public class SmallNGSPipeline {
     private String                      dataFile = "";
     
     private String                      softwareRootFolder = "";
-    private String                      unzipSoftware = "";
+    private String                      zipSoftware = "";
     private String                      adapterTrimmingSoftware = "";
     private String                      fastq2fastaSoftware = "";
     private String                      collapseFastaSoftware = "";
@@ -82,6 +83,9 @@ public class SmallNGSPipeline {
     private double                      analyzeIsomiRDispPVal = 0.05;
     
     private double                      diffExpressionPVal = 0.05;
+    
+    private ArrayList<String>           cleanupFiles = new ArrayList<>();
+    private int                         cleanupNoOfThreads = 4;
     
     private PipelineData                pipelineData = new PipelineData();
     private ArrayList<SampleDataEntry>  SampleData = new ArrayList<>();
@@ -136,7 +140,7 @@ public class SmallNGSPipeline {
                 case "unzipFastq":
                     
                     HashMap unzipFastqParams = new HashMap();
-                    unzipFastqParams.put("unzipSoftware",           this.getUnzipSoftware());
+                    unzipFastqParams.put("unzipSoftware",           this.getZipSoftware());
                     unzipFastqParams.put("trimNoOfThreads",         this.getTrimNoOfThreads());
                     
                     StepInputData sidUnzip = new StepInputData(unzipFastqParams, this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), this.getSampleData());
@@ -160,7 +164,7 @@ public class SmallNGSPipeline {
                     trimAdapterParams.put("trimMinAvgReadQuality",  this.getTrimMinAvgReadQuality());
                     
                     StepInputData sidTrim = new StepInputData(trimAdapterParams, this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), this.getSampleData());
-                    TrimAdaptersStep ngsTrimStep = new TrimAdaptersStep(sidTrim);
+                    StepTrimAdapters ngsTrimStep = new StepTrimAdapters(sidTrim);
                     this.getNGSSteps().add(ngsTrimStep);
                     ngsTrimStep.verifyInputData();
                     ngsTrimStep.execute();
@@ -176,7 +180,7 @@ public class SmallNGSPipeline {
                     collapseReadsParams.put("collapseFasta", this.getCollapseFastaSoftware());
                     
                     StepInputData sidCollapse = new StepInputData(collapseReadsParams, this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), this.getSampleData());
-                    CollapseReadsStep ngsCollapseStep = new CollapseReadsStep(sidCollapse);
+                    StepCollapseReads ngsCollapseStep = new StepCollapseReads(sidCollapse);
                     ngsCollapseStep.verifyInputData();
                     ngsCollapseStep.execute();
                     
@@ -193,7 +197,7 @@ public class SmallNGSPipeline {
                     bowtieMapReadsParams.put("bowtieNoOfThreads", this.getBowtieMappingNoOfThreads());
                     
                     StepInputData sidMap = new StepInputData(bowtieMapReadsParams, this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), this.getSampleData());
-                    BowtieMapReadsStep ngsBowtieMapReads = new BowtieMapReadsStep(sidMap);
+                    StepBowtieMapReads ngsBowtieMapReads = new StepBowtieMapReads(sidMap);
                     ngsBowtieMapReads.verifyInputData();
                     ngsBowtieMapReads.execute();
                     
@@ -210,7 +214,7 @@ public class SmallNGSPipeline {
                     parseSAMmiRNAsParams.put("analyze_isomirs", this.getSamParseForMiRNAsAnalyzeIsomirs());
 
                     StepInputData sidSAM = new StepInputData(parseSAMmiRNAsParams, this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), this.getSampleData());
-                    ParseSAMForMiRNAsStep ngsParseSAMForMiRNAs = new ParseSAMForMiRNAsStep(sidSAM);
+                    StepParseSAMForMiRNAs ngsParseSAMForMiRNAs = new StepParseSAMForMiRNAs(sidSAM);
                     ngsParseSAMForMiRNAs.verifyInputData();
                     ngsParseSAMForMiRNAs.execute();
                     
@@ -246,7 +250,7 @@ public class SmallNGSPipeline {
                     isomiRDispersionAnalysisParams.put("miRBaseHostGFFFile", this.getMiRBaseHostGFF());
                     
                     StepInputData sidIsoDisp = new StepInputData(isomiRDispersionAnalysisParams, this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), this.getSampleData());                    
-                    AnalyzeIsomiRDispersionStep analyzeIsomiRDispersions = new AnalyzeIsomiRDispersionStep(sidIsoDisp);
+                    StepAnalyzeIsomiRDispersion analyzeIsomiRDispersions = new StepAnalyzeIsomiRDispersion(sidIsoDisp);
                     analyzeIsomiRDispersions.verifyInputData();
                     analyzeIsomiRDispersions.execute();
                     
@@ -266,9 +270,22 @@ public class SmallNGSPipeline {
                     diffExpressionAnalysisParams.put("miRBaseHostGFFFile", this.getMiRBaseHostGFF());
                     
                     StepInputData siodDiffExpr = new StepInputData(diffExpressionAnalysisParams, this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), this.getSampleData());
-                    DEwithEdgeRStep edgeRDE = new DEwithEdgeRStep(siodDiffExpr);
+                    StepDEwithEdgeR edgeRDE = new StepDEwithEdgeR(siodDiffExpr);
                     edgeRDE.verifyInputData();
                     edgeRDE.execute();
+                    break;
+                    
+                case "cleanup":
+                    HashMap cleanUpParams = new HashMap();
+                    cleanUpParams.put("zipSoftware",          this.getZipSoftware());
+                    cleanUpParams.put("trimNoOfThreads",        this.getTrimNoOfThreads());
+                    cleanUpParams.put("fileTypes",              this.getCleanupFiles());
+                    
+                    StepInputData sidCleanUp = new StepInputData(cleanUpParams, this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), this.getSampleData());
+                    StepCleanUp cleanUp = new StepCleanUp(sidCleanUp);
+                    cleanUp.verifyInputData();
+                    cleanUp.execute();
+                    break;
                     
                     
                 case "exit":
@@ -344,7 +361,7 @@ public class SmallNGSPipeline {
 
         HashMap softwareOptions = (HashMap) pipelineConfiguration.get("software");
         this.setSoftwareRootFolder((String) softwareOptions.get("root_folder"));
-        this.setUnzipSoftware((String) softwareOptions.get("unzip"));
+        this.setZipSoftware((String) softwareOptions.get("unzip"));
         this.setAdapterTrimmingSoftware((String) softwareOptions.get("adapter_trimming"));
         this.setFastq2fastaSoftware((String) softwareOptions.get("fastq_to_fasta"));
         this.setCollapseFastaSoftware((String) softwareOptions.get("fastx_collapser"));
@@ -385,6 +402,11 @@ public class SmallNGSPipeline {
         
         HashMap diffExpressionOptions = (HashMap) pipelineConfiguration.get("differential_expression");
         this.setDiffExpressionPVal((double) diffExpressionOptions.get("pvalue"));
+        
+        HashMap cleanupOptions = (HashMap) pipelineConfiguration.get("cleanup");
+        this.setCleanupFiles((ArrayList<String>)cleanupOptions.get("file_types"));
+        this.setCleanupNoOfThreads((int) cleanupOptions.get("no_of_threads"));
+        
         
         logger.info("done\n");
         
@@ -922,20 +944,6 @@ public class SmallNGSPipeline {
     }
 
     /**
-     * @return the unzipSoftware
-     */
-    public String getUnzipSoftware() {
-        return unzipSoftware;
-    }
-
-    /**
-     * @param unzipSoftware the unzipSoftware to set
-     */
-    public void setUnzipSoftware(String unzipSoftware) {
-        this.unzipSoftware = unzipSoftware;
-    }
-
-    /**
      * @return the unzipNoOfThreads
      */
     public int getUnzipNoOfThreads() {
@@ -947,6 +955,48 @@ public class SmallNGSPipeline {
      */
     public void setUnzipNoOfThreads(int unzipNoOfThreads) {
         this.unzipNoOfThreads = unzipNoOfThreads;
+    }
+
+    /**
+     * @return the cleanupFiles
+     */
+    public ArrayList<String> getCleanupFiles() {
+        return cleanupFiles;
+    }
+
+    /**
+     * @param cleanupFiles the cleanupFiles to set
+     */
+    public void setCleanupFiles(ArrayList<String> cleanupFiles) {
+        this.cleanupFiles = cleanupFiles;
+    }
+
+    /**
+     * @return the zipSoftware
+     */
+    public String getZipSoftware() {
+        return zipSoftware;
+    }
+
+    /**
+     * @param zipSoftware the zipSoftware to set
+     */
+    public void setZipSoftware(String zipSoftware) {
+        this.zipSoftware = zipSoftware;
+    }
+
+    /**
+     * @return the cleanupNoOfThreads
+     */
+    public int getCleanupNoOfThreads() {
+        return cleanupNoOfThreads;
+    }
+
+    /**
+     * @param cleanupNoOfThreads the cleanupNoOfThreads to set
+     */
+    public void setCleanupNoOfThreads(int cleanupNoOfThreads) {
+        this.cleanupNoOfThreads = cleanupNoOfThreads;
     }
     
     

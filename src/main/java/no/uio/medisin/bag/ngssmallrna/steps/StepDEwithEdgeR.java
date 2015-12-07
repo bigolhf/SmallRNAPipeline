@@ -41,7 +41,7 @@ import org.apache.logging.log4j.Logger;
  * @author sr
  */
 
-public class DEwithEdgeRStep extends NGSStep{
+public class StepDEwithEdgeR extends NGSStep{
     
     static Logger                       logger                      = LogManager.getLogger();
     static String                       FileSeparator               = System.getProperty("file.separator");
@@ -90,7 +90,7 @@ public class DEwithEdgeRStep extends NGSStep{
      * @param sid StepInputData
      * 
      */
-    public DEwithEdgeRStep(StepInputData sid){
+    public StepDEwithEdgeR(StepInputData sid){
         stepInputData = sid;
     }
     

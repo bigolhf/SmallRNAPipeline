@@ -9,7 +9,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import no.uio.medisin.bag.ngssmallrna.steps.StepInputData;
-import no.uio.medisin.bag.ngssmallrna.steps.TrimAdaptersStep;
+import no.uio.medisin.bag.ngssmallrna.steps.StepTrimAdapters;
 
 
 /**

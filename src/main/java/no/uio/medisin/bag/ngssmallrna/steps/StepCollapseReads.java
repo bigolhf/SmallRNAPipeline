@@ -30,7 +30,7 @@ import org.apache.logging.log4j.Logger;
  * @author sr
  */
 
-public class CollapseReadsStep extends NGSStep{
+public class StepCollapseReads extends NGSStep{
     
     static  Logger                      logger = LogManager.getLogger();
     static  String                      FileSeparator = System.getProperty("file.separator");
@@ -52,7 +52,7 @@ public class CollapseReadsStep extends NGSStep{
      * @param sid StepInputData
      * 
      */
-    public CollapseReadsStep(StepInputData sid){
+    public StepCollapseReads(StepInputData sid){
         try{
             stepInputData = sid;
             stepInputData.verifyInputData();

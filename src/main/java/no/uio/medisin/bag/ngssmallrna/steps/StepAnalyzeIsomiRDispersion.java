@@ -38,7 +38,7 @@ import org.apache.logging.log4j.Logger;
  * @author sr
  */
 
-public class AnalyzeIsomiRDispersionStep extends NGSStep{
+public class StepAnalyzeIsomiRDispersion extends NGSStep{
     
     static Logger                       logger                      = LogManager.getLogger();
     static String                       FileSeparator               = System.getProperty("file.separator");
@@ -71,7 +71,7 @@ public class AnalyzeIsomiRDispersionStep extends NGSStep{
      * @param sid StepInputData
      * 
      */
-    public AnalyzeIsomiRDispersionStep(StepInputData sid){
+    public StepAnalyzeIsomiRDispersion(StepInputData sid){
         stepInputData = sid;
     }
     

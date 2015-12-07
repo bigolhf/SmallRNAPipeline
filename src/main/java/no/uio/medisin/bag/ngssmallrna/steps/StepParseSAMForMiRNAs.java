@@ -36,7 +36,7 @@ import org.apache.logging.log4j.Logger;
  * @author sr
  */
 
-public class ParseSAMForMiRNAsStep extends NGSStep{
+public class StepParseSAMForMiRNAs extends NGSStep{
     
     static Logger                       logger                      = LogManager.getLogger();
     static String                       FileSeparator               = System.getProperty("file.separator");
@@ -64,7 +64,7 @@ public class ParseSAMForMiRNAsStep extends NGSStep{
      * @param sid StepInputData
      * 
      */
-    public ParseSAMForMiRNAsStep(StepInputData sid){
+    public StepParseSAMForMiRNAs(StepInputData sid){
         stepInputData = sid;
     }
     

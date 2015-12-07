@@ -29,7 +29,7 @@ import org.apache.logging.log4j.Logger;
  * @author sr
  */
 
-public class BowtieMapReadsStep extends NGSStep{
+public class StepBowtieMapReads extends NGSStep{
     
     static Logger                       logger                      = LogManager.getLogger();
     static  String                      FileSeparator               = System.getProperty("file.separator");
@@ -59,7 +59,7 @@ public class BowtieMapReadsStep extends NGSStep{
      * @param sid StepInputData
      * 
      */
-    public BowtieMapReadsStep(StepInputData sid){
+    public StepBowtieMapReads(StepInputData sid){
         try{
             stepInputData = sid;
             stepInputData.verifyInputData();

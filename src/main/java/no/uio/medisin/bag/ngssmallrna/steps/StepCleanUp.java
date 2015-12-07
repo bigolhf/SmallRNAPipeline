@@ -10,8 +10,11 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import no.uio.medisin.bag.ngssmallrna.pipeline.SampleDataEntry;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.filefilter.WildcardFileFilter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 
@@ -19,8 +22,14 @@ import org.apache.logging.log4j.Logger;
 
 
 /**
- *  Adapter Trimming Step
- *  Unzip FASTQ files using pigz.
+ *  perform clean up
+ *  this primarily involves zipping up files to save space
+ *  because we don't know which steps were run or where the files are located
+ *  we have to find files by searching the project folder
+ *  thus, this will only work for linux command line, there is no attempt
+ *  to make it work for Windows
+ * 
+ *  
  * 
  *   Input is a zipped FASTQ file
  *   Output is a unzipped FASTQ file
@@ -29,7 +38,7 @@ import org.apache.logging.log4j.Logger;
  * @author sr
  */
 
-public class StepUnzipInputFiles extends NGSStep{
+public class StepCleanUp extends NGSStep{
     
     static Logger                       logger = LogManager.getLogger();
     static  String                      FileSeparator = System.getProperty("file.separator");
@@ -50,7 +59,7 @@ public class StepUnzipInputFiles extends NGSStep{
      * @param sid StepInputData
      * 
      */
-    public StepUnzipInputFiles(StepInputData sid){
+    public StepCleanUp(StepInputData sid){
         try{
             stepInputData = sid;
             stepInputData.verifyInputData();
@@ -69,6 +78,60 @@ public class StepUnzipInputFiles extends NGSStep{
         unzipFastqParams.put("trimNoOfThreads",         this.getTrimNoOfThreads());
                
         */
+        String projectRoot = stepInputData.getProjectRoot() + FileSeparator + stepInputData.getProjectID();
+        File directory = new File(projectRoot);
+        ArrayList<String> fileTypes = (ArrayList<String>)stepInputData.getStepParams().get("fileTypes");
+        for(String fileType: fileTypes){
+//            Collection<File> c = FileUtils.listFiles(directory, new WildcardFileFilter(fileType), null);
+            String fileTypesArray[] = new String[fileTypes.size()];
+            Collection<File> c = FileUtils.listFiles(directory, fileTypes.toArray(fileTypesArray), true);
+            Iterator itFL = c.iterator();
+            for(File f: c){
+                logger.info(f.toString());
+                try{
+    
+                    ArrayList<String> cmd = new ArrayList<>();
+                    cmd.add((String) stepInputData.getStepParams().get("zipSoftware"));
+                    cmd.add(f.toString());
+                    cmd.add("-p " + stepInputData.getStepParams().get("trimNoOfThreads"));
+
+                        /*
+                        pigz -p 4 -d /data/ngsdata/project1/sra_data.fastq.gz 
+                        */      
+
+                    String cmdZip = StringUtils.join(cmd, " ");
+                    cmdZip = cmdZip.replace(FileSeparator + FileSeparator, FileSeparator);
+                    logger.info("pigz zip command:\t" + cmdZip);
+
+                    Runtime rt = Runtime.getRuntime();
+                    Process proc = rt.exec(cmdZip);
+                    BufferedReader brStdin  = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+                    BufferedReader brStdErr = new BufferedReader(new InputStreamReader(proc.getErrorStream()));
+
+                        String line = null;
+                        logger.info("<OUTPUT>");
+                        while ( (line = brStdin.readLine()) != null)
+                            logger.info(line);
+                        logger.info("</OUTPUT>");
+
+                        logger.info("<ERROR>");
+                        while ( (line = brStdErr.readLine()) != null)
+                            logger.info(line);
+                        logger.info("</ERROR>");
+
+
+                    int exitVal = proc.waitFor();            
+                    logger.info("Process exitValue: " + exitVal);   
+
+                    brStdin.close();
+                    brStdErr.close();
+                }
+                catch(IOException|InterruptedException ex){
+                    logger.error("error executing pigz unzip command\n" + ex.toString());
+                }
+             
+            }            
+        }
         
         Iterator itSD = this.stepInputData.getSampleData().iterator();
         while (itSD.hasNext()){
@@ -90,7 +153,7 @@ public class StepUnzipInputFiles extends NGSStep{
                 ArrayList<String> cmd = new ArrayList<>();
                 cmd.add((String) stepInputData.getStepParams().get("unzipSoftware"));
                 cmd.add(inputFile);
-                cmd.add("-p " + stepInputData.getStepParams().get("trimNoOfThreads"));
+                cmd.add("-threads " + stepInputData.getStepParams().get("trimNoOfThreads"));
                 cmd.add(pathToData + FileSeparator + inFolder + FileSeparator + sampleData.getDataFile());
 
                     /*
@@ -137,23 +200,6 @@ public class StepUnzipInputFiles extends NGSStep{
             
     @Override
     public void verifyInputData(){
-        Iterator itSD = this.stepInputData.getSampleData().iterator();
-        while (itSD.hasNext()){
-            SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
-            if (sampleData.getDataFile().toUpperCase().endsWith(infileExtension.toUpperCase())==false)
-            {
-                throw new IllegalArgumentException("AdapterTrimming: incorrect file extension for input file <" 
-                  + sampleData.getDataFile() + ">. " 
-                  + "should have <" + infileExtension + "> as extension");
-            }
-            
-            if (sampleData.getDataFile().toUpperCase().endsWith(outfileExtension.toUpperCase())==true)
-            {
-                logger.warn("AdapterTrimming: input file has output file extension (.trim.fastq)");
-                logger.warn("this file has already been trimmed");
-            }
-            
-        }
             // does input file have correct extension?
         // does input file have the same extension as expected for the output file?
     }
