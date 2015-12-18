@@ -14,13 +14,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import static no.uio.medisin.bag.ngssmallrna.pipeline.SmallNGSCmd.logger;
 import no.uio.medisin.bag.ngssmallrna.steps.StepAnalyzeIsomiRDispersion;
-import no.uio.medisin.bag.ngssmallrna.steps.StepBowtieMapReads;
+import no.uio.medisin.bag.ngssmallrna.steps.StepBowtieMapSingleReads;
 import no.uio.medisin.bag.ngssmallrna.steps.StepCollapseReads;
 import no.uio.medisin.bag.ngssmallrna.steps.NGSStep;
 import no.uio.medisin.bag.ngssmallrna.steps.NGSRunStepData;
 import no.uio.medisin.bag.ngssmallrna.steps.StepParseSAMForMiRNAs;
 import no.uio.medisin.bag.ngssmallrna.steps.StepDEwithEdgeR;
 import no.uio.medisin.bag.ngssmallrna.steps.StepAnalyzeMappedReads;
+import no.uio.medisin.bag.ngssmallrna.steps.StepBowtieMapPairedReads;
 import no.uio.medisin.bag.ngssmallrna.steps.StepCleanUp;
 import no.uio.medisin.bag.ngssmallrna.steps.StepInputData;
 import no.uio.medisin.bag.ngssmallrna.steps.StepUnzipInputFiles;
@@ -50,7 +51,8 @@ public class SmallNGSPipeline {
     private String                      adapterTrimmingSoftware = "";
     private String                      fastq2fastaSoftware = "";
     private String                      collapseFastaSoftware = "";
-    private String                      mappingCommand = "";
+    private String                      bowtieMappingCommand = "";
+    private String                      rScriptCommand = "";
     
     private String                      genomeRootFolder = "";
     private String                      mirbaseRootFolder = "";
@@ -63,10 +65,15 @@ public class SmallNGSPipeline {
     private int                         trimNoOfThreads = 4;
     private int                         trimMinAvgReadQuality = 30;
     
-    private String                      bowtieMappingAlignMode = "";
-    private int                         bowtieMappingNoOfMismatches = 2;
-    private int                         bowtieMappingNoOfThreads = 4;
-    private String                      bowtieMappingReferenceGenome = "";
+    private String                      bowtieSMappingAlignMode = "";
+    private int                         bowtieSMappingNoOfMismatches = 2;
+    private int                         bowtieSMappingNoOfThreads = 4;
+    private String                      bowtieSMappingReferenceGenome = "";
+    
+    private String                      bowtiePMappingAlignMode = "";
+    private int                         bowtiePMappingNoOfMismatches = 2;
+    private int                         bowtiePMappingNoOfThreads = 4;
+    private String                      bowtiePMappingReferenceGenome = "";
     
     private int                         samParseForMiRNAsBleed = 2;
     private int                         samParseForMiRNAsBaselinePercent = 5;
@@ -186,20 +193,39 @@ public class SmallNGSPipeline {
                     
                     break;
                     
-                case "BowtieMapReads":
                     
-                    HashMap bowtieMapReadsParams = new HashMap();
-                    bowtieMapReadsParams.put("bowtieMappingCommand", this.getMappingCommand());
-                    bowtieMapReadsParams.put("bowtieMapGenomeRootFolder", this.getGenomeRootFolder());
-                    bowtieMapReadsParams.put("bowtieReferenceGenome", this.getBowtieMappingReferenceGenome());
-                    bowtieMapReadsParams.put("bowtieMapAlignMode", this.getBowtieMappingAlignMode());
-                    bowtieMapReadsParams.put("bowtieMapNoOfMismatches", this.getBowtieMappingNoOfMismatches()); //getBowtieMappingNoOfMismatches
-                    bowtieMapReadsParams.put("bowtieNoOfThreads", this.getBowtieMappingNoOfThreads());
+                case "BowtieMapSingleReads":
                     
-                    StepInputData sidMap = new StepInputData(bowtieMapReadsParams, this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), this.getSampleData());
-                    StepBowtieMapReads ngsBowtieMapReads = new StepBowtieMapReads(sidMap);
+                    HashMap bowtieMapSingleReadsParams = new HashMap();
+                    bowtieMapSingleReadsParams.put("bowtieMappingCommand", this.getBowtieMappingCommand());
+                    bowtieMapSingleReadsParams.put("bowtieMapGenomeRootFolder", this.getGenomeRootFolder());
+                    bowtieMapSingleReadsParams.put("bowtieReferenceGenome", this.getBowtieSMappingReferenceGenome());
+                    bowtieMapSingleReadsParams.put("bowtieMapAlignMode", this.getBowtieSMappingAlignMode());
+                    bowtieMapSingleReadsParams.put("bowtieMapNoOfMismatches", this.getBowtieSMappingNoOfMismatches()); //getBowtieMappingNoOfMismatches
+                    bowtieMapSingleReadsParams.put("bowtieNoOfThreads", this.getBowtieSMappingNoOfThreads());
+                    
+                    StepInputData sidMapSR = new StepInputData(bowtieMapSingleReadsParams, this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), this.getSampleData());
+                    StepBowtieMapSingleReads ngsBowtieMapReads = new StepBowtieMapSingleReads(sidMapSR);
                     ngsBowtieMapReads.verifyInputData();
                     ngsBowtieMapReads.execute();
+                    
+                    break;
+                    
+                    
+                case "BowtieMapPairedReads":
+                    
+                    HashMap bowtieMapPairedReadsParams = new HashMap();
+                    bowtieMapPairedReadsParams.put("bowtieMappingCommand", this.getBowtieMappingCommand());
+                    bowtieMapPairedReadsParams.put("bowtieMapGenomeRootFolder", this.getGenomeRootFolder());
+                    bowtieMapPairedReadsParams.put("bowtieReferenceGenome", this.getBowtiePMappingReferenceGenome());
+                    bowtieMapPairedReadsParams.put("bowtieMapAlignMode", this.getBowtiePMappingAlignMode());
+                    bowtieMapPairedReadsParams.put("bowtieMapNoOfMismatches", this.getBowtiePMappingNoOfMismatches()); //getBowtieMappingNoOfMismatches
+                    bowtieMapPairedReadsParams.put("bowtieNoOfThreads", this.getBowtiePMappingNoOfThreads());
+                    
+                    StepInputData sidMapPR = new StepInputData(bowtieMapPairedReadsParams, this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), this.getSampleData());
+                    StepBowtieMapPairedReads ngsBowtieMapPairedReads = new StepBowtieMapPairedReads(sidMapPR);
+                    ngsBowtieMapPairedReads.verifyInputData();
+                    ngsBowtieMapPairedReads.execute();
                     
                     break;
                     
@@ -209,7 +235,7 @@ public class SmallNGSPipeline {
                     HashMap parseSAMmiRNAsParams = new HashMap();
                     parseSAMmiRNAsParams.put("bleed", this.getSamParseForMiRNAsBleed());
                     parseSAMmiRNAsParams.put("baseline_percent", this.getSamParseForMiRNAsBaselinePercent());
-                    parseSAMmiRNAsParams.put("host", this.getBowtieMappingReferenceGenome());
+                    parseSAMmiRNAsParams.put("host", this.getBowtieSMappingReferenceGenome());
                     parseSAMmiRNAsParams.put("miRBaseHostGFFFile", this.getMiRBaseHostGFF());
                     parseSAMmiRNAsParams.put("analyze_isomirs", this.getSamParseForMiRNAsAnalyzeIsomirs());
 
@@ -229,10 +255,10 @@ public class SmallNGSPipeline {
                     analyzeSAMStartPositionsParams.put("longest_feature", this.getSamParseLongestFeature());    
                     analyzeSAMStartPositionsParams.put("min_counts", this.getSamParseMinCounts());
                     analyzeSAMStartPositionsParams.put("feature_types", this.getSamParseFeatureTypes());
-                    analyzeSAMStartPositionsParams.put("host", this.getBowtieMappingReferenceGenome());
+                    analyzeSAMStartPositionsParams.put("host", this.getBowtieSMappingReferenceGenome());
                     analyzeSAMStartPositionsParams.put("genomeReferenceGFFFile", this.getGenomeAnnotationGFF());
                     analyzeSAMStartPositionsParams.put("bowtieMapGenomeRootFolder", this.getGenomeRootFolder());
-                    analyzeSAMStartPositionsParams.put("bowtieReferenceGenome", this.getBowtieMappingReferenceGenome());
+                    analyzeSAMStartPositionsParams.put("bowtieReferenceGenome", this.getBowtieSMappingReferenceGenome());
 
                     StepInputData sidStart = new StepInputData(analyzeSAMStartPositionsParams, this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), this.getSampleData());
                     StepAnalyzeMappedReads ngsAnalyzeSAMStartPos = new StepAnalyzeMappedReads(sidStart);
@@ -246,7 +272,7 @@ public class SmallNGSPipeline {
                     
                     HashMap isomiRDispersionAnalysisParams = new HashMap();
                     isomiRDispersionAnalysisParams.put("pvalue", this.getAnalyzeIsomiRDispPVal());
-                    isomiRDispersionAnalysisParams.put("host", this.getBowtieMappingReferenceGenome());
+                    isomiRDispersionAnalysisParams.put("host", this.getBowtieSMappingReferenceGenome());
                     isomiRDispersionAnalysisParams.put("miRBaseHostGFFFile", this.getMiRBaseHostGFF());
                     
                     StepInputData sidIsoDisp = new StepInputData(isomiRDispersionAnalysisParams, this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), this.getSampleData());                    
@@ -265,8 +291,9 @@ public class SmallNGSPipeline {
                     */
                 case "differentialExpression":
                     HashMap diffExpressionAnalysisParams = new HashMap();
+                    diffExpressionAnalysisParams.put("rScriptCommand", this.getrScriptCommand());
                     diffExpressionAnalysisParams.put("pvalue", this.getDiffExpressionPVal());
-                    diffExpressionAnalysisParams.put("host", this.getBowtieMappingReferenceGenome());
+                    diffExpressionAnalysisParams.put("host", this.getBowtieSMappingReferenceGenome());
                     diffExpressionAnalysisParams.put("miRBaseHostGFFFile", this.getMiRBaseHostGFF());
                     
                     StepInputData siodDiffExpr = new StepInputData(diffExpressionAnalysisParams, this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), this.getSampleData());
@@ -274,6 +301,7 @@ public class SmallNGSPipeline {
                     edgeRDE.verifyInputData();
                     edgeRDE.execute();
                     break;
+        
                     
                 case "cleanup":
                     HashMap cleanUpParams = new HashMap();
@@ -365,7 +393,8 @@ public class SmallNGSPipeline {
         this.setAdapterTrimmingSoftware((String) softwareOptions.get("adapter_trimming"));
         this.setFastq2fastaSoftware((String) softwareOptions.get("fastq_to_fasta"));
         this.setCollapseFastaSoftware((String) softwareOptions.get("fastx_collapser"));
-        this.setMappingCommand((String) softwareOptions.get("mapping_command"));
+        this.setBowtieMappingCommand((String) softwareOptions.get("bowtie_mapping_command"));
+        this.setrScriptCommand((String) softwareOptions.get("rscript_command"));
         
         HashMap unzipOptions = (HashMap) pipelineConfiguration.get("unzip");
         this.setUnzipNoOfThreads((int) unzipOptions.get("no_of_threads"));
@@ -377,11 +406,17 @@ public class SmallNGSPipeline {
         this.setTrimNoOfThreads((int) trimAdapterOptions.get("no_of_threads"));
         this.setTrimMinAvgReadQuality((int) trimAdapterOptions.get("min_avg_read_qual"));
         
-        HashMap mapReadsOptions = (HashMap) pipelineConfiguration.get("bowtie_mapping");
-        this.setBowtieMappingAlignMode((String) mapReadsOptions.get("alignment_mode"));
-        this.setBowtieMappingNoOfMismatches((int) mapReadsOptions.get("no_of_mismatches"));
-        this.setBowtieMappingNoOfThreads((int) mapReadsOptions.get("no_of_threads"));
-        this.setBowtieMappingReferenceGenome((String) mapReadsOptions.get("host"));
+        HashMap mapSingleReadsOptions = (HashMap) pipelineConfiguration.get("bowtie_single_mapping");
+        this.setBowtieSMappingAlignMode((String) mapSingleReadsOptions.get("alignment_mode"));
+        this.setBowtieSMappingNoOfMismatches((int) mapSingleReadsOptions.get("no_of_mismatches"));
+        this.setBowtieSMappingNoOfThreads((int) mapSingleReadsOptions.get("no_of_threads"));
+        this.setBowtieSMappingReferenceGenome((String) mapSingleReadsOptions.get("host"));
+        
+        HashMap mapPairedReadsOptions = (HashMap) pipelineConfiguration.get("bowtie_paired_mapping");
+        this.setBowtiePMappingAlignMode((String) mapPairedReadsOptions.get("alignment_mode"));
+        this.setBowtiePMappingNoOfMismatches((int) mapPairedReadsOptions.get("no_of_mismatches"));
+        this.setBowtiePMappingNoOfThreads((int) mapPairedReadsOptions.get("no_of_threads"));
+        this.setBowtiePMappingReferenceGenome((String) mapPairedReadsOptions.get("host"));
         
         HashMap processSAMForMiRNAsOptions  = (HashMap) pipelineConfiguration.get("sam_mirna_processing");
         this.setSamParseForMiRNAsBleed((int) processSAMForMiRNAsOptions.get("bleed"));
@@ -459,7 +494,7 @@ public class SmallNGSPipeline {
      * @return 
      */
     public String getMiRBaseHostGFF(){
-        return this.mirbaseRootFolder + FileSeparator + this.samParseForMiRNAsMiRBaseVersion + FileSeparator + this.getBowtieMappingReferenceGenome() + ".gff3";
+        return this.mirbaseRootFolder + FileSeparator + this.samParseForMiRNAsMiRBaseVersion + FileSeparator + this.getBowtieSMappingReferenceGenome() + ".gff3";
     }
     
     
@@ -472,7 +507,7 @@ public class SmallNGSPipeline {
      * @return 
      */
     public String getGenomeAnnotationGFF(){
-        return this.getGenomeRootFolder() + FileSeparator + this.getBowtieMappingReferenceGenome() + FileSeparator + "Annotation/Genes/genes.gtf";
+        return this.getGenomeRootFolder() + FileSeparator + this.getBowtieSMappingReferenceGenome() + FileSeparator + "Annotation/Genes/genes.gtf";
     }
     
     
@@ -680,57 +715,57 @@ public class SmallNGSPipeline {
     /**
      * @return the bowtieMappingAlignMode
      */
-    public String getBowtieMappingAlignMode() {
-        return bowtieMappingAlignMode;
+    public String getBowtieSMappingAlignMode() {
+        return bowtieSMappingAlignMode;
     }
 
     /**
      * @param bowtieMappingAlignMode the bowtieMappingAlignMode to set
      */
-    public void setBowtieMappingAlignMode(String bowtieMappingAlignMode) {
-        this.bowtieMappingAlignMode = bowtieMappingAlignMode;
+    public void setBowtieSMappingAlignMode(String bowtieMappingAlignMode) {
+        this.bowtieSMappingAlignMode = bowtieMappingAlignMode;
     }
 
     /**
      * @return the bowtieMappingNoOfMismatches
      */
-    public int getBowtieMappingNoOfMismatches() {
-        return bowtieMappingNoOfMismatches;
+    public int getBowtieSMappingNoOfMismatches() {
+        return bowtieSMappingNoOfMismatches;
     }
 
     /**
      * @param bowtieMappingNoOfMismatches the bowtieMappingNoOfMismatches to set
      */
-    public void setBowtieMappingNoOfMismatches(int bowtieMappingNoOfMismatches) {
-        this.bowtieMappingNoOfMismatches = bowtieMappingNoOfMismatches;
+    public void setBowtieSMappingNoOfMismatches(int bowtieMappingNoOfMismatches) {
+        this.bowtieSMappingNoOfMismatches = bowtieMappingNoOfMismatches;
     }
 
     /**
      * @return the bowtieMappingNoOfThreads
      */
-    public int getBowtieMappingNoOfThreads() {
-        return bowtieMappingNoOfThreads;
+    public int getBowtieSMappingNoOfThreads() {
+        return bowtieSMappingNoOfThreads;
     }
 
     /**
      * @param bowtieMappingNoOfThreads the bowtieMappingNoOfThreads to set
      */
-    public void setBowtieMappingNoOfThreads(int bowtieMappingNoOfThreads) {
-        this.bowtieMappingNoOfThreads = bowtieMappingNoOfThreads;
+    public void setBowtieSMappingNoOfThreads(int bowtieMappingNoOfThreads) {
+        this.bowtieSMappingNoOfThreads = bowtieMappingNoOfThreads;
     }
 
     /**
      * @return the bowtieMappingReferenceGenome
      */
-    public String getBowtieMappingReferenceGenome() {
-        return bowtieMappingReferenceGenome;
+    public String getBowtieSMappingReferenceGenome() {
+        return bowtieSMappingReferenceGenome;
     }
 
     /**
      * @param bowtieMappingReferenceGenome the bowtieMappingReferenceGenome to set
      */
-    public void setBowtieMappingReferenceGenome(String bowtieMappingReferenceGenome) {
-        this.bowtieMappingReferenceGenome = bowtieMappingReferenceGenome;
+    public void setBowtieSMappingReferenceGenome(String bowtieMappingReferenceGenome) {
+        this.bowtieSMappingReferenceGenome = bowtieMappingReferenceGenome;
     }
 
     /**
@@ -862,15 +897,15 @@ public class SmallNGSPipeline {
     /**
      * @return the mappingCommand
      */
-    public String getMappingCommand() {
-        return mappingCommand;
+    public String getBowtieMappingCommand() {
+        return bowtieMappingCommand;
     }
 
     /**
      * @param mappingCommand the mappingCommand to set
      */
-    public void setMappingCommand(String mappingCommand) {
-        this.mappingCommand = mappingCommand;
+    public void setBowtieMappingCommand(String mappingCommand) {
+        this.bowtieMappingCommand = mappingCommand;
     }
 
     /**
@@ -997,6 +1032,76 @@ public class SmallNGSPipeline {
      */
     public void setCleanupNoOfThreads(int cleanupNoOfThreads) {
         this.cleanupNoOfThreads = cleanupNoOfThreads;
+    }
+
+    /**
+     * @return the bowtiePMappingAlignMode
+     */
+    public String getBowtiePMappingAlignMode() {
+        return bowtiePMappingAlignMode;
+    }
+
+    /**
+     * @param bowtiePMappingAlignMode the bowtiePMappingAlignMode to set
+     */
+    public void setBowtiePMappingAlignMode(String bowtiePMappingAlignMode) {
+        this.bowtiePMappingAlignMode = bowtiePMappingAlignMode;
+    }
+
+    /**
+     * @return the bowtiePMappingNoOfMismatches
+     */
+    public int getBowtiePMappingNoOfMismatches() {
+        return bowtiePMappingNoOfMismatches;
+    }
+
+    /**
+     * @param bowtiePMappingNoOfMismatches the bowtiePMappingNoOfMismatches to set
+     */
+    public void setBowtiePMappingNoOfMismatches(int bowtiePMappingNoOfMismatches) {
+        this.bowtiePMappingNoOfMismatches = bowtiePMappingNoOfMismatches;
+    }
+
+    /**
+     * @return the bowtiePMappingNoOfThreads
+     */
+    public int getBowtiePMappingNoOfThreads() {
+        return bowtiePMappingNoOfThreads;
+    }
+
+    /**
+     * @param bowtiePMappingNoOfThreads the bowtiePMappingNoOfThreads to set
+     */
+    public void setBowtiePMappingNoOfThreads(int bowtiePMappingNoOfThreads) {
+        this.bowtiePMappingNoOfThreads = bowtiePMappingNoOfThreads;
+    }
+
+    /**
+     * @return the bowtiePMappingReferenceGenome
+     */
+    public String getBowtiePMappingReferenceGenome() {
+        return bowtiePMappingReferenceGenome;
+    }
+
+    /**
+     * @param bowtiePMappingReferenceGenome the bowtiePMappingReferenceGenome to set
+     */
+    public void setBowtiePMappingReferenceGenome(String bowtiePMappingReferenceGenome) {
+        this.bowtiePMappingReferenceGenome = bowtiePMappingReferenceGenome;
+    }
+
+    /**
+     * @return the rScriptCommand
+     */
+    public String getrScriptCommand() {
+        return rScriptCommand;
+    }
+
+    /**
+     * @param rScriptCommand the rScriptCommand to set
+     */
+    public void setrScriptCommand(String rScriptCommand) {
+        this.rScriptCommand = rScriptCommand;
     }
     
     
