@@ -150,10 +150,10 @@ public class SmallNGSPipeline {
                     unzipFastqParams.put("unzipSoftware",           this.getZipSoftware());
                     unzipFastqParams.put("trimNoOfThreads",         this.getTrimNoOfThreads());
                     
-                    StepInputData sidUnzip = new StepInputData(unzipFastqParams, this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), this.getSampleData());
+                    StepInputData sidUnzip = new StepInputData(unzipFastqParams, this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), 
+                             stepData.getInputFileList(), stepData.getOutputFileList(), this.getSampleData());
                     StepUnzipInputFiles unzipFastqStep = new StepUnzipInputFiles(sidUnzip);
                     
-                    unzipFastqStep.verifyInputData();
                     unzipFastqStep.execute();
                     
                     break;
@@ -170,10 +170,11 @@ public class SmallNGSPipeline {
                     trimAdapterParams.put("trimNoOfThreads",        this.getTrimNoOfThreads());
                     trimAdapterParams.put("trimMinAvgReadQuality",  this.getTrimMinAvgReadQuality());
                     
-                    StepInputData sidTrim = new StepInputData(trimAdapterParams, this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), this.getSampleData());
+                    StepInputData sidTrim = new StepInputData(trimAdapterParams, this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), 
+                             stepData.getInputFileList(), stepData.getOutputFileList(), this.getSampleData());
                     StepTrimAdapters ngsTrimStep = new StepTrimAdapters(sidTrim);
                     this.getNGSSteps().add(ngsTrimStep);
-                    ngsTrimStep.verifyInputData();
+
                     ngsTrimStep.execute();
                     
                     break;
@@ -186,9 +187,10 @@ public class SmallNGSPipeline {
                     collapseReadsParams.put("fastqTofasta", this.getFastq2fastaSoftware());
                     collapseReadsParams.put("collapseFasta", this.getCollapseFastaSoftware());
                     
-                    StepInputData sidCollapse = new StepInputData(collapseReadsParams, this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), this.getSampleData());
+                    StepInputData sidCollapse = new StepInputData(collapseReadsParams, this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), 
+                             stepData.getInputFileList(), stepData.getOutputFileList(), this.getSampleData());
                     StepCollapseReads ngsCollapseStep = new StepCollapseReads(sidCollapse);
-                    ngsCollapseStep.verifyInputData();
+
                     ngsCollapseStep.execute();
                     
                     break;
@@ -204,9 +206,10 @@ public class SmallNGSPipeline {
                     bowtieMapSingleReadsParams.put("bowtieMapNoOfMismatches", this.getBowtieSMappingNoOfMismatches()); //getBowtieMappingNoOfMismatches
                     bowtieMapSingleReadsParams.put("bowtieNoOfThreads", this.getBowtieSMappingNoOfThreads());
                     
-                    StepInputData sidMapSR = new StepInputData(bowtieMapSingleReadsParams, this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), this.getSampleData());
+                    StepInputData sidMapSR = new StepInputData(bowtieMapSingleReadsParams, this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), 
+                             stepData.getInputFileList(), stepData.getOutputFileList(), this.getSampleData());
                     StepBowtieMapSingleReads ngsBowtieMapReads = new StepBowtieMapSingleReads(sidMapSR);
-                    ngsBowtieMapReads.verifyInputData();
+
                     ngsBowtieMapReads.execute();
                     
                     break;
@@ -222,9 +225,10 @@ public class SmallNGSPipeline {
                     bowtieMapPairedReadsParams.put("bowtieMapNoOfMismatches", this.getBowtiePMappingNoOfMismatches()); //getBowtieMappingNoOfMismatches
                     bowtieMapPairedReadsParams.put("bowtieNoOfThreads", this.getBowtiePMappingNoOfThreads());
                     
-                    StepInputData sidMapPR = new StepInputData(bowtieMapPairedReadsParams, this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), this.getSampleData());
+                    StepInputData sidMapPR = new StepInputData(bowtieMapPairedReadsParams, this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), 
+                             stepData.getInputFileList(), stepData.getOutputFileList(), this.getSampleData());
                     StepBowtieMapPairedReads ngsBowtieMapPairedReads = new StepBowtieMapPairedReads(sidMapPR);
-                    ngsBowtieMapPairedReads.verifyInputData();
+                    
                     ngsBowtieMapPairedReads.execute();
                     
                     break;
@@ -233,15 +237,18 @@ public class SmallNGSPipeline {
                 case "parseSAMForMiRNAs":
                     
                     HashMap parseSAMmiRNAsParams = new HashMap();
+                    parseSAMmiRNAsParams.put("inputFolder", stepData.getInputFileList());
+                    parseSAMmiRNAsParams.put("outputFolder", stepData.getOutputFileList());
                     parseSAMmiRNAsParams.put("bleed", this.getSamParseForMiRNAsBleed());
                     parseSAMmiRNAsParams.put("baseline_percent", this.getSamParseForMiRNAsBaselinePercent());
                     parseSAMmiRNAsParams.put("host", this.getBowtieSMappingReferenceGenome());
                     parseSAMmiRNAsParams.put("miRBaseHostGFFFile", this.getMiRBaseHostGFF());
                     parseSAMmiRNAsParams.put("analyze_isomirs", this.getSamParseForMiRNAsAnalyzeIsomirs());
 
-                    StepInputData sidSAM = new StepInputData(parseSAMmiRNAsParams, this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), this.getSampleData());
+                    StepInputData sidSAM = new StepInputData(parseSAMmiRNAsParams, this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), 
+                             stepData.getInputFileList(), stepData.getOutputFileList(), this.getSampleData());
                     StepParseSAMForMiRNAs ngsParseSAMForMiRNAs = new StepParseSAMForMiRNAs(sidSAM);
-                    ngsParseSAMForMiRNAs.verifyInputData();
+
                     ngsParseSAMForMiRNAs.execute();
                     
                     break;
@@ -259,10 +266,11 @@ public class SmallNGSPipeline {
                     analyzeSAMStartPositionsParams.put("genomeReferenceGFFFile", this.getGenomeAnnotationGFF());
                     analyzeSAMStartPositionsParams.put("bowtieMapGenomeRootFolder", this.getGenomeRootFolder());
                     analyzeSAMStartPositionsParams.put("bowtieReferenceGenome", this.getBowtieSMappingReferenceGenome());
-
-                    StepInputData sidStart = new StepInputData(analyzeSAMStartPositionsParams, this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), this.getSampleData());
+                    
+                    StepInputData sidStart = new StepInputData(analyzeSAMStartPositionsParams, this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), 
+                             stepData.getInputFileList(), stepData.getOutputFileList(), this.getSampleData());
                     StepAnalyzeMappedReads ngsAnalyzeSAMStartPos = new StepAnalyzeMappedReads(sidStart);
-                    ngsAnalyzeSAMStartPos.verifyInputData();
+
                     ngsAnalyzeSAMStartPos.execute();
                     
                     break;
@@ -275,9 +283,10 @@ public class SmallNGSPipeline {
                     isomiRDispersionAnalysisParams.put("host", this.getBowtieSMappingReferenceGenome());
                     isomiRDispersionAnalysisParams.put("miRBaseHostGFFFile", this.getMiRBaseHostGFF());
                     
-                    StepInputData sidIsoDisp = new StepInputData(isomiRDispersionAnalysisParams, this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), this.getSampleData());                    
+                    StepInputData sidIsoDisp = new StepInputData(isomiRDispersionAnalysisParams, this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), 
+                             stepData.getInputFileList(), stepData.getOutputFileList(), this.getSampleData());
                     StepAnalyzeIsomiRDispersion analyzeIsomiRDispersions = new StepAnalyzeIsomiRDispersion(sidIsoDisp);
-                    analyzeIsomiRDispersions.verifyInputData();
+
                     analyzeIsomiRDispersions.execute();
                     
                     break;
@@ -296,9 +305,10 @@ public class SmallNGSPipeline {
                     diffExpressionAnalysisParams.put("host", this.getBowtieSMappingReferenceGenome());
                     diffExpressionAnalysisParams.put("miRBaseHostGFFFile", this.getMiRBaseHostGFF());
                     
-                    StepInputData siodDiffExpr = new StepInputData(diffExpressionAnalysisParams, this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), this.getSampleData());
+                    StepInputData siodDiffExpr = new StepInputData(diffExpressionAnalysisParams, this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), 
+                             stepData.getInputFileList(), stepData.getOutputFileList(), this.getSampleData());
                     StepDEwithEdgeR edgeRDE = new StepDEwithEdgeR(siodDiffExpr);
-                    edgeRDE.verifyInputData();
+
                     edgeRDE.execute();
                     break;
         
@@ -309,9 +319,10 @@ public class SmallNGSPipeline {
                     cleanUpParams.put("trimNoOfThreads",        this.getTrimNoOfThreads());
                     cleanUpParams.put("fileTypes",              this.getCleanupFiles());
                     
-                    StepInputData sidCleanUp = new StepInputData(cleanUpParams, this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), this.getSampleData());
+                    StepInputData sidCleanUp = new StepInputData(cleanUpParams, this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), 
+                             stepData.getInputFileList(), stepData.getOutputFileList(), this.getSampleData());
                     StepCleanUp cleanUp = new StepCleanUp(sidCleanUp);
-                    cleanUp.verifyInputData();
+
                     cleanUp.execute();
                     break;
                     

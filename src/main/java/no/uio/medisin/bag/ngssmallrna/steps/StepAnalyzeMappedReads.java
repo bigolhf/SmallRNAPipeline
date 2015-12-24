@@ -156,11 +156,14 @@ public class StepAnalyzeMappedReads extends NGSStep {
         int minCounts       = (int) stepInputData.getStepParams().get("min_counts");
         
         String pathToData = stepInputData.getProjectRoot() + FileSeparator + stepInputData.getProjectID();
-        String posAnalysisOutputFolder = pathToData + FileSeparator + posAnalysisOutFolder;
-        posAnalysisOutputFolder = posAnalysisOutputFolder.replace(FileSeparator + FileSeparator, FileSeparator).trim();
-        Boolean fA = new File(posAnalysisOutputFolder).mkdir();        
+        pathToData = pathToData.replace(FileSeparator + FileSeparator, FileSeparator).trim();
+        
+        String outputFolder = pathToData + FileSeparator + stepInputData.getOutputFolder();
+//        String posAnalysisOutputFolder = pathToData + FileSeparator + posAnalysisOutFolder;
+        outputFolder = outputFolder.replace(FileSeparator + FileSeparator, FileSeparator).trim();
+        Boolean fA = new File(outputFolder).mkdir();        
         if (fA) {
-            logger.info("created output folder <" + posAnalysisOutputFolder + "> for results");
+            logger.info("created output folder <" + outputFolder + "> for results");
         }
         Iterator itSD = this.stepInputData.getSampleData().iterator();
                 int featureCount = 0;
@@ -168,7 +171,10 @@ public class StepAnalyzeMappedReads extends NGSStep {
         while (itSD.hasNext()) {
             SampleDataEntry sampleData = (SampleDataEntry) itSD.next();
             
-            String positionFile = posAnalysisOutFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", positionsExtension);
+            String positionFile = outputFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", positionsExtension);
+            String featureOutFile = outputFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", featuresExtension);
+            featureOutFile = featureOutFile.replace(FileSeparator + FileSeparator, FileSeparator).trim();
+
             String samInputFile = pathToData + FileSeparator + inFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", infileExtension);
             
             logger.info("sam input file is " + samInputFile);
@@ -256,8 +262,9 @@ public class StepAnalyzeMappedReads extends NGSStep {
                     coverage3Start = currentStart3 - COVERAGE_SPAN / 2;
                 }
                 
-                String featureOutFile = pathToData + FileSeparator + posAnalysisOutFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", featuresExtension);
-                featureOutFile = featureOutFile.replace(FileSeparator + FileSeparator, FileSeparator).trim();
+                //String featureOutFile = pathToData + FileSeparator + posAnalysisOutFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", featuresExtension);
+//                positionFile
+                //featureOutFile = featureOutFile.replace(FileSeparator + FileSeparator, FileSeparator).trim();x
                 
                 BufferedWriter bwFT = new BufferedWriter(new FileWriter(new File(featureOutFile)));
                 bwFT.write("ID\tChr\t \tStart\tStop\tLength\tCoverage\tDispersion\n");
@@ -433,8 +440,7 @@ public class StepAnalyzeMappedReads extends NGSStep {
             
         }
         
-        String featureFile = pathToData + FileSeparator + posAnalysisOutFolder + FileSeparator + stepInputData.getProjectID() + ".features.tsv";
-        featureFile = featureFile.replace(FileSeparator + FileSeparator, FileSeparator).trim();        
+        String featureFile = outputFolder + FileSeparator + stepInputData.getProjectID() + ".features.tsv";
         try{
             BufferedWriter bwFT = new BufferedWriter(new FileWriter(new File(featureFile)));
                 featureSet.writeFeaturesAsGFF3(bwFT);
@@ -446,8 +452,7 @@ public class StepAnalyzeMappedReads extends NGSStep {
         }
 
         
-        String fastaFile = pathToData + FileSeparator + posAnalysisOutFolder + FileSeparator + stepInputData.getProjectID() + ".fasta";
-        fastaFile = fastaFile.replace(FileSeparator + FileSeparator, FileSeparator).trim();
+        String fastaFile = outputFolder + FileSeparator + stepInputData.getProjectID() + ".fasta";
         try{
             BufferedWriter bwFA = new BufferedWriter(new FileWriter(new File(fastaFile)));
                 featureSet.writeFeaturesAsFastA(bwFA);

@@ -21,17 +21,24 @@ import org.apache.logging.log4j.Logger;
  */
 public class StepInputData {
     
-    static Logger logger = LogManager.getLogger();
+    static  Logger  logger = LogManager.getLogger();
+    static  String  FileSeparator = System.getProperty("file.separator");
+
     private HashMap stepParams;
-    private String projectID;
-    private String projectRoot;
+    private String  projectID;
+    private String  projectRoot;
+    private String  inputFolder;
+    private String  outputFolder;
     private ArrayList<SampleDataEntry> sampleData;
     
-    public StepInputData(HashMap params, String pid, String pRoot, ArrayList<SampleDataEntry>sdata){
+    
+    public StepInputData(HashMap params, String pid, String pRoot, String inFolder, String outFolder, ArrayList<SampleDataEntry>sdata){
         
         stepParams  = params;
         projectID   = pid;
         projectRoot = pRoot;
+        inputFolder = inFolder;
+        outputFolder = outFolder;
         sampleData  = sdata;
         
     }
@@ -58,10 +65,18 @@ public class StepInputData {
         logger.info("Project root <" + projectRoot + "> exists");
         
         String projectFolder = projectRoot + System.getProperty("file.separator") + projectID;
+        projectFolder = projectFolder.replace(FileSeparator + FileSeparator, FileSeparator).trim();
         if (!(new File(projectFolder)).exists()){
+            logger.error("project folder <" + projectFolder + "> not found");
             throw new IOException();
         }
         logger.info("Project folder <" + projectFolder + ">  exists");
+        
+        inputFolder = projectFolder + System.getProperty("file.separator") + inputFolder;
+        if (!(new File(inputFolder)).exists()){
+            logger.error("input folder <" + inputFolder + "> not found");
+            throw new IOException();
+        }
         
 
         
@@ -106,6 +121,27 @@ public class StepInputData {
      */
     public ArrayList<SampleDataEntry> getSampleData() {
         return sampleData;
+    }
+
+    /**
+     * @return the inputFolder
+     */
+    public String getInputFolder() {
+        return inputFolder;
+    }
+
+    /**
+     * @param inputFolder the inputFolder to set
+     */
+    public void setInputFolder(String inputFolder) {
+        this.inputFolder = inputFolder;
+    }
+
+    /**
+     * @return the outputFolder
+     */
+    public String getOutputFolder() {
+        return outputFolder;
     }
     
     

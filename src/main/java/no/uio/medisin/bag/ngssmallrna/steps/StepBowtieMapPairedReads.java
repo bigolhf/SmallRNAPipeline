@@ -22,7 +22,7 @@ import org.apache.logging.log4j.Logger;
 
 
 /**
- *  Map reads to contaminants, RNA, Reference Genome and output in SAM format
+ *  Map paired reads to contaminants, RNA, Reference Genome and output in SAM format
  * 
  *   Input is a collapsed FASTA file
  * 
