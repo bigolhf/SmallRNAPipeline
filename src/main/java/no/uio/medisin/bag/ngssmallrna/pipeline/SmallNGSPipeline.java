@@ -168,19 +168,19 @@ public class SmallNGSPipeline {
                     this.executeStepParseSAMForMiRNAs(stepData);
                     break;
                     
-                case "analyzeStartPositions":
+                case "AnalyzeStartPositions":
                     this.executeStepAnalyzeStartPositions(stepData);
                     break;
                     
-                case "analyzeIsomiRDispersion":
+                case "AnalyzeIsomiRDispersion":
                     this.executeStepAnalyzeIsomiRDispersion(stepData);
                     break;
 
-                case "differentialExpression":
+                case "DifferentialExpression":
                     this.executeStepDifferentialExpression(stepData);
                     break;
                     
-                case "cleanup":
+                case "Cleanup":
                     this.executeStepCleanup(stepData);
                     break;
                     

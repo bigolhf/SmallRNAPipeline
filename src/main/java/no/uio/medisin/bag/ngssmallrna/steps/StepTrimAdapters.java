@@ -36,13 +36,6 @@ public class StepTrimAdapters extends NGSStep{
     
     private static final String         infileExtension     = ".fastq";
     private static final String         outfileExtension    = ".trim.fastq";
-    private static final String         inFolder            = "fastq_files";
-    private static final String         outFolder           = "adapter_trimmed";
-    
-    
-    
-    private StepInputData               stepInputData;
-    private StepResultData              stepResultData;
     
 
     /**
@@ -73,11 +66,12 @@ public class StepTrimAdapters extends NGSStep{
 
         */
         
+        this.setPaths();
+        
         Iterator itSD = this.stepInputData.getSampleData().iterator();
         while (itSD.hasNext()){
             try{
                 SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
-                String pathToData = stepInputData.getProjectRoot() + FileSeparator + stepInputData.getProjectID();
                 ArrayList<String> cmd = new ArrayList<>();
                 cmd.add("java -jar");
                 cmd.add((String) stepInputData.getStepParams().get("trimAdapterSoftware"));
@@ -85,14 +79,12 @@ public class StepTrimAdapters extends NGSStep{
                 cmd.add("-phred64");
     //          cmd.add("-trimlog " + pathToData + FileSeparator + sampleData.getDataFile() + ".trimlog");  // this will create huge logfiles. Disabled for now
                 cmd.add("-threads " + stepInputData.getStepParams().get("trimNoOfThreads"));
-                cmd.add(pathToData + FileSeparator + inFolder + FileSeparator + sampleData.getDataFile());
+                cmd.add(inFolder + FileSeparator + sampleData.getDataFile());
 
-                String outputFolder = pathToData + FileSeparator + outFolder;
-                outputFolder = outputFolder.replace(FileSeparator + FileSeparator, FileSeparator).trim();
-                Boolean f = new File(outputFolder).mkdir();       
-                if (f) logger.info("created output folder <" + outputFolder + "> for results" );
+                Boolean f = new File(outFolder).mkdir();       
+                if (f) logger.info("created output folder <" + outFolder + "> for results" );
 
-                cmd.add(outputFolder + FileSeparator + sampleData.getDataFile().replace(infileExtension, outfileExtension));
+                cmd.add(outFolder + FileSeparator + sampleData.getDataFile().replace(infileExtension, outfileExtension));
                 cmd.add("ILLUMINACLIP:" + stepInputData.getStepParams().get("trimAdapterFile") 
                     + ":" + stepInputData.getStepParams().get("trimNoOfMismatches")
                     + ":30"

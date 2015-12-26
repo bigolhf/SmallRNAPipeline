@@ -41,7 +41,6 @@ public class StepParseSAMForMiRNAs extends NGSStep{
     static Logger                       logger                      = LogManager.getLogger();
     static String                       FileSeparator               = System.getProperty("file.separator");
     
-    private static final String         inFolder                    = "bowtie_genome_mapped";
     private static final String         miRNAAnalysisOutFolder      = "mirna_isomir_analysis";
     
     
@@ -50,11 +49,7 @@ public class StepParseSAMForMiRNAs extends NGSStep{
     private static final String         isomirPrettyExtension       = ".trim.clp.gen.iso_pretty.tsv";
     private static final String         miRCountsExtension          = ".trim.clp.gen.mircounts.tsv";
     
-    
-    
-    private StepInputData               stepInputData;
-    private StepResultData              stepResultData;
-    
+        
 
     private List<MiRNAFeature>          miRBaseMiRNAList                   = new ArrayList<>();
     private List<MiRNAFeature>          miRNAHitList;
@@ -70,6 +65,7 @@ public class StepParseSAMForMiRNAs extends NGSStep{
     
     @Override
     public void execute(){
+        this.setPaths();
         /*
             parseSAMmiRNAsParams.put("bleed", this.getSamParseForMiRNAsBleed());
             parseSAMmiRNAsParams.put("miRBaseHostGFFFile", this.getMiRBaseHostGFF());
@@ -95,11 +91,8 @@ public class StepParseSAMForMiRNAs extends NGSStep{
         
         Boolean analyzeIsomirs = (Boolean) stepInputData.getStepParams().get("analyze_isomirs");
 
-        String pathToData = stepInputData.getProjectRoot() + FileSeparator + stepInputData.getProjectID();
-        String miRNAAnalysisOutputFolder = pathToData + FileSeparator + miRNAAnalysisOutFolder;
-        miRNAAnalysisOutputFolder = miRNAAnalysisOutputFolder.replace(FileSeparator + FileSeparator, FileSeparator).trim();
-        Boolean fA = new File(miRNAAnalysisOutputFolder).mkdir();       
-        if (fA) logger.info("created output folder <" + miRNAAnalysisOutputFolder + "> for results" );
+        Boolean fA = new File(outFolder).mkdir();       
+        if (fA) logger.info("created output folder <" + outFolder + "> for results" );
         String samLine = null;
         
         Iterator itSD = this.stepInputData.getSampleData().iterator();
@@ -109,7 +102,7 @@ public class StepParseSAMForMiRNAs extends NGSStep{
                 int bleed = (int) stepInputData.getStepParams().get("bleed");
                 SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
                 
-                String samInputFile = pathToData + FileSeparator + inFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", infileExtension);
+                String samInputFile = inFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", infileExtension);
                 logger.info(sampleData.getDataFile().replace(".fastq", infileExtension));
                 int matchCount5 = 0;
                 int matchCount3 = 0;
@@ -203,8 +196,8 @@ public class StepParseSAMForMiRNAs extends NGSStep{
 
                         logger.info("  write isomiRs");
 
-                        String  isoDetailsFile = miRNAAnalysisOutputFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", isomirSummaryExtension);
-                        String  isoPrettyFile  = miRNAAnalysisOutputFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", isomirPrettyExtension);
+                        String  isoDetailsFile = outFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", isomirSummaryExtension);
+                        String  isoPrettyFile  = outFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", isomirPrettyExtension);
 
                         BufferedWriter brDetails = new BufferedWriter(new FileWriter(new File(isoDetailsFile)));
                         BufferedWriter brPretty  = new BufferedWriter(new FileWriter(new File(isoPrettyFile)));
@@ -221,7 +214,7 @@ public class StepParseSAMForMiRNAs extends NGSStep{
                     
                     logger.info("  write miRNA counts");
 
-                    String  miRCountsFile  = miRNAAnalysisOutputFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", miRCountsExtension);
+                    String  miRCountsFile  = outFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", miRCountsExtension);
                     
                     BufferedWriter brCounts  = new BufferedWriter(new FileWriter(new File(miRCountsFile)));
                         for(MiRNAFeature miR: this.miRBaseMiRNAList){
@@ -254,8 +247,8 @@ public class StepParseSAMForMiRNAs extends NGSStep{
         }
         
         if(analyzeIsomirs){
-            String dispersionFile   = miRNAAnalysisOutputFolder + FileSeparator + stepInputData.getProjectID() + ".disp.tsv";
-            String summaryFile      = miRNAAnalysisOutputFolder + FileSeparator + stepInputData.getProjectID() + ".disp.summary.tsv";
+            String dispersionFile   = outFolder + FileSeparator + stepInputData.getProjectID() + ".disp.tsv";
+            String summaryFile      = outFolder + FileSeparator + stepInputData.getProjectID() + ".disp.summary.tsv";
             logger.info("write dispersions to file <" + dispersionFile + ">");
             try{
                 BufferedWriter bwDp = new BufferedWriter(new FileWriter(new File(dispersionFile)));

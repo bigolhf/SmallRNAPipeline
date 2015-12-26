@@ -16,12 +16,11 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.List;
 import java.security.SecureRandom;
+import java.sql.Timestamp;
 import java.util.Date;
 import java.util.Random;
 
-import no.uio.medisin.bag.ngssmallrna.pipeline.IsomiRSet;
 import no.uio.medisin.bag.ngssmallrna.pipeline.MiRNAFeature;
 import no.uio.medisin.bag.ngssmallrna.pipeline.MirBaseSet;
 import no.uio.medisin.bag.ngssmallrna.pipeline.SampleDataEntry;
@@ -44,15 +43,11 @@ import org.apache.logging.log4j.Logger;
 public class StepDEwithEdgeR extends NGSStep{
     
     static Logger                       logger                      = LogManager.getLogger();
-    static String                       FileSeparator               = System.getProperty("file.separator");
-    
-    private static final String         inFolder                    = "mirna_isomir_analysis";
-    private static final String         deAnalysisOutFolder         = "de_analysis";
-    private              String         pathToDEAnalysisOutputFolder= "";
+
     private              String         rScriptFilename             = "";
     
     
-    private static final String         infileExtension             = ".trim.clp.gen.sam";
+    private static final String         infileExtension             = "";
     private static final String         groupsFileExtension         = ".groups.tsv";
     private static final String         miRCountsExtension          = ".trim.clp.gen.mircounts.tsv";
     private static final String         deResultsExtension          = ".DE.edgeR.sort.csv";
@@ -78,13 +73,7 @@ public class StepDEwithEdgeR extends NGSStep{
     private static final int            resolution                  = 300;
     
     
-    private StepInputData               stepInputData;
-    private StepResultData              stepResultData;
-    
     private MirBaseSet                  miRBaseMiRNAList            = new MirBaseSet();
-    private List<MiRNAFeature>          miRNAList                   = new ArrayList<>();
-    private List<MiRNAFeature>          miRNAHitList;
-    private ArrayList<IsomiRSet>        isomiRList;
     /**
      * 
      * @param sid StepInputData
@@ -96,6 +85,8 @@ public class StepDEwithEdgeR extends NGSStep{
     
     @Override
     public void execute(){
+        this.setPaths();
+        
         /*
             diffExpressionAnalysisParams.put("pvalue", this.getDiffExpressionPVal());
             diffExpressionAnalysisParams.put("host", this.getBowtieMappingReferenceGenome());
@@ -124,26 +115,20 @@ public class StepDEwithEdgeR extends NGSStep{
         }
         
         
-        String pathToData = stepInputData.getProjectRoot() + FileSeparator + stepInputData.getProjectID();
-        String miRNAInputFolder = pathToData + FileSeparator + inFolder;
-        pathToDEAnalysisOutputFolder = pathToData + FileSeparator + deAnalysisOutFolder;
+        Boolean fA = new File(outFolder).mkdir();       
+        if (fA) logger.info("created output folder <" + outFolder + "> for results" );
         
-        pathToDEAnalysisOutputFolder = pathToDEAnalysisOutputFolder.replace(FileSeparator + FileSeparator, FileSeparator).trim();
-        Boolean fA = new File(pathToDEAnalysisOutputFolder).mkdir();       
-        if (fA) logger.info("created output folder <" + pathToDEAnalysisOutputFolder + "> for results" );
-        
-        Iterator itSD = this.stepInputData.getSampleData().iterator();
-
         
         logger.info("Merging Count Files");
         String headerLine = "name";
         String[] countStrings = new String[miRBaseMiRNAList.getNumberOfEntries()];
         Arrays.fill(countStrings, "");
-        itSD = this.stepInputData.getSampleData().iterator();
+        
+        Iterator itSD = this.stepInputData.getSampleData().iterator();
         while (itSD.hasNext()){
             SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
             headerLine = headerLine.concat("\t" + sampleData.getDataFile().replace(".fastq", ""));
-            String  miRCountsFile  = miRNAInputFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", miRCountsExtension);
+            String  miRCountsFile  = inFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", miRCountsExtension);
             miRCountsFile = miRCountsFile.replace(FileSeparator + FileSeparator, FileSeparator).trim();
             try{
                 int m=0;
@@ -161,17 +146,24 @@ public class StepDEwithEdgeR extends NGSStep{
         }
         
         logger.info("Writing merged count files");
-        mergedCountsFile        = pathToDEAnalysisOutputFolder + FileSeparator + stepInputData.getProjectID() + ".merged.mirna_counts.tsv";    
+        mergedCountsFile        = outFolder + FileSeparator + stepInputData.getProjectID() + ".merged.mirna_counts.tsv"; 
+        
         try{
-            BufferedWriter bwMc = new BufferedWriter(new FileWriter(new File(mergedCountsFile)));
-            bwMc.write(headerLine + "\n");
+            BufferedWriter bwMC = new BufferedWriter(new FileWriter(new File(mergedCountsFile)));
+            bwMC.write("# created " + new Timestamp((new java.util.Date()).getTime()));
+            bwMC.write("# from SmallRNAPipeline::StepDEwithEdgeR()");
+            bwMC.write("# " + this.stepInputData.getProjectID());
+            bwMC.write("# ");
+            bwMC.write("# ");
+            
+            bwMC.write(headerLine + "\n");
             int m=0;
             for(MiRNAFeature miR: miRBaseMiRNAList.getMiRBaseMiRNAList()){
-                bwMc.write(miR.getMimatID() + "|" + miR.getName() + countStrings[m] + "\n");
+                bwMC.write(miR.getMimatID() + "|" + miR.getName() + countStrings[m] + "\n");
                 m++;
             }
             
-            bwMc.close();
+            bwMC.close();
         }
         catch(IOException exIO){
             logger.info("error writing merged counts File <" + mergedCountsFile + ">\n" + exIO);        
@@ -222,7 +214,7 @@ public class StepDEwithEdgeR extends NGSStep{
             sampleString = sampleString.concat("\t" + sampleData.getDataFile().replace(".fastq", ""));
         }        
         
-        groupsFile = pathToDEAnalysisOutputFolder + FileSeparator + stepInputData.getProjectID() + groupsFileExtension;
+        groupsFile = outFolder + FileSeparator + stepInputData.getProjectID() + groupsFileExtension;
         logger.info("writing groups file "  + groupsFile);
         try{
             BufferedWriter bwGF = new BufferedWriter(new FileWriter(new File(groupsFile)));    
@@ -256,12 +248,12 @@ public class StepDEwithEdgeR extends NGSStep{
 
         BigInteger big = new BigInteger(130, new Random());
         String randomName = new BigInteger(130, new SecureRandom()).toString(32);
-        rScriptFilename = pathToDEAnalysisOutputFolder + FileSeparator + randomName + ".R";
+        rScriptFilename = outFolder + FileSeparator + randomName + ".R";
         rScriptFilename = rScriptFilename.replace(FileSeparator + FileSeparator, FileSeparator);
         
-        deResultsFile           = pathToDEAnalysisOutputFolder + FileSeparator + stepInputData.getProjectID() + deResultsExtension;    
-        deCountsBySampleFile    = pathToDEAnalysisOutputFolder + FileSeparator + stepInputData.getProjectID() + deSampleCountsExtension;
-        deSummaryFile           = pathToDEAnalysisOutputFolder + FileSeparator + stepInputData.getProjectID() + deSummaryExtension;
+        deResultsFile           = outFolder + FileSeparator + stepInputData.getProjectID() + deResultsExtension;    
+        deCountsBySampleFile    = outFolder + FileSeparator + stepInputData.getProjectID() + deSampleCountsExtension;
+        deSummaryFile           = outFolder + FileSeparator + stepInputData.getProjectID() + deSummaryExtension;
         
         int minCounts = 10;
         ArrayList<String> cmdSet = new ArrayList<>();
@@ -302,19 +294,19 @@ public class StepDEwithEdgeR extends NGSStep{
         cmdSet.add("");
         
         
-        dePlotBCVfile           = pathToDEAnalysisOutputFolder + FileSeparator + stepInputData.getProjectID() + dePlotBCVExtension + "png";
+        dePlotBCVfile           = outFolder + FileSeparator + stepInputData.getProjectID() + dePlotBCVExtension + "png";
         cmdSet.add("png(\"" + dePlotBCVfile + "\", width=" + width + ", height=" + height + ", units=\"" + units + "\", res=" + resolution + ")");
         cmdSet.add("plotBCV(TagwiseDispersion)");
         cmdSet.add("dev.off()");
         cmdSet.add("");
         
-        dePlotMDSfile           = pathToDEAnalysisOutputFolder + FileSeparator + stepInputData.getProjectID() + dePlotMDSExtension + "png";
+        dePlotMDSfile           = outFolder + FileSeparator + stepInputData.getProjectID() + dePlotMDSExtension + "png";
         cmdSet.add("png(\"" + dePlotMDSfile + "\", width=" + width + ", height=" + height + ", units=\"" + units + "\", res=" + resolution + ")");
         cmdSet.add("plotMDS(TagwiseDispersion)");
         cmdSet.add("dev.off()");
         cmdSet.add("");
 
-        dePlotSmearfile           = pathToDEAnalysisOutputFolder + FileSeparator + stepInputData.getProjectID() + dePlotSmearExtension + "png";
+        dePlotSmearfile         = outFolder + FileSeparator + stepInputData.getProjectID() + dePlotSmearExtension + "png";
         cmdSet.add("png(\"" + dePlotSmearfile + "\", width=" + width + ", height=" + height + ", units=\"" + units + "\", res=" + resolution + ")");
         cmdSet.add("plotSmear(TagwiseDispersion)");
         cmdSet.add("dev.off()");        

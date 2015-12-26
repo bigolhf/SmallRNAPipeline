@@ -58,7 +58,7 @@ public class StepInputData {
             logger.info((String) param);
         }
         
-        
+        /*
         if (!(new File(projectRoot)).exists()){
             throw new IOException();
         }
@@ -77,7 +77,7 @@ public class StepInputData {
             logger.error("input folder <" + inputFolder + "> not found");
             throw new IOException();
         }
-        
+        */        
 
         
     }

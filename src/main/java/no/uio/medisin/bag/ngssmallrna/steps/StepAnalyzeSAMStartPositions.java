@@ -15,12 +15,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import no.uio.medisin.bag.ngssmallrna.pipeline.GenomeFeature;
 import no.uio.medisin.bag.ngssmallrna.pipeline.GenomeFeatureSet;
 import no.uio.medisin.bag.ngssmallrna.pipeline.IsomiRSet;
-import no.uio.medisin.bag.ngssmallrna.pipeline.MiRNAFeature;
 import no.uio.medisin.bag.ngssmallrna.pipeline.SampleDataEntry;
 
 import org.apache.logging.log4j.LogManager;
@@ -42,19 +39,12 @@ public class StepAnalyzeSAMStartPositions extends NGSStep{
     
     static Logger                       logger                      = LogManager.getLogger();
     static  String                      FileSeparator               = System.getProperty("file.separator");
-    
-    private static final String         inFolder                    = "bowtie_genome_mapped";
-    private static final String         startAnalysisOutFolder      = "start_pos_analysis";
-    
+        
     
     private static final String         infileExtension             = ".trim.clp.gen.sam";
     private static final String         readsInExonExtension      = ".trim.clp.gen.iso_summary.tsv";
     private static final String         readsInNonCodingExtension       = ".trim.clp.gen.iso_pretty.tsv";
     
-    
-    
-    private StepInputData               stepInputData;
-    private StepResultData              stepResultData;
     
     private GenomeFeatureSet            genomeFeatureSet;
     private List<HashMap>               codingHits;
@@ -70,8 +60,11 @@ public class StepAnalyzeSAMStartPositions extends NGSStep{
         stepInputData = sid;
     }
     
+    
+    
     @Override
     public void execute(){
+        this.setPaths();
         /*
             analyzeSAMStartPositionsParams.put("bleed", this.getSamParseStartPosBleed());
             analyzeSAMStartPositionsParams.put("feature_types", this.getSamParseFeatureTypes());
@@ -97,11 +90,11 @@ public class StepAnalyzeSAMStartPositions extends NGSStep{
         String[] featureTypes = x.toArray(new String[x.size()]);
 
         String samInputFile = null;
-        String pathToData = stepInputData.getProjectRoot() + FileSeparator + stepInputData.getProjectID();
-        String startAnalysisOutputFolder = pathToData + FileSeparator + startAnalysisOutFolder;
-        startAnalysisOutputFolder = startAnalysisOutputFolder.replace(FileSeparator + FileSeparator, FileSeparator).trim();
-        Boolean fA = new File(startAnalysisOutputFolder).mkdir();       
-        if (fA) logger.info("created output folder <" + startAnalysisOutputFolder + "> for results" );
+//        String pathToData = stepInputData.getProjectRoot() + FileSeparator + stepInputData.getProjectID();
+//        String startAnalysisOutputFolder = pathToData + FileSeparator + startAnalysisOutFolder;
+//        startAnalysisOutputFolder = startAnalysisOutputFolder.replace(FileSeparator + FileSeparator, FileSeparator).trim();
+        Boolean fA = new File(outFolder).mkdir();       
+        if (fA) logger.info("created output folder <" + outFolder + "> for results" );
         
         Iterator itSD = this.stepInputData.getSampleData().iterator();
         codingHits      = new ArrayList<>();
@@ -113,14 +106,14 @@ public class StepAnalyzeSAMStartPositions extends NGSStep{
                 int bleed = (int) stepInputData.getStepParams().get("bleed");
                 SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
                 
-                samInputFile = pathToData + FileSeparator + inFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", infileExtension);
-                logger.info(sampleData.getDataFile().replace(".fastq", infileExtension));
+                samInputFile = inFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", infileExtension);
+                logger.info(samInputFile);
                 int matchCount5 = 0;
                 int matchCount3 = 0;
                 int codingCounts = 0;
                 int nonCodingCounts = 0;
-                int preMatchCount5 = 0;
-                int preMatchCount3 = 0;
+//                int preMatchCount5 = 0;
+//                int preMatchCount3 = 0;
                 int totalCounts = 0;
                 int lineCount = 0;
                 String samLine = null;
@@ -145,6 +138,7 @@ public class StepAnalyzeSAMStartPositions extends NGSStep{
                         totalCounts += Integer.parseInt(samLine.split("\t")[0].split("-")[1]);
                         if(samLine.split("\t")[1].equals("16") || samLine.split("\t")[1].equals("0")){
                             String strand = "";
+                            /*
                             if (samLine.split("\t")[1].equals("16")) {
                                 strand = "-";
                                 preMatchCount3++;
@@ -153,7 +147,7 @@ public class StepAnalyzeSAMStartPositions extends NGSStep{
                                 strand = "+";
                                 preMatchCount5++;
                             }
-                            
+*/                            
                             int startPos = Integer.parseInt(samLine.split("\t")[3]);
                             String cigarStr = samLine.split("\t")[5].replace("M", "").trim();
                             int endPos = startPos + Integer.parseInt(cigarStr);
@@ -203,8 +197,8 @@ public class StepAnalyzeSAMStartPositions extends NGSStep{
                     logger.info("  total non coding reads   = " + nonCodingCounts);
                     Double minCounts = (double) totalCounts /100000.0;
                     logger.info((matchCount5 + matchCount3) + " reads (" + matchCount5 + " 5'" + "/" + matchCount3 + " 3' ) were mapped");
-                    String  codingReadsDetailsFile = startAnalysisOutputFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", readsInExonExtension);
-                    String  nonCodingReadsDetailsFile  = startAnalysisOutputFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", readsInNonCodingExtension);
+                    String  codingReadsDetailsFile = outFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", readsInExonExtension);
+                    String  nonCodingReadsDetailsFile  = outFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", readsInNonCodingExtension);
                     
             
                     

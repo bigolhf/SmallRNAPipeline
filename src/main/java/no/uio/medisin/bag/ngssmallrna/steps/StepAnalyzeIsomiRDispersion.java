@@ -5,7 +5,6 @@
  */
 package no.uio.medisin.bag.ngssmallrna.steps;
 
-import java.awt.geom.Point2D;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -41,20 +40,9 @@ import org.apache.logging.log4j.Logger;
 public class StepAnalyzeIsomiRDispersion extends NGSStep{
     
     static Logger                       logger                      = LogManager.getLogger();
-    static String                       FileSeparator               = System.getProperty("file.separator");
-    
-    private static final String         inFolder                    = "mirna_isomir_analysis";
-    private static final String         isomiRDispAnalysisOutFolder = "isomir_analysis";
-    
     
     private static final String         infileExtension             = ".disp.summary.tsv";
-    private static final String         isomirDispSummaryExtension  = ".disp.summary.tsv";
-
-    
-    
-    
-    private StepInputData               stepInputData;
-    private StepResultData              stepResultData;
+    private static final String         dispersionResultsExtension  = ".disp.test.tsv";
     
     private ArrayList<String>           sourceList;
     private ArrayList<String>           conditionList;
@@ -77,6 +65,7 @@ public class StepAnalyzeIsomiRDispersion extends NGSStep{
     
     @Override
     public void execute(){
+        this.setPaths();
         /*
             isomiRDispersionAnalysisParams.put("pvalue", this.getAnalyzeIsomiRDispPVal());
             
@@ -88,9 +77,9 @@ public class StepAnalyzeIsomiRDispersion extends NGSStep{
             logger.info("exception parsing InputData" + exIO);
         }
 
-        sourceList = new ArrayList<>();
-        conditionList = new ArrayList<>();
-        pairedSet = new ConditionSet();
+        sourceList      = new ArrayList<>();
+        conditionList   = new ArrayList<>();
+        pairedSet       = new ConditionSet();
 
         
         /*
@@ -120,18 +109,15 @@ public class StepAnalyzeIsomiRDispersion extends NGSStep{
             if(i > 1)
                 logger.info("removed " + i +  " paired entries");            
         }
-        String pathToData = stepInputData.getProjectRoot() + FileSeparator + stepInputData.getProjectID();
-        String isomiRDispAnalysisOutputFolder = pathToData + FileSeparator + isomiRDispAnalysisOutFolder;
-        isomiRDispAnalysisOutputFolder = isomiRDispAnalysisOutputFolder.replace(FileSeparator + FileSeparator, FileSeparator).trim();
-        Boolean fA = new File(isomiRDispAnalysisOutputFolder).mkdir();       
-        if (fA) logger.info("created output folder <" + isomiRDispAnalysisOutputFolder + "> for results" );
+        Boolean fA = new File(outFolder).mkdir();       
+        if (fA) logger.info("created output folder <" + outFolder + "> for results" );
         isomiRList = new ArrayList<>();
         miRNAdispAnalysisResList = new ArrayList<>();
         
         try{
 
 
-            String isomiRDispFile = pathToData + FileSeparator + inFolder + FileSeparator + stepInputData.getProjectID() + infileExtension;
+            String isomiRDispFile = inFolder + FileSeparator + stepInputData.getProjectID() + infileExtension;
             logger.info("reading " + isomiRDispFile);
 
             String isoDispLine = null;
@@ -184,7 +170,7 @@ public class StepAnalyzeIsomiRDispersion extends NGSStep{
         }
         
         
-        String dispersionFile   = isomiRDispAnalysisOutputFolder + FileSeparator + stepInputData.getProjectID() + ".disp.test.tsv";
+        String dispersionFile   = outFolder + FileSeparator + stepInputData.getProjectID() + dispersionResultsExtension;
         logger.info("write dispersions to file <" + dispersionFile + ">");
         try{
             BufferedWriter bwDp = new BufferedWriter(new FileWriter(new File(dispersionFile)));

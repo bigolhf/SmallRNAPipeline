@@ -20,12 +20,9 @@ import org.apache.logging.log4j.Logger;
 
 
 /**
- *  Adapter Trimming Step
- *  Performs adapter trimming via a call to Trimmomatic.
- * 
- *   Input is a raw FASTQ file
- *   Output is a trimmed FASTQ file
- * 
+ *  Collapse Read Step
+ *  1. Convert FASTQ files in input list to an equivalent set of FASTA files.
+ *  2. Count up duplicate reads and store this information in the header line 
  * 
  * @author sr
  */
@@ -38,13 +35,9 @@ public class StepCollapseReads extends NGSStep{
     private static final String         infileExtension         = ".trim.fastq";
     private static final String         faOutputExtension       = ".trim.fasta";
     private static final String         clpfaOutputExtension    = ".trim.clp.fasta";
-    private static final String         inFolder                = "adapter_trimmed";
-    private static final String         outFolder               = "collapsed";
     
     
     
-    private StepInputData               stepInputData;
-    private StepResultData              stepResultData;
     
 
     /**
@@ -70,6 +63,8 @@ public class StepCollapseReads extends NGSStep{
     
     @Override
     public void execute(){
+        this.setPaths();
+        
         /*
         
             collapseReadsParams.put("fastqTofasta", this.getFastq2fastaSoftware());
@@ -82,16 +77,18 @@ public class StepCollapseReads extends NGSStep{
         while (itSD.hasNext()){
             try{
                 SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
-                String pathToData = stepInputData.getProjectRoot() + FileSeparator + stepInputData.getProjectID();
-                ArrayList<String> cmdQ2A = new ArrayList<>();
+                Boolean f = new File(outFolder).mkdir(); 
+                if (f) logger.info("created output folder <" + outFolder + "> for results" );
 
                 
+ 
                 /*
                     fastq_to_fasta -i 1000.fastq -o 1000.fasta -Q33
                 */                      
+                ArrayList<String> cmdQ2A = new ArrayList<>();
                 cmdQ2A.add((String) stepInputData.getStepParams().get("fastqTofasta"));
 
-                String fastqInputFile = pathToData + FileSeparator + inFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", infileExtension);
+                String fastqInputFile = inFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", infileExtension);
                 fastqInputFile = fastqInputFile.replace(FileSeparator + FileSeparator, FileSeparator).trim();                
                 if (new File(fastqInputFile).exists() == false)
                 {
@@ -101,12 +98,8 @@ public class StepCollapseReads extends NGSStep{
                 cmdQ2A.add(fastqInputFile);
 
                 cmdQ2A.add("-o");
-                String outputFolder = pathToData + FileSeparator + outFolder;
-                outputFolder = outputFolder.replace(FileSeparator + FileSeparator, FileSeparator).trim();
-                Boolean f = new File(outputFolder).mkdir(); 
-                if (f) logger.info("created output folder <" + outputFolder + "> for results" );
 
-                String fastaOutputFile = outputFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", faOutputExtension);
+                String fastaOutputFile = outFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", faOutputExtension);
                 cmdQ2A.add(fastaOutputFile);
                 
                 cmdQ2A.add("-Q33");
@@ -156,9 +149,7 @@ public class StepCollapseReads extends NGSStep{
 
                 cmd2.add("-o");
 
-                if (f) logger.info("created output folder <" + outputFolder + "> for results" );
-
-                String clpOutputFile = outputFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", clpfaOutputExtension);
+                String clpOutputFile = outFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", clpfaOutputExtension);
                 cmd2.add(clpOutputFile);
                 
 
