@@ -150,11 +150,6 @@ public class StepDEwithEdgeR extends NGSStep{
         
         try{
             BufferedWriter bwMC = new BufferedWriter(new FileWriter(new File(mergedCountsFile)));
-            bwMC.write("# created " + new Timestamp((new java.util.Date()).getTime()));
-            bwMC.write("# from SmallRNAPipeline::StepDEwithEdgeR()");
-            bwMC.write("# " + this.stepInputData.getProjectID());
-            bwMC.write("# ");
-            bwMC.write("# ");
             
             bwMC.write(headerLine + "\n");
             int m=0;

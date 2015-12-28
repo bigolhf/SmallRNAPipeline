@@ -375,7 +375,9 @@ public class StepAnalyzeMappedReads extends NGSStep {
                     }
                     
                     if (startNewFeature5) {
-                        if(currentStop5 - currentStart5 < longestFeature && countCoverage5(currentStart5 - coverage5Start, currentStop5 - coverage5Start) >= minCounts){
+                        if(currentStop5 - currentStart5 + 1 <= longestFeature 
+                                && currentStop5 - currentStart5 + 1>= shortestFeature 
+                                && countCoverage5(currentStart5 - coverage5Start, currentStop5 - coverage5Start) >= minCounts){
                             bwFT.write(featureCount + "\t" + currentChr + "\t" + currentStrand + "\t" + currentStart5 + "\t" + currentStop5 + "\t"
                                     + (currentStop5 - currentStart5 + 1) + "\t" + this.countCoverage5(currentStart5 - coverage5Start, currentStop5 - coverage5Start)
                                     + "\t" + this.countDispersion5(currentStart5 - coverage5Start, currentStop5 - coverage5Start) + "\n");
@@ -405,7 +407,8 @@ public class StepAnalyzeMappedReads extends NGSStep {
                         
                     } else {                                         
                         if (startNewFeature3 ) {
-                            if(currentStop3 - currentStart3 < longestFeature 
+                            if(currentStop3 - currentStart3 + 1<= longestFeature 
+                                && currentStop3 - currentStart3 + 1>= shortestFeature
                                 && countCoverage3(coverage3Start - currentStop3, coverage3Start - currentStart3) > minCounts){
                                 bwFT.write(featureCount + "\t" + currentChr + "\t" + currentStrand + "\t" + currentStart3 + "\t" + currentStop3 + "\t"
                                         + (currentStop3 - currentStart3 + 1) + "\t" + this.countCoverage3(coverage3Start - currentStop3, coverage3Start - currentStart3)
@@ -447,7 +450,7 @@ public class StepAnalyzeMappedReads extends NGSStep {
         String featureFile = outFolder + FileSeparator + stepInputData.getProjectID() + ".features.tsv";
         try{
             BufferedWriter bwFT = new BufferedWriter(new FileWriter(new File(featureFile)));
-                featureSet.writeFeaturesAsGFF3(bwFT);
+                featureSet.writeFeaturesAsGFF3(bwFT, stepInputData.getProjectID());
             bwFT.close();
         }
         catch(IOException exIO){
@@ -455,6 +458,18 @@ public class StepAnalyzeMappedReads extends NGSStep {
             logger.error(exIO);
         }
 
+        String freqFile = outFolder + FileSeparator + stepInputData.getProjectID() + ".freq.tsv";
+        try{
+            BufferedWriter bwFQ = new BufferedWriter(new FileWriter(new File(freqFile)));
+                featureSet.writeLengthDistribution(bwFQ, 1, longestFeature);
+            bwFQ.close();
+        }
+        catch(IOException exIO){
+            logger.error("error writing frequenct file <" + freqFile + ">");
+            logger.error(exIO);
+        }
+
+        
         
         String fastaFile = outFolder + FileSeparator + stepInputData.getProjectID() + ".fasta";
         try{

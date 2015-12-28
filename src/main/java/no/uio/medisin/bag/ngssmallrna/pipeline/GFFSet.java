@@ -10,8 +10,10 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Iterator;
+import org.apache.commons.math3.stat.Frequency;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -122,14 +124,42 @@ public class GFFSet {
     }
     
     
+    /**
+     * 
+     * @param bwLD
+     * @param start
+     * @param stop
+     * @throws IOException 
+     */
+    public void writeLengthDistribution(BufferedWriter bwLD, int start, int stop) throws IOException{
+        Frequency freqDist = new Frequency();
+        Iterator itGF = GFFEntries.iterator();
+        while(itGF.hasNext()){
+            GFFEntry gffEntry = (GFFEntry)itGF.next();            
+            freqDist.addValue(gffEntry.getStop() - gffEntry.getStart() + 1);
+        }
+
+        for(int l=start; l<=stop; l++){
+            bwLD.write(l + "\t" + freqDist.getCount(l) + "\n");
+        }
+        
+    }
+    
     
     /**
      * write out the features in GFF format
      * 
      * @param bwFT
+     * @param projectID
      * @throws IOException 
      */
-    public void writeFeaturesAsGFF3(BufferedWriter bwFT) throws IOException{
+    public void writeFeaturesAsGFF3(BufferedWriter bwFT, String ID) throws IOException{
+            bwFT.write("# created " + new Timestamp((new java.util.Date()).getTime()));
+            bwFT.write("# from GFFSet");
+            bwFT.write("# " + ID);
+            bwFT.write("# ");
+            bwFT.write("# ");
+        
         Iterator itGF = GFFEntries.iterator();
         while(itGF.hasNext()){
             GFFEntry gffEntry = (GFFEntry)itGF.next();            

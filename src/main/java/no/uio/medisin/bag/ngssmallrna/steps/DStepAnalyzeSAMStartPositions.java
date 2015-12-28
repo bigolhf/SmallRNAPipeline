@@ -35,7 +35,7 @@ import org.apache.logging.log4j.Logger;
  * @author sr
  */
 
-public class StepAnalyzeSAMStartPositions extends NGSStep{
+public class DStepAnalyzeSAMStartPositions extends NGSStep{
     
     static Logger                       logger                      = LogManager.getLogger();
     static  String                      FileSeparator               = System.getProperty("file.separator");
@@ -55,7 +55,7 @@ public class StepAnalyzeSAMStartPositions extends NGSStep{
      * @param sid StepInputData
      * 
      */
-    public StepAnalyzeSAMStartPositions(StepInputData sid){
+    public DStepAnalyzeSAMStartPositions(StepInputData sid){
         genomeFeatureSet = new GenomeFeatureSet();
         stepInputData = sid;
     }
