@@ -107,11 +107,11 @@ public class GFFSet {
      * @param bleed
      * @return 
      */
-    public Boolean doesRegionContainFeature(int start, int stop, String strand, String chr, int bleed){
+    public Boolean doesRegionContainFeature(int start, int stop, Strand strand, String chr, int bleed){
         Iterator itGF = GFFEntries.iterator();
         while(itGF.hasNext()){
             GFFEntry gffEntry = (GFFEntry)itGF.next();
-            if(gffEntry.getStrand().equals(strand)
+            if(gffEntry.getStrand() ==strand
                 && gffEntry.getSrc().equals(chr)
                 && Math.abs(gffEntry.getStart()-start) < bleed 
                 && Math.abs(gffEntry.getStop() - stop) < bleed
@@ -158,7 +158,7 @@ public class GFFSet {
             bwFT.write("# from GFFSet");
             bwFT.write("# " + ID);
             bwFT.write("# ");
-            bwFT.write("# ");
+            bwFT.write("# \n");
         
         Iterator itGF = GFFEntries.iterator();
         while(itGF.hasNext()){

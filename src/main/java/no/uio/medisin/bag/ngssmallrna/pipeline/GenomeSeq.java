@@ -64,7 +64,7 @@ public class GenomeSeq {
                     seq = new StringBuilder();
                 }
                 else{
-                    line=line.replaceAll("\\s+", "").replace('T', 'u').toUpperCase();
+                    line=line.replaceAll("\\s+", "").toUpperCase();
                     seq.append(line);
                 }
             }
@@ -82,16 +82,17 @@ public class GenomeSeq {
      * return subsequence within specified feature
      * 
      * @param featureID
+     * @param strand
      * @param b
      * @param e
      * @return 
      */
-    public String getSubSeq(String featureID, int b, int e){
+    public String getSubSeq(String featureID, Strand strand, int b, int e){
         Iterator itGN = genomeSeq.iterator();
         while(itGN.hasNext()){
             SimpleSeq simpleSeq = (SimpleSeq) itGN.next();
             if(simpleSeq.getId().equals(featureID))
-                return simpleSeq.getSequence(b, e);
+                return strand==Strand.PLUS ? simpleSeq.getSequence(b, e):SimpleSeq.complement(simpleSeq.getSequence(b, e));
         }
         return null;
     }
@@ -121,7 +122,7 @@ public class GenomeSeq {
         try{
             genomeSeq.readFastaGenome("/data/ngsdata/sweden/test.fa");
             
-            System.out.printf(SimpleSeq.complement(genomeSeq.getSubSeq("S2", 5, 17)));
+            System.out.printf(SimpleSeq.complement(genomeSeq.getSubSeq("S2", Strand.PLUS, 5, 17)));
             System.out.printf("done");
         }
         catch(IOException exIO){

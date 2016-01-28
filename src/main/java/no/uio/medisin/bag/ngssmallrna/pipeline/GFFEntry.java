@@ -26,9 +26,9 @@ public class GFFEntry {
     private static final    int GFF_PHASE  = 7;
     private static final    int GFF_ATTR   = 8;
     
-    public static final     String  PLUSSTRAND  = "+";
-    public static final     String  NEGSTRAND   = "-";
-    public static final     String  UNKSTRAND   = "?";
+//    public static final     String  PLUSSTRAND  = "+";
+//    public static final     String  NEGSTRAND   = "-";
+//    public static final     String  UNKSTRAND   = "?";
     
     static String   CR = System.getProperty("line.separator");
     
@@ -39,7 +39,7 @@ public class GFFEntry {
     private                 int     start;
     private                 int     stop;
     private                 float   score;
-    private                 String  strand;
+    private                 Strand  strand;
     private                 int     phase;
     private                 String  attr;
     
@@ -71,7 +71,7 @@ public class GFFEntry {
             score = 0;
         }
         
-        strand  = GFFEntry.findStrand(line.split("\t")[GFF_STRAND]);
+        strand  = StrandString.guessStrand(line.split("\t")[GFF_STRAND]);
         
         try{
             phase   = Integer.parseInt(line.split("\t")[GFF_PHASE]);
@@ -100,7 +100,7 @@ public class GFFEntry {
         start = b;
         stop = e;
         src = c;
-        strand = s;
+        strand = StrandString.guessStrand(s);
         seqID = id;
         attr = id;
     }
@@ -137,18 +137,6 @@ public class GFFEntry {
     
     
     
-    /**
-     * There are many different ways to write the strand. 
-     * Make a best guess by parsing the input String
-     * 
-     * @param strandString
-     * @return the guessed Strand
-     */
-    static public String findStrand(String strandString){
-        if (strandString.contains(PLUSSTRAND)) return PLUSSTRAND;
-        if (strandString.contains(NEGSTRAND))  return NEGSTRAND;
-        return UNKSTRAND;
-    }
     /**
      * @return the seqID
      */
@@ -201,7 +189,7 @@ public class GFFEntry {
     /**
      * @return the strand
      */
-    public String getStrand() {
+    public Strand getStrand() {
         return strand;
     }
 
@@ -260,7 +248,8 @@ public class GFFEntry {
         if(attr.contains("seq=")){
             int startPos = attr.indexOf("seq=")+4;
             int stopPos = attr.indexOf(";", startPos);
-            return ">" + this.seqID + " " + this.seqID.split("-")[1] + " " + this.seqID.split("-")[0] + " " + this.seqID.split("-")[1] + CR + attr.substring(startPos, stopPos);
+            return ">" + this.seqID + " " + this.seqID.split("-")[1] + " " + this.seqID.split("-")[0] + " " + this.seqID.split("-")[1] 
+                    + CR + attr.substring(startPos, stopPos);
         }
         return "";
     }

@@ -13,7 +13,7 @@ public class MappedRead implements Comparable<MappedRead>{
     private int startPos;
     private int endPos;
     private String chr;
-    private String strand;
+    private Strand strand;
     private int count;
 
     
@@ -22,7 +22,7 @@ public class MappedRead implements Comparable<MappedRead>{
         startPos = s;
         endPos = e;
         chr = c;
-        strand = t;
+        strand = StrandString.guessStrand(t);
         count = n;
     }
     
@@ -35,13 +35,13 @@ public class MappedRead implements Comparable<MappedRead>{
     @Override
     public int compareTo(MappedRead mappedRead){
         
-        if (mappedRead.chr.equals(chr) && mappedRead.strand.equals(strand))
+        if (mappedRead.chr.equals(chr) && mappedRead.strand == strand)
         {
             return startPos - mappedRead.startPos ;
         }
         
-        if(mappedRead.strand.equals(strand)==false){
-            if(strand.equals("+") && mappedRead.strand.equals("-")){
+        if(mappedRead.strand != strand){
+            if(strand == Strand.PLUS && mappedRead.strand == Strand.MINUS){
                 return -1;
             }else{
                 return +1;
@@ -96,7 +96,7 @@ public class MappedRead implements Comparable<MappedRead>{
     /**
      * @return the strand
      */
-    public String getStrand() {
+    public Strand getStrand() {
         return strand;
     }
 

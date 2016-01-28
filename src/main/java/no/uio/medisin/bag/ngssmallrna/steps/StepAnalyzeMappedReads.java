@@ -21,6 +21,7 @@ import no.uio.medisin.bag.ngssmallrna.pipeline.GenomeSeq;
 import no.uio.medisin.bag.ngssmallrna.pipeline.MappedRead;
 import no.uio.medisin.bag.ngssmallrna.pipeline.SAMEntry;
 import no.uio.medisin.bag.ngssmallrna.pipeline.SampleDataEntry;
+import no.uio.medisin.bag.ngssmallrna.pipeline.Strand;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -239,7 +240,7 @@ public class StepAnalyzeMappedReads extends NGSStep {
                 MappedRead mappedRead = ((MappedRead) mappedReads.get(0));
                 //logger.debug(mappedRead.toString());
                 String currentChr = mappedRead.getChr();
-                String currentStrand = mappedRead.getStrand();
+                Strand currentStrand = mappedRead.getStrand();
 
                 /*
                  need to accommodate the possibility of two features in the
@@ -256,7 +257,7 @@ public class StepAnalyzeMappedReads extends NGSStep {
                 int coverage5Start = -1;
                 int coverage3Start = -1;
                 
-                if (currentStrand.equals(GFFEntry.PLUSSTRAND)) {
+                if (currentStrand.equals(Strand.PLUS)) {
                     currentStart5 = mappedRead.getStartPos();
                     currentStop5 = mappedRead.getEndPos();
                     coverage5Start = currentStart5 - COVERAGE_SPAN / 2;
@@ -288,7 +289,7 @@ public class StepAnalyzeMappedReads extends NGSStep {
                         }
                         currentStrand = mappedRead.getStrand();
                         currentChr = mappedRead.getChr();
-                        if (currentStrand.equals(GFFEntry.PLUSSTRAND)) {
+                        if (currentStrand == Strand.PLUS) {
                             startNewFeature3 = false;
                             startNewFeature5 = false;
                             currentStart5 = mappedRead.getStartPos();
@@ -306,7 +307,7 @@ public class StepAnalyzeMappedReads extends NGSStep {
                         
                     } else {
                         switch (currentStrand) {
-                            case GFFEntry.PLUSSTRAND:
+                            case PLUS:
                                 if (mappedRead.getStartPos() - currentStart5 > separation) {
                                     //logger.debug("read too far away. start new 5' feature");                                    
                                     startNewFeature5 = true;
@@ -334,7 +335,7 @@ public class StepAnalyzeMappedReads extends NGSStep {
                                 break;
                             
                                 
-                            case GFFEntry.NEGSTRAND:
+                            case MINUS:
                                 if ((mappedRead.getStartPos() - currentStart3 > separation) || (currentStop3 - mappedRead.getEndPos() > separation)) {
                                     //logger.debug("read too far away. start new 3' feature");
                                     startNewFeature3 = true;
@@ -365,7 +366,7 @@ public class StepAnalyzeMappedReads extends NGSStep {
                                 break;
                             
                                 
-                            case GFFEntry.UNKSTRAND:
+                            case UNKNOWN:
                                 logger.error("no Strand information for read, cannot process ");
                                 logger.error(mappedRead.toString());
                                 break;
@@ -382,8 +383,8 @@ public class StepAnalyzeMappedReads extends NGSStep {
                                     + (currentStop5 - currentStart5 + 1) + "\t" + this.countCoverage5(currentStart5 - coverage5Start, currentStop5 - coverage5Start)
                                     + "\t" + this.countDispersion5(currentStart5 - coverage5Start, currentStop5 - coverage5Start) + "\n");
                             if(featureSet.doesRegionContainFeature(currentStart5, currentStop5, currentStrand, currentChr, bleed)==false){
-                                GFFEntry newEntry = new GFFEntry(hostCode  + "-" + Integer.toString(featureCount) + ":5", currentStrand, currentChr, currentStart5, currentStop5);
-                                String featureSeq = genomeFasta.getSubSeq(currentChr, currentStart5, currentStop5);
+                                GFFEntry newEntry = new GFFEntry(hostCode  + "-" + Integer.toString(featureCount) + ":5|" + currentChr  + ":" + currentStart5+ "-" + currentStop5, currentStrand.toString(), currentChr, currentStart5, currentStop5);
+                                String featureSeq = genomeFasta.getSubSeq(currentChr, currentStrand, currentStart5, currentStop5);
                                 newEntry.setSequence(featureSeq);
                                 featureSet.addEntry(newEntry);
                             }                            
@@ -414,8 +415,8 @@ public class StepAnalyzeMappedReads extends NGSStep {
                                         + (currentStop3 - currentStart3 + 1) + "\t" + this.countCoverage3(coverage3Start - currentStop3, coverage3Start - currentStart3)
                                         + "\t" + this.countDispersion3(coverage3Start - currentStop3, coverage3Start - currentStart3) + "\n");
                                 if(featureSet.doesRegionContainFeature(currentStart3, currentStop3, currentStrand, currentChr, bleed)==false){
-                                    GFFEntry newEntry = new GFFEntry(hostCode + "-" + Integer.toString(featureCount) + ":3", currentStrand, currentChr, currentStart3, currentStop3);
-                                    String featureSeq = SimpleSeq.complement(genomeFasta.getSubSeq(currentChr, currentStart3, currentStop3));
+                                    GFFEntry newEntry = new GFFEntry(hostCode + "-" + Integer.toString(featureCount) + ":3|" + currentChr  + ":" + currentStart5+ "-" + currentStop5, currentStrand.toString(), currentChr, currentStart3, currentStop3);
+                                    String featureSeq = SimpleSeq.complement(genomeFasta.getSubSeq(currentChr, currentStrand, currentStart3, currentStop3));
                                     newEntry.setSequence(featureSeq);
                                     featureSet.addEntry(newEntry);                                    
                                 }
