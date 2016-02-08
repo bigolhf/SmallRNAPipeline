@@ -5,11 +5,7 @@
  */
 package no.uio.medisin.bag.ngssmallrna.steps;
 
-import java.util.ArrayList;
-import no.uio.medisin.bag.ngssmallrna.pipeline.SampleDataEntry;
-import org.apache.logging.log4j.LogManager;
-
-import org.apache.logging.log4j.Logger;
+import java.io.IOException;
 
 /**
  *
@@ -25,9 +21,9 @@ abstract public class NGSStep {
     
     protected static final  String      FileSeparator   = System.getProperty("file.separator");
     
-    abstract void verifyInputData();
+    abstract void verifyInputData() throws IOException, NullPointerException;
     abstract void outputResultData();
-    abstract void execute();
+    abstract void execute() throws IOException;
     
     
     /**

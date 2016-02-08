@@ -116,7 +116,7 @@ public class StepBowtieMapSingleReads extends NGSStep{
                     + FileSeparator + stepInputData.getStepParams().get("bowtieReferenceGenome") + "/Sequence/AbundantSequences/abundant";
                 cmd.add(pathToBowtieIndex);
                 
-                String fastqTrimmedInputFile = inFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", infileExtension);
+                String fastqTrimmedInputFile = inFolder + FileSeparator + sampleData.getFastqFile1().replace(".fastq", infileExtension);
                 fastqTrimmedInputFile = fastqTrimmedInputFile.replace(FileSeparator + FileSeparator, FileSeparator).trim();
                 cmd.add("-f");
                 cmd.add(fastqTrimmedInputFile);
@@ -126,9 +126,9 @@ public class StepBowtieMapSingleReads extends NGSStep{
                 cmd.add("-m 2");
                 
 
-                String fastqAbundantAln     = outFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", fastqAbundantAlnExtension);
-                String fastqAbundantUnAln   = outFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", fastqAbundantUnAlnExtension);
-                String samAbundantAln       = outFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", samAbundantAlnExtension);
+                String fastqAbundantAln     = outFolder + FileSeparator + sampleData.getFastqFile1().replace(".fastq", fastqAbundantAlnExtension);
+                String fastqAbundantUnAln   = outFolder + FileSeparator + sampleData.getFastqFile1().replace(".fastq", fastqAbundantUnAlnExtension);
+                String samAbundantAln       = outFolder + FileSeparator + sampleData.getFastqFile1().replace(".fastq", samAbundantAlnExtension);
                 cmd.add("--al " + fastqAbundantAln);
                 cmd.add("--un " + fastqAbundantUnAln);
                 cmd.add("--sam "  + samAbundantAln);
@@ -192,9 +192,9 @@ public class StepBowtieMapSingleReads extends NGSStep{
                 
 
 
-                String fastqGenomeAln     = outFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", fastqGenomeAlnExtension);
-                String fastqGenomeUnAln   = outFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", fastqGenomeUnAlnExtension);
-                String samGenomeAln       = outFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", samGenomeAlnExtension);
+                String fastqGenomeAln     = outFolder + FileSeparator + sampleData.getFastqFile1().replace(".fastq", fastqGenomeAlnExtension);
+                String fastqGenomeUnAln   = outFolder + FileSeparator + sampleData.getFastqFile1().replace(".fastq", fastqGenomeUnAlnExtension);
+                String samGenomeAln       = outFolder + FileSeparator + sampleData.getFastqFile1().replace(".fastq", samGenomeAlnExtension);
                 cmd.add("--al " + fastqGenomeAln);
                 cmd.add("--un " + fastqGenomeUnAln);
                 cmd.add("--sam "  + samGenomeAln);
@@ -237,7 +237,7 @@ public class StepBowtieMapSingleReads extends NGSStep{
                 brAStdErr.close();
                 
 
-                String mappingOutputFile    = outFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", mappingResultExtension);
+                String mappingOutputFile    = outFolder + FileSeparator + sampleData.getFastqFile1().replace(".fastq", mappingResultExtension);
                 BufferedWriter bwMO = new BufferedWriter(new FileWriter(new File(mappingOutputFile)));
                     for(String mapLine: mapGenStdErr){
                         bwMO.write(mapLine + "\n");
@@ -250,7 +250,7 @@ public class StepBowtieMapSingleReads extends NGSStep{
                         while (brFQ.readLine() != null) rawReadsIn++;
                     brFQ.close();
 */
-                bwMO.write("original FASTQ source" + sampleData.getDataFile() + "\n");
+                bwMO.write("original FASTQ source" + sampleData.getFastqFile1() + "\n");
                 bwMO.write(fastqTrimmedInputFile + "\n");
                 bwMO.write(fastqGenomeAln + "\n");
                 bwMO.write(fastqAbundantAln + "\n");

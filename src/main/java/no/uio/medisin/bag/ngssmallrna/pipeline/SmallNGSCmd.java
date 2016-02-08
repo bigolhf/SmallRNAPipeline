@@ -30,7 +30,7 @@ public class SmallNGSCmd {
         parseArguments(args, smallPipeline);
         try{
             smallPipeline.prepare_pipeline();
-            smallPipeline.buildPipeline();
+            smallPipeline.runPipeline();
         }
         catch(IOException exIO){
             logger.info("IO error while executing pipeline");

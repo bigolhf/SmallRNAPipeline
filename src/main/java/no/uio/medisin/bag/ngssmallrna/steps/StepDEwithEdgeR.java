@@ -127,8 +127,8 @@ public class StepDEwithEdgeR extends NGSStep{
         Iterator itSD = this.stepInputData.getSampleData().iterator();
         while (itSD.hasNext()){
             SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
-            headerLine = headerLine.concat("\t" + sampleData.getDataFile().replace(".fastq", ""));
-            String  miRCountsFile  = inFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", miRCountsExtension);
+            headerLine = headerLine.concat("\t" + sampleData.getFastqFile1().replace(".fastq", ""));
+            String  miRCountsFile  = inFolder + FileSeparator + sampleData.getFastqFile1().replace(".fastq", miRCountsExtension);
             miRCountsFile = miRCountsFile.replace(FileSeparator + FileSeparator, FileSeparator).trim();
             try{
                 int m=0;
@@ -206,7 +206,7 @@ public class StepDEwithEdgeR extends NGSStep{
         while (itSD.hasNext()){
             SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
             groupString = groupString.concat("\t" + sampleData.getCondition());
-            sampleString = sampleString.concat("\t" + sampleData.getDataFile().replace(".fastq", ""));
+            sampleString = sampleString.concat("\t" + sampleData.getFastqFile1().replace(".fastq", ""));
         }        
         
         groupsFile = outFolder + FileSeparator + stepInputData.getProjectID() + groupsFileExtension;

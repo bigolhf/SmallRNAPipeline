@@ -140,13 +140,13 @@ public class StepCleanUp extends NGSStep{
                 String pathToData = stepInputData.getProjectRoot() + FileSeparator + stepInputData.getProjectID();
                 
                 String outputFolder = pathToData + FileSeparator + outFolder;
-                String outputFile = outputFolder + FileSeparator + sampleData.getDataFile().replace(infileExtension, outfileExtension);
+                String outputFile = outputFolder + FileSeparator + sampleData.getFastqFile1().replace(infileExtension, outfileExtension);
                 if(new File(outputFile).exists()){
                     logger.info("Output file <" + outputFile + "> exists. Skipping");
                     continue;
                 }
                 
-                String inputFile = outputFolder + FileSeparator + sampleData.getDataFile();
+                String inputFile = outputFolder + FileSeparator + sampleData.getFastqFile1();
                 
                 
                 
@@ -154,7 +154,7 @@ public class StepCleanUp extends NGSStep{
                 cmd.add((String) stepInputData.getStepParams().get("unzipSoftware"));
                 cmd.add(inputFile);
                 cmd.add("-threads " + stepInputData.getStepParams().get("trimNoOfThreads"));
-                cmd.add(pathToData + FileSeparator + inFolder + FileSeparator + sampleData.getDataFile());
+                cmd.add(pathToData + FileSeparator + inFolder + FileSeparator + sampleData.getFastqFile1());
 
                     /*
                     pigz -p 4 -d /data/ngsdata/project1/sra_data.fastq.gz 

@@ -88,7 +88,7 @@ public class StepCollapseReads extends NGSStep{
                 ArrayList<String> cmdQ2A = new ArrayList<>();
                 cmdQ2A.add((String) stepInputData.getStepParams().get("fastqTofasta"));
 
-                String fastqInputFile = inFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", infileExtension);
+                String fastqInputFile = inFolder + FileSeparator + sampleData.getFastqFile1().replace(".fastq", infileExtension);
                 fastqInputFile = fastqInputFile.replace(FileSeparator + FileSeparator, FileSeparator).trim();                
                 if (new File(fastqInputFile).exists() == false)
                 {
@@ -99,7 +99,7 @@ public class StepCollapseReads extends NGSStep{
 
                 cmdQ2A.add("-o");
 
-                String fastaOutputFile = outFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", faOutputExtension);
+                String fastaOutputFile = outFolder + FileSeparator + sampleData.getFastqFile1().replace(".fastq", faOutputExtension);
                 cmdQ2A.add(fastaOutputFile);
                 
                 cmdQ2A.add("-Q33");
@@ -149,7 +149,7 @@ public class StepCollapseReads extends NGSStep{
 
                 cmd2.add("-o");
 
-                String clpOutputFile = outFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", clpfaOutputExtension);
+                String clpOutputFile = outFolder + FileSeparator + sampleData.getFastqFile1().replace(".fastq", clpfaOutputExtension);
                 cmd2.add(clpOutputFile);
                 
 

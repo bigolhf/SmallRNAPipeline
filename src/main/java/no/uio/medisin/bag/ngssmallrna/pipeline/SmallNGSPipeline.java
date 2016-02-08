@@ -138,7 +138,7 @@ public class SmallNGSPipeline {
      * build each step and execute
      * 
      */
-    public void buildPipeline(){
+    public void runPipeline() throws IOException{
         
         for (NGSRunStepData stepData: this.getPipelineData().getStepsData()){
             
@@ -200,7 +200,7 @@ public class SmallNGSPipeline {
      * 
      * @param stepData 
      */
-    private void executeStepUnzipInputFiles(NGSRunStepData stepData){
+    private void executeStepUnzipInputFiles(NGSRunStepData stepData) throws IOException{
         
         HashMap unzipFastqParams = new HashMap();
         unzipFastqParams.put("unzipSoftware",           this.getZipSoftware());
@@ -446,24 +446,30 @@ public class SmallNGSPipeline {
     public void readDataFile() throws IOException{
         
         
-        logger.info("read data file");
+        logger.info("\nread data file");
         String line = "";
         BufferedReader bwData = new BufferedReader(new FileReader(new File(this.getDataFile())));
             bwData.readLine(); // skip header line
             while((line=bwData.readLine())!= null){
+                if (line.startsWith("#")) 
+                    continue;
                 
                 String tokens[] = line.split("\t");
-                String file = tokens[0];
+                String file1 = tokens[0].split(",")[0].trim();
+                String file2 = tokens[0].split(",")[1].trim();
                 String source = tokens[1];
                 String condition = tokens[2];
                 String time = tokens[3];
                 String note = tokens[4];
                 
-                getSampleData().add(new SampleDataEntry(file, source, condition, time, note));
+                getSampleData().add(new SampleDataEntry(file1, file2, source, condition, time, note));
+                SampleDataEntry x = new SampleDataEntry(file1, file2, source, condition, time, note);
+                
+                logger.info(line);
                 
             }
         bwData.close();
-        logger.info("read " + getSampleData().size() + " entries");
+        logger.info("\nread " + getSampleData().size() + " entries");
         
         
     }

@@ -106,7 +106,7 @@ public class DStepAnalyzeSAMStartPositions extends NGSStep{
                 int bleed = (int) stepInputData.getStepParams().get("bleed");
                 SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
                 
-                samInputFile = inFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", infileExtension);
+                samInputFile = inFolder + FileSeparator + sampleData.getFastqFile1().replace(".fastq", infileExtension);
                 logger.info(samInputFile);
                 int matchCount5 = 0;
                 int matchCount3 = 0;
@@ -197,8 +197,8 @@ public class DStepAnalyzeSAMStartPositions extends NGSStep{
                     logger.info("  total non coding reads   = " + nonCodingCounts);
                     Double minCounts = (double) totalCounts /100000.0;
                     logger.info((matchCount5 + matchCount3) + " reads (" + matchCount5 + " 5'" + "/" + matchCount3 + " 3' ) were mapped");
-                    String  codingReadsDetailsFile = outFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", readsInExonExtension);
-                    String  nonCodingReadsDetailsFile  = outFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", readsInNonCodingExtension);
+                    String  codingReadsDetailsFile = outFolder + FileSeparator + sampleData.getFastqFile1().replace(".fastq", readsInExonExtension);
+                    String  nonCodingReadsDetailsFile  = outFolder + FileSeparator + sampleData.getFastqFile1().replace(".fastq", readsInNonCodingExtension);
                     
             
                     

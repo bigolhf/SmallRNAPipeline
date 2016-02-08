@@ -88,11 +88,11 @@ public class StepAnalyzeIsomiRDispersion extends NGSStep{
         for(SampleDataEntry dataEntry: stepInputData.getSampleData()){
             
             if(sourceList.contains(dataEntry.getDataSource())==false){
-                pairedSet.addEntry(dataEntry.getDataSource(), dataEntry.getDataFile().replace(".fastq", ""));
+                pairedSet.addEntry(dataEntry.getDataSource(), dataEntry.getFastqFile1().replace(".fastq", ""));
                 sourceList.add(dataEntry.getDataSource());
             }
             else{
-                pairedSet.updateEntry(dataEntry.getDataSource(), dataEntry.getDataFile().replace(".fastq", ""));
+                pairedSet.updateEntry(dataEntry.getDataSource(), dataEntry.getFastqFile1().replace(".fastq", ""));
             }
             
             if(conditionList.contains(dataEntry.getCondition())==false){

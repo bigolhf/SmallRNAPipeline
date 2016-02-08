@@ -9,7 +9,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /**
- *
+ * stores a single entry from a GFF line
  * @author simonray
  */
 public class GFFEntry {
@@ -25,11 +25,7 @@ public class GFFEntry {
     private static final    int GFF_STRAND = 6;
     private static final    int GFF_PHASE  = 7;
     private static final    int GFF_ATTR   = 8;
-    
-//    public static final     String  PLUSSTRAND  = "+";
-//    public static final     String  NEGSTRAND   = "-";
-//    public static final     String  UNKSTRAND   = "?";
-    
+        
     static String   CR = System.getProperty("line.separator");
     
     

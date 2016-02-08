@@ -79,12 +79,12 @@ public class StepTrimAdapters extends NGSStep{
                 cmd.add("-phred64");
     //          cmd.add("-trimlog " + pathToData + FileSeparator + sampleData.getDataFile() + ".trimlog");  // this will create huge logfiles. Disabled for now
                 cmd.add("-threads " + stepInputData.getStepParams().get("trimNoOfThreads"));
-                cmd.add(inFolder + FileSeparator + sampleData.getDataFile());
+                cmd.add(inFolder + FileSeparator + sampleData.getFastqFile1());
 
                 Boolean f = new File(outFolder).mkdir();       
                 if (f) logger.info("created output folder <" + outFolder + "> for results" );
 
-                cmd.add(outFolder + FileSeparator + sampleData.getDataFile().replace(infileExtension, outfileExtension));
+                cmd.add(outFolder + FileSeparator + sampleData.getFastqFile1().replace(infileExtension, outfileExtension));
                 cmd.add("ILLUMINACLIP:" + stepInputData.getStepParams().get("trimAdapterFile") 
                     + ":" + stepInputData.getStepParams().get("trimNoOfMismatches")
                     + ":30"
@@ -149,14 +149,14 @@ public class StepTrimAdapters extends NGSStep{
         Iterator itSD = this.stepInputData.getSampleData().iterator();
         while (itSD.hasNext()){
             SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
-            if (sampleData.getDataFile().toUpperCase().endsWith(infileExtension.toUpperCase())==false)
+            if (sampleData.getFastqFile1().toUpperCase().endsWith(infileExtension.toUpperCase())==false)
             {
                 throw new IllegalArgumentException("AdapterTrimming: incorrect file extension for input file <" 
-                  + sampleData.getDataFile() + ">. " 
+                  + sampleData.getFastqFile1() + ">. " 
                   + "should have <" + infileExtension + "> as extension");
             }
             
-            if (sampleData.getDataFile().toUpperCase().endsWith(outfileExtension.toUpperCase())==true)
+            if (sampleData.getFastqFile1().toUpperCase().endsWith(outfileExtension.toUpperCase())==true)
             {
                 logger.warn("AdapterTrimming: input file has output file extension (.trim.fastq)");
                 logger.warn("this file has already been trimmed");

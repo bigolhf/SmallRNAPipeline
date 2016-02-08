@@ -5,13 +5,19 @@
  */
 package no.uio.medisin.bag.ngssmallrna.pipeline;
 
+import org.apache.commons.lang3.Validate;
+
 /**
- *
+ * stores information for a sample entry specified in a run data file
+ * handles both single and paired end reads
+ * for single end reads, the second file will be set to null
+ * 
  * @author sr
  */
 public class SampleDataEntry {
     
-    private String dataFile;
+    private String fastqFile1;
+    private String fastqFile2;
     private String dataSource;
     private String condition;
     private String time;
@@ -19,28 +25,49 @@ public class SampleDataEntry {
 
     
     
-    public SampleDataEntry(String fname, String source, String cond, String t, String n){
+    public SampleDataEntry(String fname1, String fname2, String source, String cond, String t, String n){
         
-        dataFile = fname;
+        fastqFile1 = fname1;
+        fastqFile2 = fname2;
         dataSource = source;
         condition = cond;
         time = t;
         note = n;
+        
+        Validate.notNull(fastqFile1, "fastq file 1 must be specified");
+        Validate.notNull(dataSource, "source must be specified");
+        
     }
+    
+    
+    /*
+        @return the instance as a string
+    */
+    @Override
+    public String toString(){
+        String s = "fastqFile1:\t" + fastqFile1 + "\t"
+                + "fastqFile2:\t" + fastqFile2 + "\t"
+                + "dataSource:\t" + dataSource + "\t"
+                + "condition:\t" + condition + "\t"
+                + "time:\t" + time + "\t"
+                + "note:\t" + note;
+                
+        return s;
+    };
     
     
     /**
      * @return the dataFile
      */
-    public String getDataFile() {
-        return dataFile;
+    public String getFastqFile1() {
+        return fastqFile1;
     }
 
     /**
      * @param dataFile the dataFile to set
      */
     public void setDataFile(String dataFile) {
-        this.dataFile = dataFile;
+        this.fastqFile1 = dataFile;
     }
 
     /**
@@ -97,5 +124,19 @@ public class SampleDataEntry {
      */
     public void setNote(String note) {
         this.note = note;
+    }
+
+    /**
+     * @return the fastqFile2
+     */
+    public String getFastqFile2() {
+        return fastqFile2;
+    }
+
+    /**
+     * @param fastqFile2 the fastqFile2 to set
+     */
+    public void setFastqFile2(String fastqFile2) {
+        this.fastqFile2 = fastqFile2;
     }
 }

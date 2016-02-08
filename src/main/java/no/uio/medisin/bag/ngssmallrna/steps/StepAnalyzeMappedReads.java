@@ -176,11 +176,11 @@ public class StepAnalyzeMappedReads extends NGSStep {
         while (itSD.hasNext()) {
             SampleDataEntry sampleData = (SampleDataEntry) itSD.next();
             
-            String positionFile = outFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", positionsExtension);
-            String featureOutFile = outFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", featuresExtension);
+            String positionFile = outFolder + FileSeparator + sampleData.getFastqFile1().replace(".fastq", positionsExtension);
+            String featureOutFile = outFolder + FileSeparator + sampleData.getFastqFile1().replace(".fastq", featuresExtension);
             featureOutFile = featureOutFile.replace(FileSeparator + FileSeparator, FileSeparator).trim();
 
-            String samInputFile = inFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", infileExtension);
+            String samInputFile = inFolder + FileSeparator + sampleData.getFastqFile1().replace(".fastq", infileExtension);
             
             logger.info("sam input file is " + samInputFile);
             logger.info("results will be written to " + positionFile);
