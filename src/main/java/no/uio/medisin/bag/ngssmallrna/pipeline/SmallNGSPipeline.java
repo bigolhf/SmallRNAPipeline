@@ -9,6 +9,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -25,7 +26,7 @@ import no.uio.medisin.bag.ngssmallrna.steps.StepBowtieMapPairedReads;
 import no.uio.medisin.bag.ngssmallrna.steps.StepCleanUp;
 import no.uio.medisin.bag.ngssmallrna.steps.StepInputData;
 import no.uio.medisin.bag.ngssmallrna.steps.StepUnzipInputFiles;
-import no.uio.medisin.bag.ngssmallrna.steps.StepTrimAdapters;
+import no.uio.medisin.bag.ngssmallrna.steps.StepSingleTrimAdapters;
 import org.yaml.snakeyaml.Yaml;
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.annotate.JsonAutoDetect;
@@ -42,9 +43,13 @@ public class SmallNGSPipeline {
     static  Yaml                        yaml = new Yaml();
     static  String                      FileSeparator = System.getProperty("file.separator");
     
+    private Boolean                     generateSampleFiles = false;
+    
     private String                      configurationFile = "";
     private String                      pipelineFile = "";
     private String                      dataFile = "";
+    
+    private HashMap                     pipelineConfigurationDataHash;    
     
     private String                      softwareRootFolder = "";
     private String                      zipSoftware = "";
@@ -57,7 +62,6 @@ public class SmallNGSPipeline {
     private String                      genomeRootFolder = "";
     private String                      mirbaseRootFolder = "";
     
-    private int                         unzipNoOfThreads = 4;
     
     private String                      trimAdapterFile = "";
     private int                         trimNoOfMismatches = 2;
@@ -136,20 +140,20 @@ public class SmallNGSPipeline {
     /**
      * 
      * build each step and execute
-     * 
+     * @throws IOException, Exception
      */
-    public void runPipeline() throws IOException{
+    public void runPipeline() throws IOException, Exception{
         
         for (NGSRunStepData stepData: this.getPipelineData().getStepsData()){
             
             switch (stepData.getStepType()){
                 
-                case "UnzipFastq":
+                case StepUnzipInputFiles.STEP_ID_STRING:
                     this.executeStepUnzipInputFiles(stepData);                    
                     break;
                     
-                case "TrimAdapters":
-                    this.executeStepTrimAdapters(stepData);
+                case StepSingleTrimAdapters.STEP_ID_STRING:
+                    this.executeStepSingleTrimAdapters(stepData);
                     break;
                     
                 case "CollapseReads":                
@@ -200,27 +204,23 @@ public class SmallNGSPipeline {
      * 
      * @param stepData 
      */
-    private void executeStepUnzipInputFiles(NGSRunStepData stepData) throws IOException{
+    private void executeStepUnzipInputFiles(NGSRunStepData stepData) throws IOException, Exception{
         
-        HashMap unzipFastqParams = new HashMap();
-        unzipFastqParams.put("unzipSoftware",           this.getZipSoftware());
-        unzipFastqParams.put("trimNoOfThreads",         this.getTrimNoOfThreads());
-
-        StepInputData sidUnzip = new StepInputData(unzipFastqParams, this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), 
+        StepInputData sidUnzip = new StepInputData(this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), 
                  stepData.getInputFileList(), stepData.getOutputFileList(), this.getSampleData());
-        StepUnzipInputFiles unzipFastqStep = new StepUnzipInputFiles(sidUnzip);
-
-        unzipFastqStep.execute();
+        StepUnzipInputFiles ngsUnzipFastqStep = new StepUnzipInputFiles(sidUnzip);        
+        ngsUnzipFastqStep.parseConfigurationData((HashMap) pipelineConfigurationDataHash.get(StepUnzipInputFiles.STEP_ID_STRING));        
+        ngsUnzipFastqStep.execute();
         
     }
 
     
     
     /**
-     * build and execute step to trim adapter sequences from supplied FASTQ files
+     * build and execute step to trim adapter sequences from single end FASTQ files
      * @param stepData 
      */
-    private void executeStepTrimAdapters(NGSRunStepData stepData){
+    private void executeStepSingleTrimAdapters(NGSRunStepData stepData) throws IOException, Exception{
 
         HashMap trimAdapterParams = new HashMap();
         trimAdapterParams.put("trimAdapterSoftware",    this.getSoftwareRootFolder() + FileSeparator + this.getAdapterTrimmingSoftware());
@@ -230,12 +230,12 @@ public class SmallNGSPipeline {
         trimAdapterParams.put("trimNoOfThreads",        this.getTrimNoOfThreads());
         trimAdapterParams.put("trimMinAvgReadQuality",  this.getTrimMinAvgReadQuality());
 
-        StepInputData sidTrim = new StepInputData(trimAdapterParams, this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), 
+        StepInputData sidTrim = new StepInputData(this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), 
                  stepData.getInputFileList(), stepData.getOutputFileList(), this.getSampleData());
-        StepTrimAdapters ngsTrimStep = new StepTrimAdapters(sidTrim);
-        this.getNGSSteps().add(ngsTrimStep);
+        StepSingleTrimAdapters ngsSingleTrimStep = new StepSingleTrimAdapters(sidTrim);
+        ngsSingleTrimStep.parseConfigurationData((HashMap) pipelineConfigurationDataHash.get(StepSingleTrimAdapters.STEP_ID_STRING));        
 
-        ngsTrimStep.execute();
+        ngsSingleTrimStep.execute();
         
     }
     
@@ -247,7 +247,7 @@ public class SmallNGSPipeline {
      * 
      * @param stepData 
      */
-    private void executeStepCollapseReads(NGSRunStepData stepData){
+    private void executeStepCollapseReads(NGSRunStepData stepData) throws IOException{
 
         HashMap collapseReadsParams = new HashMap();
         collapseReadsParams.put("fastqTofasta", this.getFastq2fastaSoftware());
@@ -267,7 +267,7 @@ public class SmallNGSPipeline {
      * 
      * @param stepData 
      */
-    private void executeStepBowtieMapSingleReads(NGSRunStepData stepData){
+    private void executeStepBowtieMapSingleReads(NGSRunStepData stepData) throws IOException{
 
         HashMap bowtieMapSingleReadsParams = new HashMap();
         bowtieMapSingleReadsParams.put("bowtieMappingCommand", this.getBowtieMappingCommand());
@@ -291,7 +291,7 @@ public class SmallNGSPipeline {
      * 
      * @param stepData 
      */
-    private void executeStepBowtieMapPairedReads(NGSRunStepData stepData){
+    private void executeStepBowtieMapPairedReads(NGSRunStepData stepData) throws IOException{
 
         HashMap bowtieMapPairedReadsParams = new HashMap();
         bowtieMapPairedReadsParams.put("bowtieMappingCommand", this.getBowtieMappingCommand());
@@ -315,7 +315,7 @@ public class SmallNGSPipeline {
      * 
      * @param stepData 
      */
-    private void executeStepParseSAMForMiRNAs(NGSRunStepData stepData){
+    private void executeStepParseSAMForMiRNAs(NGSRunStepData stepData) throws IOException{
         
        HashMap parseSAMmiRNAsParams = new HashMap();
        parseSAMmiRNAsParams.put("inputFolder", stepData.getInputFileList());
@@ -341,7 +341,7 @@ public class SmallNGSPipeline {
      * 
      * @param stepData 
      */
-    private void executeStepAnalyzeStartPositions(NGSRunStepData stepData){
+    private void executeStepAnalyzeStartPositions(NGSRunStepData stepData) throws IOException{
         
         HashMap analyzeSAMStartPositionsParams = new HashMap();
         analyzeSAMStartPositionsParams.put("bleed", this.getSamParseStartPosBleed());
@@ -369,7 +369,7 @@ public class SmallNGSPipeline {
      * 
      * @param stepData 
      */
-    private void executeStepAnalyzeIsomiRDispersion(NGSRunStepData stepData){
+    private void executeStepAnalyzeIsomiRDispersion(NGSRunStepData stepData) throws IOException{
         
         HashMap isomiRDispersionAnalysisParams = new HashMap();
         isomiRDispersionAnalysisParams.put("pvalue", this.getAnalyzeIsomiRDispPVal());
@@ -391,7 +391,7 @@ public class SmallNGSPipeline {
      * 
      * @param stepData 
      */
-    private void executeStepDifferentialExpression(NGSRunStepData stepData){
+    private void executeStepDifferentialExpression(NGSRunStepData stepData) throws IOException{
         /*
         Need to add:
             Number of Tags to report
@@ -419,7 +419,7 @@ public class SmallNGSPipeline {
      * 
      * @param stepData 
      */
-    private void executeStepCleanup(NGSRunStepData stepData){
+    private void executeStepCleanup(NGSRunStepData stepData) throws IOException{
 
         HashMap cleanUpParams = new HashMap();
         cleanUpParams.put("zipSoftware",          this.getZipSoftware());
@@ -479,19 +479,21 @@ public class SmallNGSPipeline {
     
     /**
      * read configuration settings for the pipeline
+     * there should be settings for each step. If the data is missing for a step
+     * the method should return a warning.
      * 
      * @throws IOException 
      */
     public void readConfigurationFile() throws IOException{
         
         logger.info("read pipeline configuration file");
-        HashMap pipelineConfiguration = (HashMap) yaml.load(new FileInputStream(new File(getConfigurationFile())));
+        pipelineConfigurationDataHash = (HashMap) yaml.load(new FileInputStream(new File(getConfigurationFile())));
         
-        HashMap dataOptions = (HashMap) pipelineConfiguration.get("data");
+        HashMap dataOptions = (HashMap) pipelineConfigurationDataHash.get("data");
         this.setGenomeRootFolder((String) dataOptions.get("genome_root_folder"));
         this.setMirbaseRootFolder((String) dataOptions.get("mirbase_folder"));
 
-        HashMap softwareOptions = (HashMap) pipelineConfiguration.get("software");
+        HashMap softwareOptions = (HashMap) pipelineConfigurationDataHash.get("software");
         this.setSoftwareRootFolder((String) softwareOptions.get("root_folder"));
         this.setZipSoftware((String) softwareOptions.get("unzip"));
         this.setAdapterTrimmingSoftware((String) softwareOptions.get("adapter_trimming"));
@@ -500,35 +502,35 @@ public class SmallNGSPipeline {
         this.setBowtieMappingCommand((String) softwareOptions.get("bowtie_mapping_command"));
         this.setrScriptCommand((String) softwareOptions.get("rscript_command"));
         
-        HashMap unzipOptions = (HashMap) pipelineConfiguration.get("unzip");
+        HashMap unzipOptions = (HashMap) pipelineConfigurationDataHash.get("unzip");
         this.setUnzipNoOfThreads((int) unzipOptions.get("no_of_threads"));
         
-        HashMap trimAdapterOptions = (HashMap) pipelineConfiguration.get("adapter_trimming");
+        HashMap trimAdapterOptions = (HashMap) pipelineConfigurationDataHash.get("single_adapter_trimming");
         this.setTrimAdapterFile((String) trimAdapterOptions.get("adapter_file"));
         this.setTrimMinAlignScore((int) trimAdapterOptions.get("no_of_mismatches"));
         this.setTrimNoOfMismatches((int) trimAdapterOptions.get("min_align_score"));
         this.setTrimNoOfThreads((int) trimAdapterOptions.get("no_of_threads"));
         this.setTrimMinAvgReadQuality((int) trimAdapterOptions.get("min_avg_read_qual"));
         
-        HashMap mapSingleReadsOptions = (HashMap) pipelineConfiguration.get("bowtie_single_mapping");
+        HashMap mapSingleReadsOptions = (HashMap) pipelineConfigurationDataHash.get("bowtie_single_mapping");
         this.setBowtieSMappingAlignMode((String) mapSingleReadsOptions.get("alignment_mode"));
         this.setBowtieSMappingNoOfMismatches((int) mapSingleReadsOptions.get("no_of_mismatches"));
         this.setBowtieSMappingNoOfThreads((int) mapSingleReadsOptions.get("no_of_threads"));
         this.setBowtieSMappingReferenceGenome((String) mapSingleReadsOptions.get("host"));
         
-        HashMap mapPairedReadsOptions = (HashMap) pipelineConfiguration.get("bowtie_paired_mapping");
+        HashMap mapPairedReadsOptions = (HashMap) pipelineConfigurationDataHash.get("bowtie_paired_mapping");
         this.setBowtiePMappingAlignMode((String) mapPairedReadsOptions.get("alignment_mode"));
         this.setBowtiePMappingNoOfMismatches((int) mapPairedReadsOptions.get("no_of_mismatches"));
         this.setBowtiePMappingNoOfThreads((int) mapPairedReadsOptions.get("no_of_threads"));
         this.setBowtiePMappingReferenceGenome((String) mapPairedReadsOptions.get("host"));
         
-        HashMap processSAMForMiRNAsOptions  = (HashMap) pipelineConfiguration.get("sam_mirna_processing");
+        HashMap processSAMForMiRNAsOptions  = (HashMap) pipelineConfigurationDataHash.get("sam_mirna_processing");
         this.setSamParseForMiRNAsBleed((int) processSAMForMiRNAsOptions.get("bleed"));
         this.setSamParseForMiRNAsMiRBaseVersion( String.valueOf(processSAMForMiRNAsOptions.get("mirbase_release")));
         this.setSamParseForMiRNAsBaselinePercent((int) processSAMForMiRNAsOptions.get("baseline_percent"));
         this.setSamParseForMiRNAsAnalyzeIsomirs((Boolean) processSAMForMiRNAsOptions.get("analyze_isomirs"));
         
-        HashMap processSAMStartPosOptions = (HashMap) pipelineConfiguration.get("sam_startpos_processing");
+        HashMap processSAMStartPosOptions = (HashMap) pipelineConfigurationDataHash.get("sam_startpos_processing");
         this.setSamParseStartPosBleed((int) processSAMStartPosOptions.get("bleed"));
         this.setSamParseFeatureSeparation((int) processSAMStartPosOptions.get("separation"));
         this.setSamParseShortestFeature((int) processSAMStartPosOptions.get("shortest_feature"));
@@ -536,13 +538,13 @@ public class SmallNGSPipeline {
         this.setSamParseMinCounts((int) processSAMStartPosOptions.get("min_counts"));
         this.setSamParseFeatureTypes((ArrayList<String>)processSAMStartPosOptions.get("feature_types"));
         
-        HashMap analyzeIsomiRDispersionOptions = (HashMap) pipelineConfiguration.get("analyze_isomir_dispersion");
+        HashMap analyzeIsomiRDispersionOptions = (HashMap) pipelineConfigurationDataHash.get("analyze_isomir_dispersion");
         this.setAnalyzeIsomiRDispPVal((double) analyzeIsomiRDispersionOptions.get("pvalue"));
         
-        HashMap diffExpressionOptions = (HashMap) pipelineConfiguration.get("differential_expression");
+        HashMap diffExpressionOptions = (HashMap) pipelineConfigurationDataHash.get("differential_expression");
         this.setDiffExpressionPVal((double) diffExpressionOptions.get("pvalue"));
         
-        HashMap cleanupOptions = (HashMap) pipelineConfiguration.get("cleanup");
+        HashMap cleanupOptions = (HashMap) pipelineConfigurationDataHash.get("cleanup");
         this.setCleanupFiles((ArrayList<String>)cleanupOptions.get("file_types"));
         this.setCleanupNoOfThreads((int) cleanupOptions.get("no_of_threads"));
         
@@ -553,7 +555,19 @@ public class SmallNGSPipeline {
     
     
     
+    public void writeSampleConfigurationFile() throws IOException{
+        logger.info("write example pipeline configuration file");
+        HashMap pipelineConfiguration = new HashMap();
+        
     
+        FileWriter sampleFileWriter = new FileWriter(new File("pipelineConfiguration.sample.yaml"));
+        
+        
+        
+        
+        yaml.dump(pipelineConfiguration, sampleFileWriter);
+        
+    }
     /**
      * 
      */
@@ -1206,6 +1220,20 @@ public class SmallNGSPipeline {
      */
     public void setrScriptCommand(String rScriptCommand) {
         this.rScriptCommand = rScriptCommand;
+    }
+
+    /**
+     * @return the generateSampleFiles
+     */
+    public Boolean getGenerateSampleFiles() {
+        return generateSampleFiles;
+    }
+
+    /**
+     * @param generateSampleFiles the generateSampleFiles to set
+     */
+    public void setGenerateSampleFiles(Boolean generateSampleFiles) {
+        this.generateSampleFiles = generateSampleFiles;
     }
     
     

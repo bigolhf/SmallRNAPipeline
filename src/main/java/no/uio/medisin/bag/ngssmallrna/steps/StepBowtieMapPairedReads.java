@@ -354,7 +354,7 @@ public class StepBowtieMapPairedReads extends NGSStep{
     }
     
     @Override
-    public void outputResultData(){
+    public void verifyOutputData(){
         
     }
 }

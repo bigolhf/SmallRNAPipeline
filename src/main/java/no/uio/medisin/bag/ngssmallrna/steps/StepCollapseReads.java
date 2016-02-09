@@ -210,7 +210,7 @@ public class StepCollapseReads extends NGSStep{
     }
     
     @Override
-    public void outputResultData(){
+    public void verifyOutputData(){
         
     }
 }

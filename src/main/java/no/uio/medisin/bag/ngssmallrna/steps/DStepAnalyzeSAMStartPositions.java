@@ -283,7 +283,7 @@ public class DStepAnalyzeSAMStartPositions extends NGSStep{
     
     
     @Override
-    public void outputResultData(){
+    public void verifyOutputData(){
         
     }
 }

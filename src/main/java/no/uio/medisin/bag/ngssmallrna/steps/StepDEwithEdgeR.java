@@ -128,8 +128,8 @@ public class StepDEwithEdgeR extends NGSStep{
         while (itSD.hasNext()){
             SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
             headerLine = headerLine.concat("\t" + sampleData.getFastqFile1().replace(".fastq", ""));
-            String  miRCountsFile  = inFolder + FileSeparator + sampleData.getFastqFile1().replace(".fastq", miRCountsExtension);
-            miRCountsFile = miRCountsFile.replace(FileSeparator + FileSeparator, FileSeparator).trim();
+            String  miRCountsFile  = inFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", miRCountsExtension);
+            miRCountsFile = miRCountsFile.replace(FILESEPARATOR + FILESEPARATOR, FILESEPARATOR).trim();
             try{
                 int m=0;
                 BufferedReader brmiRCounts  = new BufferedReader(new FileReader(new File(miRCountsFile)));
@@ -146,7 +146,7 @@ public class StepDEwithEdgeR extends NGSStep{
         }
         
         logger.info("Writing merged count files");
-        mergedCountsFile        = outFolder + FileSeparator + stepInputData.getProjectID() + ".merged.mirna_counts.tsv"; 
+        mergedCountsFile        = outFolder + FILESEPARATOR + stepInputData.getProjectID() + ".merged.mirna_counts.tsv"; 
         
         try{
             BufferedWriter bwMC = new BufferedWriter(new FileWriter(new File(mergedCountsFile)));
@@ -209,7 +209,7 @@ public class StepDEwithEdgeR extends NGSStep{
             sampleString = sampleString.concat("\t" + sampleData.getFastqFile1().replace(".fastq", ""));
         }        
         
-        groupsFile = outFolder + FileSeparator + stepInputData.getProjectID() + groupsFileExtension;
+        groupsFile = outFolder + FILESEPARATOR + stepInputData.getProjectID() + groupsFileExtension;
         logger.info("writing groups file "  + groupsFile);
         try{
             BufferedWriter bwGF = new BufferedWriter(new FileWriter(new File(groupsFile)));    
@@ -243,12 +243,12 @@ public class StepDEwithEdgeR extends NGSStep{
 
         BigInteger big = new BigInteger(130, new Random());
         String randomName = new BigInteger(130, new SecureRandom()).toString(32);
-        rScriptFilename = outFolder + FileSeparator + randomName + ".R";
-        rScriptFilename = rScriptFilename.replace(FileSeparator + FileSeparator, FileSeparator);
+        rScriptFilename = outFolder + FILESEPARATOR + randomName + ".R";
+        rScriptFilename = rScriptFilename.replace(FILESEPARATOR + FILESEPARATOR, FILESEPARATOR);
         
-        deResultsFile           = outFolder + FileSeparator + stepInputData.getProjectID() + deResultsExtension;    
-        deCountsBySampleFile    = outFolder + FileSeparator + stepInputData.getProjectID() + deSampleCountsExtension;
-        deSummaryFile           = outFolder + FileSeparator + stepInputData.getProjectID() + deSummaryExtension;
+        deResultsFile           = outFolder + FILESEPARATOR + stepInputData.getProjectID() + deResultsExtension;    
+        deCountsBySampleFile    = outFolder + FILESEPARATOR + stepInputData.getProjectID() + deSampleCountsExtension;
+        deSummaryFile           = outFolder + FILESEPARATOR + stepInputData.getProjectID() + deSummaryExtension;
         
         int minCounts = 10;
         ArrayList<String> cmdSet = new ArrayList<>();
@@ -289,19 +289,19 @@ public class StepDEwithEdgeR extends NGSStep{
         cmdSet.add("");
         
         
-        dePlotBCVfile           = outFolder + FileSeparator + stepInputData.getProjectID() + dePlotBCVExtension + "png";
+        dePlotBCVfile           = outFolder + FILESEPARATOR + stepInputData.getProjectID() + dePlotBCVExtension + "png";
         cmdSet.add("png(\"" + dePlotBCVfile + "\", width=" + width + ", height=" + height + ", units=\"" + units + "\", res=" + resolution + ")");
         cmdSet.add("plotBCV(TagwiseDispersion)");
         cmdSet.add("dev.off()");
         cmdSet.add("");
         
-        dePlotMDSfile           = outFolder + FileSeparator + stepInputData.getProjectID() + dePlotMDSExtension + "png";
+        dePlotMDSfile           = outFolder + FILESEPARATOR + stepInputData.getProjectID() + dePlotMDSExtension + "png";
         cmdSet.add("png(\"" + dePlotMDSfile + "\", width=" + width + ", height=" + height + ", units=\"" + units + "\", res=" + resolution + ")");
         cmdSet.add("plotMDS(TagwiseDispersion)");
         cmdSet.add("dev.off()");
         cmdSet.add("");
 
-        dePlotSmearfile         = outFolder + FileSeparator + stepInputData.getProjectID() + dePlotSmearExtension + "png";
+        dePlotSmearfile         = outFolder + FILESEPARATOR + stepInputData.getProjectID() + dePlotSmearExtension + "png";
         cmdSet.add("png(\"" + dePlotSmearfile + "\", width=" + width + ", height=" + height + ", units=\"" + units + "\", res=" + resolution + ")");
         cmdSet.add("plotSmear(TagwiseDispersion)");
         cmdSet.add("dev.off()");        
@@ -325,7 +325,7 @@ public class StepDEwithEdgeR extends NGSStep{
     private void executeRScript(){
         
 
-        String pathToData = stepInputData.getProjectRoot() + FileSeparator + stepInputData.getProjectID();
+        String pathToData = stepInputData.getProjectRoot() + FILESEPARATOR + stepInputData.getProjectID();
         ArrayList<String> cmd = new ArrayList<>();
 
         cmd.add("/usr/local/bin/Rscript");
@@ -333,7 +333,7 @@ public class StepDEwithEdgeR extends NGSStep{
 
 
         String cmdRunRScript = StringUtils.join(cmd, " ");
-        cmdRunRScript = cmdRunRScript.replace(FileSeparator + FileSeparator, FileSeparator);
+        cmdRunRScript = cmdRunRScript.replace(FILESEPARATOR + FILESEPARATOR, FILESEPARATOR);
         logger.info("Rscript command:\t" + cmdRunRScript);
 
         try{
@@ -404,7 +404,7 @@ public class StepDEwithEdgeR extends NGSStep{
     
     
     @Override
-    public void outputResultData(){
+    public void verifyOutputData(){
         
     }
 }

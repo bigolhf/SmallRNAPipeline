@@ -6,6 +6,7 @@
 package no.uio.medisin.bag.ngssmallrna.steps;
 
 import java.io.IOException;
+import java.util.HashMap;
 
 /**
  *
@@ -19,11 +20,13 @@ abstract public class NGSStep {
     protected               String      inFolder        = null;
     protected               String      outFolder       = null;
     
-    protected static final  String      FileSeparator   = System.getProperty("file.separator");
+    protected static final  String      FILESEPARATOR   = System.getProperty("file.separator");
     
-    abstract void verifyInputData() throws IOException, NullPointerException;
-    abstract void outputResultData();
-    abstract void execute() throws IOException;
+    abstract void       verifyInputData() throws IOException, NullPointerException;
+    abstract void       verifyOutputData();
+    abstract void       parseConfigurationData(HashMap configData) throws Exception;
+    abstract HashMap    generateExampleConfigurationData();
+    abstract void       execute() throws IOException;
     
     
     /**
@@ -33,11 +36,11 @@ abstract public class NGSStep {
     final void setPaths(){
         
         stepInputData.getInputFolder();
-        String projectFolder = stepInputData.getProjectRoot() + System.getProperty("file.separator") + stepInputData.getProjectID();
-        projectFolder = projectFolder.replace(FileSeparator + FileSeparator, FileSeparator).trim();
+        String projectFolder = stepInputData.getProjectRoot() + FILESEPARATOR + stepInputData.getProjectID();
+        projectFolder = projectFolder.replace(FILESEPARATOR + FILESEPARATOR, FILESEPARATOR).trim();
         
-        inFolder = projectFolder + FileSeparator + stepInputData.getInputFolder();
-        outFolder = projectFolder + FileSeparator + stepInputData.getOutputFolder();
+        inFolder = projectFolder + FILESEPARATOR + stepInputData.getInputFolder();
+        outFolder = projectFolder + FILESEPARATOR + stepInputData.getOutputFolder();
         
     }
     

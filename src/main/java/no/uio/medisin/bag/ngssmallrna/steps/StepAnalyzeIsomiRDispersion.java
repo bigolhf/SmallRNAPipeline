@@ -26,6 +26,69 @@ import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
 
 
 
@@ -117,7 +180,7 @@ public class StepAnalyzeIsomiRDispersion extends NGSStep{
         try{
 
 
-            String isomiRDispFile = inFolder + FileSeparator + stepInputData.getProjectID() + infileExtension;
+            String isomiRDispFile = inFolder + FILESEPARATOR + stepInputData.getProjectID() + infileExtension;
             logger.info("reading " + isomiRDispFile);
 
             String isoDispLine = null;
@@ -170,7 +233,7 @@ public class StepAnalyzeIsomiRDispersion extends NGSStep{
         }
         
         
-        String dispersionFile   = outFolder + FileSeparator + stepInputData.getProjectID() + dispersionResultsExtension;
+        String dispersionFile   = outFolder + FILESEPARATOR + stepInputData.getProjectID() + dispersionResultsExtension;
         logger.info("write dispersions to file <" + dispersionFile + ">");
         try{
             BufferedWriter bwDp = new BufferedWriter(new FileWriter(new File(dispersionFile)));
@@ -315,7 +378,7 @@ public class StepAnalyzeIsomiRDispersion extends NGSStep{
     public void loadMiRBaseData(String host, String miRBaseGFFFile) throws IOException{
 
         HashMap <String, String> miRBaseSeq = new HashMap();
-        String matureFAFile = new File(miRBaseGFFFile).getParent() + FileSeparator + "mature.fa";
+        String matureFAFile = new File(miRBaseGFFFile).getParent() + FILESEPARATOR + "mature.fa";
         BufferedReader brFA = new BufferedReader(new FileReader(new File(matureFAFile)));
         String lineFA = null;
         while ((lineFA = brFA.readLine())!=null){
@@ -398,7 +461,7 @@ public class StepAnalyzeIsomiRDispersion extends NGSStep{
     
     
     @Override
-    public void outputResultData(){
+    public void verifyOutputData(){
         
     }
 }

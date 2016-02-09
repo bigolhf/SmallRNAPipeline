@@ -24,7 +24,6 @@ public class StepInputData {
     static  Logger  logger = LogManager.getLogger();
     static  String  FileSeparator = System.getProperty("file.separator");
 
-    private HashMap stepParams;
     private String  projectID;
     private String  projectRoot;
     private String  inputFolder;
@@ -32,9 +31,8 @@ public class StepInputData {
     private ArrayList<SampleDataEntry> sampleData;
     
     
-    public StepInputData(HashMap params, String pid, String pRoot, String inFolder, String outFolder, ArrayList<SampleDataEntry>sdata){
+    public StepInputData(String pid, String pRoot, String inFolder, String outFolder, ArrayList<SampleDataEntry>sdata){
         
-        stepParams  = params;
         projectID   = pid;
         projectRoot = pRoot;
         inputFolder = inFolder;
@@ -54,9 +52,6 @@ public class StepInputData {
         // check the project root exists
         // check the project folder exists within root
         
-        for (Object param: getStepParams().keySet()){
-            logger.info((String) param);
-        }
         
         /*
         if (!(new File(projectRoot)).exists()){
@@ -107,13 +102,6 @@ public class StepInputData {
      */
     public void setProjectRoot(String projectRoot) {
         this.projectRoot = projectRoot;
-    }
-
-    /**
-     * @return the stepParams
-     */
-    public HashMap getStepParams() {
-        return stepParams;
     }
 
     /**

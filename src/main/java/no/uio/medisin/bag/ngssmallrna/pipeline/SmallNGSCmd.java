@@ -28,6 +28,11 @@ public class SmallNGSCmd {
         
         SmallNGSPipeline smallPipeline = new SmallNGSPipeline();
         parseArguments(args, smallPipeline);
+        
+        if(smallPipeline.getGenerateSampleFiles()){
+            
+            return;
+        }
         try{
             smallPipeline.prepare_pipeline();
             smallPipeline.runPipeline();
@@ -62,6 +67,7 @@ public class SmallNGSCmd {
         options.addOption("p", "config",    true,   "pipeline configuration file");
         options.addOption("d", "data",      true,   "data file list with grouping");
         options.addOption("s", "steps",     true,   "step file in JSON format");
+        options.addOption("g", "generate",  false,  "generate sample run files");
         
         CommandLineParser clParser = new BasicParser();
         CommandLine cmd = null;
@@ -73,6 +79,10 @@ public class SmallNGSCmd {
             if(cmd.hasOption("h")){
                 printHelp();
             }
+            if (cmd.hasOption("G")) {
+                logger.info("generate example run files ");
+                smallPipeline.setGenerateSampleFiles(Boolean.TRUE);
+            }                    
             
             if (cmd.hasOption("r")) {
                 logger.info("run configuration file set to " + cmd.getOptionValue("r"));
@@ -94,6 +104,11 @@ public class SmallNGSCmd {
             }                    
             else
                 throw new ParseException("no NGS data filelist was specified") ;
+
+            if (cmd.hasOption("d")) {
+                logger.info("NGS data filelist set to " + cmd.getOptionValue("d"));
+                smallPipeline.setDataFile(cmd.getOptionValue("d"));
+            }                    
             
         }
         catch(ParseException exPa){

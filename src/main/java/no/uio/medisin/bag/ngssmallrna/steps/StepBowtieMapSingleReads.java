@@ -113,11 +113,11 @@ public class StepBowtieMapSingleReads extends NGSStep{
                 */
                 cmd.add(mappingCmd);
                 String pathToBowtieIndex = stepInputData.getStepParams().get("bowtieMapGenomeRootFolder") 
-                    + FileSeparator + stepInputData.getStepParams().get("bowtieReferenceGenome") + "/Sequence/AbundantSequences/abundant";
+                    + FILESEPARATOR + stepInputData.getStepParams().get("bowtieReferenceGenome") + "/Sequence/AbundantSequences/abundant";
                 cmd.add(pathToBowtieIndex);
                 
-                String fastqTrimmedInputFile = inFolder + FileSeparator + sampleData.getFastqFile1().replace(".fastq", infileExtension);
-                fastqTrimmedInputFile = fastqTrimmedInputFile.replace(FileSeparator + FileSeparator, FileSeparator).trim();
+                String fastqTrimmedInputFile = inFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", infileExtension);
+                fastqTrimmedInputFile = fastqTrimmedInputFile.replace(FILESEPARATOR + FILESEPARATOR, FILESEPARATOR).trim();
                 cmd.add("-f");
                 cmd.add(fastqTrimmedInputFile);
                 
@@ -126,9 +126,9 @@ public class StepBowtieMapSingleReads extends NGSStep{
                 cmd.add("-m 2");
                 
 
-                String fastqAbundantAln     = outFolder + FileSeparator + sampleData.getFastqFile1().replace(".fastq", fastqAbundantAlnExtension);
-                String fastqAbundantUnAln   = outFolder + FileSeparator + sampleData.getFastqFile1().replace(".fastq", fastqAbundantUnAlnExtension);
-                String samAbundantAln       = outFolder + FileSeparator + sampleData.getFastqFile1().replace(".fastq", samAbundantAlnExtension);
+                String fastqAbundantAln     = outFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", fastqAbundantAlnExtension);
+                String fastqAbundantUnAln   = outFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", fastqAbundantUnAlnExtension);
+                String samAbundantAln       = outFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", samAbundantAlnExtension);
                 cmd.add("--al " + fastqAbundantAln);
                 cmd.add("--un " + fastqAbundantUnAln);
                 cmd.add("--sam "  + samAbundantAln);
@@ -136,7 +136,7 @@ public class StepBowtieMapSingleReads extends NGSStep{
                 
 
                 String cmdBowtieMapAbunReads = StringUtils.join(cmd, " ");
-                cmdBowtieMapAbunReads = cmdBowtieMapAbunReads.replace(FileSeparator + FileSeparator, FileSeparator);
+                cmdBowtieMapAbunReads = cmdBowtieMapAbunReads.replace(FILESEPARATOR + FILESEPARATOR, FILESEPARATOR);
                 logger.info("Bowtie Map Abundant Reads command:\t" + cmdBowtieMapAbunReads);
 
                 Runtime rt = Runtime.getRuntime();
@@ -179,7 +179,7 @@ public class StepBowtieMapSingleReads extends NGSStep{
                 cmd = new ArrayList<>();
                 cmd.add(mappingCmd);
                 String pathToBowtieGenomeIndex = stepInputData.getStepParams().get("bowtieMapGenomeRootFolder") 
-                    + FileSeparator + stepInputData.getStepParams().get("bowtieReferenceGenome") + "/Sequence/BowtieIndex/genome";
+                    + FILESEPARATOR + stepInputData.getStepParams().get("bowtieReferenceGenome") + "/Sequence/BowtieIndex/genome";
                 cmd.add(pathToBowtieGenomeIndex);
                 
 //                fastqTrimmedInputFile = fastqAbundantUnAln;
@@ -192,16 +192,16 @@ public class StepBowtieMapSingleReads extends NGSStep{
                 
 
 
-                String fastqGenomeAln     = outFolder + FileSeparator + sampleData.getFastqFile1().replace(".fastq", fastqGenomeAlnExtension);
-                String fastqGenomeUnAln   = outFolder + FileSeparator + sampleData.getFastqFile1().replace(".fastq", fastqGenomeUnAlnExtension);
-                String samGenomeAln       = outFolder + FileSeparator + sampleData.getFastqFile1().replace(".fastq", samGenomeAlnExtension);
+                String fastqGenomeAln     = outFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", fastqGenomeAlnExtension);
+                String fastqGenomeUnAln   = outFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", fastqGenomeUnAlnExtension);
+                String samGenomeAln       = outFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", samGenomeAlnExtension);
                 cmd.add("--al " + fastqGenomeAln);
                 cmd.add("--un " + fastqGenomeUnAln);
                 cmd.add("--sam "  + samGenomeAln);
                 
 
                 String cmdBowtieMapGenomeReads = StringUtils.join(cmd, " ");
-                cmdBowtieMapGenomeReads = cmdBowtieMapGenomeReads.replace(FileSeparator + FileSeparator, FileSeparator);
+                cmdBowtieMapGenomeReads = cmdBowtieMapGenomeReads.replace(FILESEPARATOR + FILESEPARATOR, FILESEPARATOR);
                 logger.info("Bowtie Map Genome Reads command:\t" + cmdBowtieMapGenomeReads);
 
                 Runtime rtGenMap = Runtime.getRuntime();
@@ -237,7 +237,7 @@ public class StepBowtieMapSingleReads extends NGSStep{
                 brAStdErr.close();
                 
 
-                String mappingOutputFile    = outFolder + FileSeparator + sampleData.getFastqFile1().replace(".fastq", mappingResultExtension);
+                String mappingOutputFile    = outFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", mappingResultExtension);
                 BufferedWriter bwMO = new BufferedWriter(new FileWriter(new File(mappingOutputFile)));
                     for(String mapLine: mapGenStdErr){
                         bwMO.write(mapLine + "\n");
@@ -343,7 +343,7 @@ public class StepBowtieMapSingleReads extends NGSStep{
     }
     
     @Override
-    public void outputResultData(){
+    public void verifyOutputData(){
         
     }
 }

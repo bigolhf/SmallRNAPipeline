@@ -441,7 +441,7 @@ public class StepParseSAMForMiRNAs extends NGSStep{
     
     
     @Override
-    public void outputResultData(){
+    public void verifyOutputData(){
         
     }
 }

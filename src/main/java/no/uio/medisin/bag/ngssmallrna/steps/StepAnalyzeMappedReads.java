@@ -115,9 +115,9 @@ public class StepAnalyzeMappedReads extends NGSStep {
         String hostCode = (String) stepInputData.getStepParams().get("bowtieReferenceGenome");
         genomeFasta = new GenomeSeq(hostCode);
         String pathToFasta = stepInputData.getStepParams().get("bowtieMapGenomeRootFolder")
-                + FileSeparator + stepInputData.getStepParams().get("bowtieReferenceGenome") + FileSeparator + "Sequence/WholeGenomeFasta";
-        String genomeFastaFile = pathToFasta + FileSeparator + "genome.fa";
-        genomeFastaFile = genomeFastaFile.replace(FileSeparator + FileSeparator, FileSeparator).trim();
+                + FILESEPARATOR + stepInputData.getStepParams().get("bowtieReferenceGenome") + FILESEPARATOR + "Sequence/WholeGenomeFasta";
+        String genomeFastaFile = pathToFasta + FILESEPARATOR + "genome.fa";
+        genomeFastaFile = genomeFastaFile.replace(FILESEPARATOR + FILESEPARATOR, FILESEPARATOR).trim();
         try{
             logger.info("reading genome file + <" + genomeFastaFile + ">");
             this.genomeFasta.readFastaGenome(genomeFastaFile);
@@ -134,12 +134,12 @@ public class StepAnalyzeMappedReads extends NGSStep {
          */
         String annotationFile = "";
         String pathToAnnotation = stepInputData.getStepParams().get("bowtieMapGenomeRootFolder")
-                + FileSeparator + stepInputData.getStepParams().get("bowtieReferenceGenome") + "/Annotation/Genes";
-        File f = new File(pathToAnnotation + FileSeparator + "genes.gtf");
-        if (new File(pathToAnnotation + FileSeparator + "genes.gtf").exists()) {
-            annotationFile = pathToAnnotation + FileSeparator + "genes.gtf";
-        } else if (new File(pathToAnnotation + FileSeparator + "genes.gff").exists()) {
-            annotationFile = pathToAnnotation + FileSeparator + "genes.gff";
+                + FILESEPARATOR + stepInputData.getStepParams().get("bowtieReferenceGenome") + "/Annotation/Genes";
+        File f = new File(pathToAnnotation + FILESEPARATOR + "genes.gtf");
+        if (new File(pathToAnnotation + FILESEPARATOR + "genes.gtf").exists()) {
+            annotationFile = pathToAnnotation + FILESEPARATOR + "genes.gtf";
+        } else if (new File(pathToAnnotation + FILESEPARATOR + "genes.gff").exists()) {
+            annotationFile = pathToAnnotation + FILESEPARATOR + "genes.gff";
         }
         
         try {
@@ -176,11 +176,11 @@ public class StepAnalyzeMappedReads extends NGSStep {
         while (itSD.hasNext()) {
             SampleDataEntry sampleData = (SampleDataEntry) itSD.next();
             
-            String positionFile = outFolder + FileSeparator + sampleData.getFastqFile1().replace(".fastq", positionsExtension);
-            String featureOutFile = outFolder + FileSeparator + sampleData.getFastqFile1().replace(".fastq", featuresExtension);
-            featureOutFile = featureOutFile.replace(FileSeparator + FileSeparator, FileSeparator).trim();
+            String positionFile = outFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", positionsExtension);
+            String featureOutFile = outFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", featuresExtension);
+            featureOutFile = featureOutFile.replace(FILESEPARATOR + FILESEPARATOR, FILESEPARATOR).trim();
 
-            String samInputFile = inFolder + FileSeparator + sampleData.getFastqFile1().replace(".fastq", infileExtension);
+            String samInputFile = inFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", infileExtension);
             
             logger.info("sam input file is " + samInputFile);
             logger.info("results will be written to " + positionFile);
@@ -448,7 +448,7 @@ public class StepAnalyzeMappedReads extends NGSStep {
             
         }
         
-        String featureFile = outFolder + FileSeparator + stepInputData.getProjectID() + ".features.tsv";
+        String featureFile = outFolder + FILESEPARATOR + stepInputData.getProjectID() + ".features.tsv";
         try{
             BufferedWriter bwFT = new BufferedWriter(new FileWriter(new File(featureFile)));
                 featureSet.writeFeaturesAsGFF3(bwFT, stepInputData.getProjectID());
@@ -459,7 +459,7 @@ public class StepAnalyzeMappedReads extends NGSStep {
             logger.error(exIO);
         }
 
-        String freqFile = outFolder + FileSeparator + stepInputData.getProjectID() + ".freq.tsv";
+        String freqFile = outFolder + FILESEPARATOR + stepInputData.getProjectID() + ".freq.tsv";
         try{
             BufferedWriter bwFQ = new BufferedWriter(new FileWriter(new File(freqFile)));
                 featureSet.writeLengthDistribution(bwFQ, 1, longestFeature);
@@ -472,7 +472,7 @@ public class StepAnalyzeMappedReads extends NGSStep {
 
         
         
-        String fastaFile = outFolder + FileSeparator + stepInputData.getProjectID() + ".fasta";
+        String fastaFile = outFolder + FILESEPARATOR + stepInputData.getProjectID() + ".fasta";
         try{
             BufferedWriter bwFA = new BufferedWriter(new FileWriter(new File(fastaFile)));
                 featureSet.writeFeaturesAsFastA(bwFA);
@@ -652,7 +652,7 @@ public class StepAnalyzeMappedReads extends NGSStep {
     }
     
     @Override
-    public void outputResultData() {
+    public void verifyOutputData() {
         
     }
     

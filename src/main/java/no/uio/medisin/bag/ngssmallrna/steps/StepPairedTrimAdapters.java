@@ -29,7 +29,7 @@ import org.apache.logging.log4j.Logger;
  * @author sr
  */
 
-public class StepTrimAdapters extends NGSStep{
+public class StepPairedTrimAdapters extends NGSStep{
     
     static Logger                       logger = LogManager.getLogger();
     static  String                      FileSeparator = System.getProperty("file.separator");
@@ -43,7 +43,7 @@ public class StepTrimAdapters extends NGSStep{
      * @param sid StepInputData
      * 
      */
-    public StepTrimAdapters(StepInputData sid){
+    public StepPairedTrimAdapters(StepInputData sid){
         try{
             stepInputData = sid;
             stepInputData.verifyInputData();
@@ -94,17 +94,22 @@ public class StepTrimAdapters extends NGSStep{
 //                    cmd.add("AVGQUAL:" + stepInputData.getStepParams().get("trimMinAvgReadQuality"));
 //                }
 
-                    /*
-                    java -jar Trimmomatic-0.33/trimmomatic-0.33.jar 
-                    SE 
-                    -phred64	
-                    <input file fastq file>
-                    <trimmed output fastq file> 	
-                    ILLUMINACLIP:Trimmomatic-0.33/adapters/TruSeqE-SE.fa:2:30:7 2:30:7 (Mismatches:N/A:Alignment Score)
-                    AVGQUAL (drop read if average quality is below this threshold)
-                    -trimlog (write log)
-                    -threads
-                    */      
+                /*
+
+                java -jar /data/projects/simonray/software/Trimmomatic-0.33/trimmomatic-0.33.jar 
+                PE 
+                <input file fastq file 1>
+                <input file fastq file 2>
+                <output file fastq file 1 paired reads>
+                <output file fastq file 1 unpaired reads>
+                <output file fastq file 2 paired reads>
+                <output file fastq file 2 unpaired reads>
+                ILLUMINACLIP:<path to adapter sequence file>:<MISMATCHES>:<MATCH_SCORE>:10 LEADING:3 TRAILING:3 MINLEN:30
+                AVGQUAL (drop read if average quality is below this threshold)
+                -trimlog (write log)
+                -threads 16 
+
+                */      
 
                 String cmdTrimAdapters = StringUtils.join(cmd, " ");
                 cmdTrimAdapters = cmdTrimAdapters.replace(FileSeparator + FileSeparator, FileSeparator);
@@ -145,30 +150,46 @@ public class StepTrimAdapters extends NGSStep{
     
             
     @Override
-    public void verifyInputData(){
+    public void verifyInputData() throws IOException{
         Iterator itSD = this.stepInputData.getSampleData().iterator();
         while (itSD.hasNext()){
             SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
-            if (sampleData.getFastqFile1().toUpperCase().endsWith(infileExtension.toUpperCase())==false)
-            {
-                throw new IllegalArgumentException("AdapterTrimming: incorrect file extension for input file <" 
-                  + sampleData.getFastqFile1() + ">. " 
+            String fastqFile1 = (String)sampleData.getFastqFile1();
+            String fastqFile2 = (String)sampleData.getFastqFile2();
+            
+            if (fastqFile1==null) throw new IOException("no Fastq1 file specified");
+            
+            if ((new File(fastqFile1)).exists()==false){
+                throw new IOException("AdapterTrimming: fastq File1 <" 
+                  + fastqFile1 + "> does not exist");
+            }
+            if (fastqFile1.toUpperCase().endsWith(infileExtension.toUpperCase())==false){
+                throw new IOException("AdapterTrimming: incorrect file extension for input file <" 
+                  + fastqFile1 + ">. " 
                   + "should have <" + infileExtension + "> as extension");
             }
             
-            if (sampleData.getFastqFile1().toUpperCase().endsWith(outfileExtension.toUpperCase())==true)
-            {
-                logger.warn("AdapterTrimming: input file has output file extension (.trim.fastq)");
-                logger.warn("this file has already been trimmed");
-            }
+            //Fastq 2
+            if (fastqFile2==null) continue;
             
+            if ((new File(fastqFile2)).exists()==false){
+                throw new IOException("AdapterTrimming: fastq File2 <" 
+                  + fastqFile2 + "> does not exist");
+            }
+            if (fastqFile2.toUpperCase().endsWith(infileExtension.toUpperCase())==false)
+            {
+                throw new IOException("AdapterTrimming: incorrect file extension for fastq file 2 <" 
+                  + fastqFile2 + ">. \n" 
+                  + "should have <" + infileExtension + "> as extension");
+            }
         }
-            // does input file have correct extension?
-        // does input file have the same extension as expected for the output file?
+
     }
     
+    
+    
     @Override
-    public void outputResultData(){
+    public void verifyOutputData(){
         
     }
 }

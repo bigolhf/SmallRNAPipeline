@@ -205,7 +205,7 @@ public class StepCleanUp extends NGSStep{
     }
     
     @Override
-    public void outputResultData(){
+    public void verifyOutputData(){
         
     }
 }
