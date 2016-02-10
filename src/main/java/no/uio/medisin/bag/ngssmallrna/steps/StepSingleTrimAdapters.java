@@ -34,7 +34,6 @@ import org.apache.logging.log4j.Logger;
 public class StepSingleTrimAdapters extends NGSStep{
     
     static Logger                       logger = LogManager.getLogger();
-    static  String                      FileSeparator = System.getProperty("file.separator");
     
     public static final String          STEP_ID_STRING          = "ADAPTER_TRIMMING_SINGLE:";
     private static final String         ID_SOFTWARE             = "adapter_software:";
@@ -178,12 +177,12 @@ public class StepSingleTrimAdapters extends NGSStep{
                 cmd.add("SE");
                 cmd.add("-phred64");
                 cmd.add("-threads " + this.getNoOfThreads());
-                cmd.add(inFolder + FileSeparator + sampleData.getFastqFile1());
+                cmd.add(inFolder + FILESEPARATOR + sampleData.getFastqFile1());
 
                 Boolean f = new File(outFolder).mkdir();       
                 if (f) logger.info("created output folder <" + outFolder + "> for results" );
 
-                cmd.add(outFolder + FileSeparator + sampleData.getFastqFile1().replace(INFILE_EXTENSION, OUTFILE_EXTENSION));
+                cmd.add(outFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(INFILE_EXTENSION, OUTFILE_EXTENSION));
                 cmd.add("ILLUMINACLIP:" + this.getAdapterFile()
                     + ":" + this.getNoOfMismatches()
                     + ":30"
@@ -204,7 +203,7 @@ public class StepSingleTrimAdapters extends NGSStep{
                 */      
 
                 String cmdTrimAdapters = StringUtils.join(cmd, " ");
-                cmdTrimAdapters = cmdTrimAdapters.replace(FileSeparator + FileSeparator, FileSeparator);
+                cmdTrimAdapters = cmdTrimAdapters.replace(FILESEPARATOR + FILESEPARATOR, FILESEPARATOR);
                 logger.info("Adapter Trim command:\t" + cmdTrimAdapters);
 
                 Runtime rt = Runtime.getRuntime();
@@ -282,16 +281,19 @@ public class StepSingleTrimAdapters extends NGSStep{
     @Override
     public HashMap generateExampleConfigurationData() {
 
-        logger.info("generate example configuration data");
-
-        HashMap configData = new HashMap();
+        logger.info(STEP_ID_STRING + ": generate example configuration data");
         
-        configData.put(StepSingleTrimAdapters.ID_SOFTWARE, "trimmomatic/Trimmomatic-0.33/trimmomatic-0.33.jar");
-        configData.put(StepSingleTrimAdapters.ID_ADAPTOR_FILE, "/Users/simonray/NetBeansProjects/SmallRNAPipeline/test/TruSeqE-SE.fa");
-        configData.put(StepSingleTrimAdapters.ID_MISMATCHES, 2);
-        configData.put(StepSingleTrimAdapters.ID_MIN_ALIGN_SCORE, 7);
-        configData.put(StepSingleTrimAdapters.ID_MIN_AVGREAD_QUAL, 30);        
-        configData.put(StepSingleTrimAdapters.ID_THREADS, 4);
+        HashMap configData = new HashMap();
+        HashMap paramData = new HashMap();        
+        
+        paramData.put(StepSingleTrimAdapters.ID_SOFTWARE, "trimmomatic/Trimmomatic-0.33/trimmomatic-0.33.jar");
+        paramData.put(StepSingleTrimAdapters.ID_ADAPTOR_FILE, "/Users/simonray/NetBeansProjects/SmallRNAPipeline/test/TruSeqE-SE.fa");
+        paramData.put(StepSingleTrimAdapters.ID_MISMATCHES, 2);
+        paramData.put(StepSingleTrimAdapters.ID_MIN_ALIGN_SCORE, 7);
+        paramData.put(StepSingleTrimAdapters.ID_MIN_AVGREAD_QUAL, 30);        
+        paramData.put(StepSingleTrimAdapters.ID_THREADS, 4);
+        configData.put(STEP_ID_STRING, paramData);
+
         
         return configData;
     }

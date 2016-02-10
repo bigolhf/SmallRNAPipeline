@@ -5,10 +5,10 @@
  */
 package no.uio.medisin.bag.ngssmallrna.steps;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import no.uio.medisin.bag.ngssmallrna.pipeline.DataLocations;
 import no.uio.medisin.bag.ngssmallrna.pipeline.SampleDataEntry;
 import org.apache.logging.log4j.LogManager;
 
@@ -16,7 +16,6 @@ import org.apache.logging.log4j.Logger;
 /**
  *  Specifies the information needed to locate the input data associated with a step
  * ProcessBuilder
- * htsjdk
  * @author sr
  */
 public class StepInputData {
@@ -24,17 +23,19 @@ public class StepInputData {
     static  Logger  logger = LogManager.getLogger();
     static  String  FileSeparator = System.getProperty("file.separator");
 
-    private String  projectID;
-    private String  projectRoot;
-    private String  inputFolder;
-    private String  outputFolder;
-    private ArrayList<SampleDataEntry> sampleData;
+    private String                      projectID;
+    private String                      projectRoot;
+    private DataLocations               dataLocations;
+    private String                      inputFolder;
+    private String                      outputFolder;
+    private ArrayList<SampleDataEntry>  sampleData;
     
     
-    public StepInputData(String pid, String pRoot, String inFolder, String outFolder, ArrayList<SampleDataEntry>sdata){
+    public StepInputData(String pid, String pRoot, DataLocations dataLoc, String inFolder, String outFolder, ArrayList<SampleDataEntry>sdata){
         
         projectID   = pid;
         projectRoot = pRoot;
+        dataLocations    = dataLoc;
         inputFolder = inFolder;
         outputFolder = outFolder;
         sampleData  = sdata;
@@ -130,6 +131,13 @@ public class StepInputData {
      */
     public String getOutputFolder() {
         return outputFolder;
+    }
+
+    /**
+     * @return the dataLocations
+     */
+    public DataLocations getDataLocations() {
+        return dataLocations;
     }
     
     

@@ -38,8 +38,12 @@ public class SmallNGSCmd {
             smallPipeline.runPipeline();
         }
         catch(IOException exIO){
-            logger.info("IO error while executing pipeline");
+            logger.info("error while executing pipeline");
             logger.info(exIO.toString());
+        }
+        catch(Exception exEx){
+            logger.info("error while executing pipeline");
+            logger.info(exEx.toString());
         }
         
         

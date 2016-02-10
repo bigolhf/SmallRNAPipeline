@@ -13,8 +13,10 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import no.uio.medisin.bag.jmirpara.SimpleSeq;
+import no.uio.medisin.bag.ngssmallrna.pipeline.DataLocations;
 import no.uio.medisin.bag.ngssmallrna.pipeline.GFFEntry;
 import no.uio.medisin.bag.ngssmallrna.pipeline.GFFSet;
 import no.uio.medisin.bag.ngssmallrna.pipeline.GenomeSeq;
@@ -38,60 +40,189 @@ import org.apache.logging.log4j.Logger;
  */
 public class StepAnalyzeMappedReads extends NGSStep {
     
-    private static final int COVERAGE_SPAN = 200;
+    public  static final String     STEP_ID_STRING      = "SINGLE_MAPPING_BOWTIE:";
+    private static final String     ID_BLEED            = "bleed:";
+    private static final String     ID_BASELINE         = "baseline_percent:";
+    private static final String     ID_ISOMIRS          = "analyze_isomirs:";
+    private static final String     ID_MIRBASE_VERSION  = "mirbase_release:";
+    private static final String     ID_REF_GENOME       = "host:";
+    private static final String     ID_SHORTEST_FEATURE = "shortest_feature:";
+    private static final String     ID_LONGEST_FEATURE  = "longest_feature:";
+    private static final String     ID_MIN_COUNTS       = "min_counts:";
+    private static final String     ID_SEPARATION       = "feature_separation:";
+    
+    private static final String     INFILE_EXTENSION    = ".trim.clp.gen.sam";
+    private static final String     POS_FILE_EXT        = ".trim.clp.gen.pos.tsv";
+    private static final String     FEAT_FILE_EXT       = ".trim.clp.gen.features.tsv";
+
+    private static final int        COVERAGE_SPAN       = 200;
     
     static Logger logger = LogManager.getLogger();
-//    static String FileSeparator = System.getProperty("file.separator");
     
-//    private static final String inFolder = "bowtie_genome_mapped";
-    private static final String posAnalysisOutFolder = "position_analysis";
     
-    private static final String infileExtension = ".trim.clp.gen.sam";
-    private static final String positionsExtension = ".trim.clp.gen.pos.tsv";
-    private static final String featuresExtension = ".trim.clp.gen.features.tsv";
+    private int                     locationBleed       = 2;
+    private int                     baselinePercent     = 5;
+    private Boolean                 analyzeIsomirs      = false;
+    private int                     miRBaseRelease      = 20;
+    private String                  ReferenceGenome     = "";
+    private int                     shortestRead        = 0;
+    private int                     longestRead         = 0;
+    private int                     minCounts           = 0;
+    private int                     separation          = 0;
+
     
-//    private StepInputData stepInputData;
-//    private StepResultData stepResultData;
+    private GenomeSeq               genomeFasta;
+    private GFFSet                  gffSet              = new GFFSet();    
+    private ArrayList<MappedRead>   mappedReads         = new ArrayList<>();
     
-    private GenomeSeq genomeFasta;
-    private GFFSet gffSet = new GFFSet();    
-    private ArrayList<MappedRead> mappedReads = new ArrayList<>();
+    int[]                           coverage5           = new int[COVERAGE_SPAN];    
+    int[]                           coverage3           = new int[COVERAGE_SPAN];
     
-    int[] coverage5 = new int[COVERAGE_SPAN];    
-    int[] coverage3 = new int[COVERAGE_SPAN];
-    
-    private GFFSet featureSet = new GFFSet(); // stores the identified features
+    private GFFSet                  featureSet          = new GFFSet(); // stores the identified features
     
 
-    /*
-     dont think i want to go this route, but leave the arrays for now to 
-     jog my memory should I change my mind
-    
-     int[][] startPositions = new int[169100][9];
-     int[][] readLengths = new int[169100][9];
-    
-     int[][] mrnaStartPositions = new int[4665][9];
-     int[][] mrnaStopPositions  = new int[4665][9];
-    
-     int[] chrFeatureCount = new int[10];
-     */
     public StepAnalyzeMappedReads(StepInputData sid) {
         stepInputData = sid;
     }
 
     /**
+     * in this method we are simply checking that the configuration file 
+     * has all the entries we need. We dont check if the values are acceptable
+     * that is the role of the NGSStep.
+     * 
+     * @param configData
+     * @throws Exception 
+     */
+    @Override
+    public void parseConfigurationData(HashMap configData) throws Exception{
+        logger.info(STEP_ID_STRING + ": verify configuration data");
+        
+        if(configData.get(ID_BLEED)==null) {
+            throw new NullPointerException("<" + ID_BLEED + "> : Missing Definition in Configuration File");
+        }
+        if(configData.get(ID_SHORTEST_FEATURE)==null) {
+            throw new NullPointerException("<" + ID_SHORTEST_FEATURE + "> : Missing Definition in Configuration File");
+        }
+        if(configData.get(ID_LONGEST_FEATURE)==null) {
+            throw new NullPointerException("<" + ID_LONGEST_FEATURE + "> : Missing Definition in Configuration File");
+        }
+        if(configData.get(ID_MIN_COUNTS)==null) {
+            throw new NullPointerException("<" + ID_MIN_COUNTS + "> : Missing Definition in Configuration File");
+        }
+        if(configData.get(ID_REF_GENOME)==null) {
+            throw new NullPointerException("<" + ID_REF_GENOME + "> : Missing Definition in Configuration File");
+        }
+        if(configData.get(ID_BASELINE)==null) {
+            throw new NullPointerException("<" + ID_BASELINE + "> : Missing Definition in Configuration File");
+        }
+        if(configData.get(ID_MIRBASE_VERSION)==null) {
+            throw new NullPointerException("<" + ID_MIRBASE_VERSION + "> : Missing Definition in Configuration File");
+        }
+        if(configData.get(ID_REF_GENOME)==null) {
+            throw new NullPointerException("<" + ID_REF_GENOME + "> : Missing Definition in Configuration File");
+        }
+        if(configData.get(ID_SEPARATION)==null) {
+            throw new NullPointerException("<" + ID_SEPARATION + "> : Missing Definition in Configuration File");
+        }
+        
+
+      
+        
+        try{
+            Integer.parseInt((String) configData.get(ID_BASELINE));
+        }
+        catch(NumberFormatException exNm){
+            throw new NumberFormatException(ID_BASELINE + " <" + configData.get(ID_BASELINE) + "> is not an integer");
+        }        
+        if (Integer.parseInt((String) configData.get(ID_BASELINE)) <= 0){
+            throw new IllegalArgumentException(ID_BASELINE + " <" + (String) configData.get(ID_BASELINE) + "> must be an integer between 0 and 100");
+        }
+        this.setBaselinePercent(Integer.parseInt((String) configData.get(ID_BASELINE)));
+
+        
+        try{
+            Integer.parseInt((String) configData.get(ID_SHORTEST_FEATURE));
+        }
+        catch(NumberFormatException exNm){
+            throw new NumberFormatException(ID_SHORTEST_FEATURE + " <" + ID_SHORTEST_FEATURE + "> is not an integer");
+        }        
+        if (Integer.parseInt((String) configData.get(ID_SHORTEST_FEATURE)) <= 0 ){
+            throw new IllegalArgumentException(ID_SHORTEST_FEATURE + " <" + (String) configData.get(ID_SHORTEST_FEATURE) + "> must be > 0 ");
+        }
+        this.setShortestRead(Integer.parseInt((String) configData.get(ID_SHORTEST_FEATURE)));
+        
+
+        try{
+            Integer.parseInt((String) configData.get(ID_LONGEST_FEATURE));
+        }
+        catch(NumberFormatException exNm){
+            throw new NumberFormatException(ID_LONGEST_FEATURE + " <" + ID_LONGEST_FEATURE + "> is not an integer");
+        }        
+        if (Integer.parseInt((String) configData.get(ID_LONGEST_FEATURE)) <= 0 ){
+            throw new IllegalArgumentException(ID_LONGEST_FEATURE + " <" + (String) configData.get(ID_LONGEST_FEATURE) + "> must be > 0 ");
+        }
+        this.setLongestRead(Integer.parseInt((String) configData.get(ID_BLEED)));
+        
+
+        try{
+            Integer.parseInt((String) configData.get(ID_MIN_COUNTS));
+        }
+        catch(NumberFormatException exNm){
+            throw new NumberFormatException(ID_MIN_COUNTS + " <" + ID_MIN_COUNTS + "> is not an integer");
+        }        
+        if (Integer.parseInt((String) configData.get(ID_MIN_COUNTS)) <= 0 ){
+            throw new IllegalArgumentException(ID_MIN_COUNTS + " <" + (String) configData.get(ID_MIN_COUNTS) + "> must be > 0 ");
+        }
+        this.setMinCounts(Integer.parseInt((String) configData.get(ID_MIN_COUNTS)));
+        
+
+        try{
+            Integer.parseInt((String) configData.get(ID_BLEED));
+        }
+        catch(NumberFormatException exNm){
+            throw new NumberFormatException(ID_BLEED + " <" + ID_BLEED + "> is not an integer");
+        }        
+        if (Integer.parseInt((String) configData.get(ID_BLEED)) <= 0 ){
+            throw new IllegalArgumentException(ID_BLEED + " <" + (String) configData.get(ID_BLEED) + "> must be > 0 ");
+        }
+        this.setLocationBleed(Integer.parseInt((String) configData.get(ID_BLEED)));
+        
+
+        try{
+            Integer.parseInt((String) configData.get(ID_SEPARATION));
+        }
+        catch(NumberFormatException exNm){
+            throw new NumberFormatException(ID_SEPARATION + " <" + ID_SEPARATION + "> is not an integer");
+        }        
+        if (Integer.parseInt((String) configData.get(ID_SEPARATION)) <= 0 ){
+            throw new IllegalArgumentException(ID_SEPARATION + " <" + (String) configData.get(ID_SEPARATION) + "> must be > 0 ");
+        }
+        this.setLocationBleed(Integer.parseInt((String) configData.get(ID_BLEED)));
+        
+
+        this.setReferenceGenome((String) configData.get(ID_REF_GENOME));
+        if(this.getReferenceGenome().length() !=3 ){
+            throw new IllegalArgumentException(ID_REF_GENOME + " <" + (String) configData.get(ID_REF_GENOME) + "> must be a 3 letter string");            
+        }
+        try{
+            Boolean.parseBoolean((String) configData.get(ID_ISOMIRS));
+        }
+        catch(NumberFormatException exNm){
+            throw new NumberFormatException(ID_BLEED + " <" + (String) configData.get(ID_BLEED) + "> cannot be cast as Boolean");
+        }        
+        this.setAnalyzeIsomirs(Boolean.parseBoolean((String) configData.get(ID_ISOMIRS)));
+        
+
+        logger.info("passed");
+    }
+    
+    
+    
+    
+    
+    
+    /**
      * parse out SAM file to retrieve start and stop information for each read
-     *
-     * analyzeSAMStartPositionsParams.put("bleed",this.getSamParseStartPosBleed());
-     * analyzeSAMStartPositionsParams.put("separation",this.getSamParseFeatureSeparation());
-     * analyzeSAMStartPositionsParams.put("feature_types", this.getSamParseFeatureTypes());
-     * analyzeSAMStartPositionsParams.put("shortest_feature", this.getSamParseShortestFeature());
-     * analyzeSAMStartPositionsParams.put("longest_feature",this.getSamParseLongestFeature());
-     * analyzeSAMStartPositionsParams.put("min_counts", this.getSamParseMinCounts());
-     * analyzeSAMStartPositionsParams.put("host", this.getBowtieMappingReferenceGenome());
-     * analyzeSAMStartPositionsParams.put("genomeReferenceGFFFile",this.getGenomeAnnotationGFF());
-     * analyzeSAMStartPositionsParams.put("bowtieMapGenomeRootFolder",this.getGenomeRootFolder());
-     * analyzeSAMStartPositionsParams.put("bowtieReferenceGenome",this.getBowtieMappingReferenceGenome());
      *
      *
      * @param filename
@@ -112,10 +243,10 @@ public class StepAnalyzeMappedReads extends NGSStep {
         /**
          * read genome fasta
          */
-        String hostCode = (String) stepInputData.getStepParams().get("bowtieReferenceGenome");
+        String hostCode = this.getReferenceGenome();
         genomeFasta = new GenomeSeq(hostCode);
-        String pathToFasta = stepInputData.getStepParams().get("bowtieMapGenomeRootFolder")
-                + FILESEPARATOR + stepInputData.getStepParams().get("bowtieReferenceGenome") + FILESEPARATOR + "Sequence/WholeGenomeFasta";
+        String pathToFasta = stepInputData.getDataLocations().getGenomeRootFolder()
+                + FILESEPARATOR + hostCode + FILESEPARATOR + DataLocations.ID_REL_WHOLE_GENSEQ_PATH;
         String genomeFastaFile = pathToFasta + FILESEPARATOR + "genome.fa";
         genomeFastaFile = genomeFastaFile.replace(FILESEPARATOR + FILESEPARATOR, FILESEPARATOR).trim();
         try{
@@ -133,8 +264,8 @@ public class StepAnalyzeMappedReads extends NGSStep {
          * read genes.gtf or genes.gff3 file
          */
         String annotationFile = "";
-        String pathToAnnotation = stepInputData.getStepParams().get("bowtieMapGenomeRootFolder")
-                + FILESEPARATOR + stepInputData.getStepParams().get("bowtieReferenceGenome") + "/Annotation/Genes";
+        String pathToAnnotation = stepInputData.getDataLocations().getGenomeRootFolder()
+                + FILESEPARATOR + hostCode + DataLocations.ID_GENE_ANNOTATION;
         File f = new File(pathToAnnotation + FILESEPARATOR + "genes.gtf");
         if (new File(pathToAnnotation + FILESEPARATOR + "genes.gtf").exists()) {
             annotationFile = pathToAnnotation + FILESEPARATOR + "genes.gtf";
@@ -145,7 +276,7 @@ public class StepAnalyzeMappedReads extends NGSStep {
         try {
             if (annotationFile == null) {
                 throw new IOException("no annotation file was found for reference genome "
-                        + stepInputData.getStepParams().get("bowtieReferenceGenome"));
+                        + hostCode);
             }
             gffSet.readGFF(annotationFile);
         } catch (IOException exIO) {
@@ -156,9 +287,9 @@ public class StepAnalyzeMappedReads extends NGSStep {
         /**
          * read and parse the SAM files
          */
-        int shortestFeature = (int) stepInputData.getStepParams().get("shortest_feature");
-        int longestFeature  = (int) stepInputData.getStepParams().get("longest_feature");
-        int minCounts       = (int) stepInputData.getStepParams().get("min_counts");
+        
+        int shortestFeature = this.getShortestRead();
+        int longestFeature  = this.getLongestRead();
         
 //        String pathToData = stepInputData.getProjectRoot() + FileSeparator + stepInputData.getProjectID();
 //        pathToData = pathToData.replace(FileSeparator + FileSeparator, FileSeparator).trim();
@@ -176,11 +307,11 @@ public class StepAnalyzeMappedReads extends NGSStep {
         while (itSD.hasNext()) {
             SampleDataEntry sampleData = (SampleDataEntry) itSD.next();
             
-            String positionFile = outFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", positionsExtension);
-            String featureOutFile = outFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", featuresExtension);
+            String positionFile = outFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", POS_FILE_EXT);
+            String featureOutFile = outFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", FEAT_FILE_EXT);
             featureOutFile = featureOutFile.replace(FILESEPARATOR + FILESEPARATOR, FILESEPARATOR).trim();
 
-            String samInputFile = inFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", infileExtension);
+            String samInputFile = inFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", INFILE_EXTENSION);
             
             logger.info("sam input file is " + samInputFile);
             logger.info("results will be written to " + positionFile);
@@ -228,8 +359,7 @@ public class StepAnalyzeMappedReads extends NGSStep {
             try {
                 Collections.sort(mappedReads);
 
-                int bleed = (int) stepInputData.getStepParams().get("bleed");
-                int separation = (int) stepInputData.getStepParams().get("separation");
+                int bleed = this.getLocationBleed();
                 
                 int matchCount5 = 0;
                 int matchCount3 = 0;
@@ -628,6 +758,7 @@ public class StepAnalyzeMappedReads extends NGSStep {
      */    
     @Override
     public void verifyInputData() {
+        // Check for presence of GTF file and genome files
         Iterator itSD = this.stepInputData.getSampleData().iterator();
         while (itSD.hasNext()) {
             SampleDataEntry sampleData = (SampleDataEntry) itSD.next();
@@ -654,6 +785,132 @@ public class StepAnalyzeMappedReads extends NGSStep {
     @Override
     public void verifyOutputData() {
         
+    }
+
+    /**
+     * @return the locationBleed
+     */
+    public int getLocationBleed() {
+        return locationBleed;
+    }
+
+    /**
+     * @param locationBleed the locationBleed to set
+     */
+    public void setLocationBleed(int locationBleed) {
+        this.locationBleed = locationBleed;
+    }
+
+    /**
+     * @return the baselinePercent
+     */
+    public int getBaselinePercent() {
+        return baselinePercent;
+    }
+
+    /**
+     * @param baselinePercent the baselinePercent to set
+     */
+    public void setBaselinePercent(int baselinePercent) {
+        this.baselinePercent = baselinePercent;
+    }
+
+    /**
+     * @return the analyzeIsomirs
+     */
+    public Boolean getAnalyzeIsomirs() {
+        return analyzeIsomirs;
+    }
+
+    /**
+     * @param analyzeIsomirs the analyzeIsomirs to set
+     */
+    public void setAnalyzeIsomirs(Boolean analyzeIsomirs) {
+        this.analyzeIsomirs = analyzeIsomirs;
+    }
+
+    /**
+     * @return the miRBaseRelease
+     */
+    public int getMiRBaseRelease() {
+        return miRBaseRelease;
+    }
+
+    /**
+     * @param miRBaseRelease the miRBaseRelease to set
+     */
+    public void setMiRBaseRelease(int miRBaseRelease) {
+        this.miRBaseRelease = miRBaseRelease;
+    }
+
+    /**
+     * @return the ReferenceGenome
+     */
+    public String getReferenceGenome() {
+        return ReferenceGenome;
+    }
+
+    /**
+     * @param ReferenceGenome the ReferenceGenome to set
+     */
+    public void setReferenceGenome(String ReferenceGenome) {
+        this.ReferenceGenome = ReferenceGenome;
+    }
+
+    /**
+     * @return the shortestRead
+     */
+    public int getShortestRead() {
+        return shortestRead;
+    }
+
+    /**
+     * @param shortestRead the shortestRead to set
+     */
+    public void setShortestRead(int shortestRead) {
+        this.shortestRead = shortestRead;
+    }
+
+    /**
+     * @return the longestRead
+     */
+    public int getLongestRead() {
+        return longestRead;
+    }
+
+    /**
+     * @param longestRead the longestRead to set
+     */
+    public void setLongestRead(int longestRead) {
+        this.longestRead = longestRead;
+    }
+
+    /**
+     * @return the min_counts
+     */
+    public int getMinCounts() {
+        return minCounts;
+    }
+
+    /**
+     * @param min_counts the min_counts to set
+     */
+    public void setMinCounts(int min_counts) {
+        this.minCounts = min_counts;
+    }
+
+    /**
+     * @return the separation
+     */
+    public int getSeparation() {
+        return separation;
+    }
+
+    /**
+     * @param separation the separation to set
+     */
+    public void setSeparation(int separation) {
+        this.separation = separation;
     }
     
 }

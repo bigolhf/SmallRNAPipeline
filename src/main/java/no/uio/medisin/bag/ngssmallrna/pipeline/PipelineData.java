@@ -18,6 +18,8 @@ public class PipelineData {
         private String pipelineName;
         private String projectID;
         private String projectRoot;
+        private String dataRoot;
+        
         private final List <NGSRunStepData> stepsData = new ArrayList<>();
         
  
@@ -54,5 +56,12 @@ public class PipelineData {
      */
     public String getProjectRoot() {
         return projectRoot;
+    }
+
+    /**
+     * @return the dataRoot
+     */
+    public String getDataRoot() {
+        return dataRoot;
     }
 }

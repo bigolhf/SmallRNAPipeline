@@ -42,20 +42,14 @@ public class StepUnzipInputFiles extends NGSStep{
     private static final String         ID_SOFTWARE             = "unzip_software:";    
     private static final String         ID_THREADS              = "no_of_threads:";
     
-    private static final String         infileExtension         = ".fastq.gz";
-    private static final String         outfileExtension        = ".fastq";
-    private static final String         inFolder                = "fastq_files";
-    private static final String         outFolder               = "fastq_files";
+    private static final String         INFILE_EXTENSION         = ".fastq.gz";
+    private static final String         OUTFILE_EXTENSION        = ".fastq";
+    //private static final String         inFolder                = "fastq_files";
+    //private static final String         outFolder               = "fastq_files";
     
     private int                         noOfThreads             = 4;
     private String                      unzipSoftware           = "";
 
-    /**
-     * @return the ID_SOFTWARE
-     */
-    public static String getID_SOFTWARE() {
-        return ID_SOFTWARE;
-    }
     
 
     
@@ -135,7 +129,7 @@ public class StepUnzipInputFiles extends NGSStep{
                 String outputFolder = pathToData + FileSeparator + outFolder;
                 
                 
-                String fastqFile1 = outputFolder + FileSeparator + sampleData.getFastqFile1().replace(infileExtension, outfileExtension);
+                String fastqFile1 = outputFolder + FileSeparator + sampleData.getFastqFile1().replace(INFILE_EXTENSION, OUTFILE_EXTENSION);
                 if(new File(fastqFile1).exists()){
                     logger.info("fastq file 1 <" + fastqFile1 + "> exists. Skipping");
                     continue;
@@ -173,7 +167,7 @@ public class StepUnzipInputFiles extends NGSStep{
                 brStdin1.close();
                 brStdErr1.close();
                 
-                String fastqFile2 = outputFolder + FileSeparator + sampleData.getFastqFile2().replace(infileExtension, outfileExtension);
+                String fastqFile2 = outputFolder + FileSeparator + sampleData.getFastqFile2().replace(INFILE_EXTENSION, OUTFILE_EXTENSION);
                 ArrayList<String> cmd2 = new ArrayList<>();
                 cmd2.add(this.getUnzipSoftware());
                 cmd2.add("-d");
@@ -251,11 +245,11 @@ public class StepUnzipInputFiles extends NGSStep{
                 throw new IOException("unzipFastqFiles: fastq File1 <" 
                   + fastqFile1 + "> does not exist");
             }
-            if (fastqFile1.toUpperCase().endsWith(infileExtension.toUpperCase())==false)
+            if (fastqFile1.toUpperCase().endsWith(INFILE_EXTENSION.toUpperCase())==false)
             {
                 throw new IOException("unzipFastqFiles: incorrect file extension for input file <" 
                   + fastqFile1 + ">.  \n" 
-                  + "should have <" + infileExtension + "> as extension");
+                  + "should have <" + INFILE_EXTENSION + "> as extension");
             }
             
             
@@ -266,11 +260,11 @@ public class StepUnzipInputFiles extends NGSStep{
                 throw new IOException("unzipFastqFiles: fastq File2 <" 
                   + fastqFile2 + "> does not exist");
             }
-            if (fastqFile2.toUpperCase().endsWith(infileExtension.toUpperCase())==false)
+            if (fastqFile2.toUpperCase().endsWith(INFILE_EXTENSION.toUpperCase())==false)
             {
                 throw new IOException("unzipFastqFiles: incorrect file extension for fastq file 2 <" 
                   + fastqFile2 + ">. \n" 
-                  + "should have <" + infileExtension + "> as extension");
+                  + "should have <" + INFILE_EXTENSION + "> as extension");
             }
                         
             
@@ -296,10 +290,14 @@ public class StepUnzipInputFiles extends NGSStep{
     @Override
     public HashMap generateExampleConfigurationData() {
 
-        logger.info("generate example configuration data");
-
+        logger.info(STEP_ID_STRING + ": generate example configuration data");
+        
         HashMap configData = new HashMap();
-        configData.put(ID_THREADS, 4);
+        HashMap paramData = new HashMap();
+        
+        paramData.put(ID_THREADS, 4);
+        configData.put(STEP_ID_STRING, paramData);
+
         
         return configData;
     }
