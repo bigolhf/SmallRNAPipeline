@@ -324,7 +324,7 @@ public class MiRNAFeature {
      * 
      * @return ArrayList    : list of isomiR points
      */
-    public ArrayList characterizeIsomiRs(int baselinePercent, int minCounts){
+    public ArrayList characterizeIsomiRs(int baselinePercent){
         
         ArrayList isomiRPts = new ArrayList<>();
         // we can identify 5´ modification from start position

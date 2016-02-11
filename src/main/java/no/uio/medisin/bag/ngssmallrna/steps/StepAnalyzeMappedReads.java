@@ -16,7 +16,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import no.uio.medisin.bag.jmirpara.SimpleSeq;
-import no.uio.medisin.bag.ngssmallrna.pipeline.DataLocations;
+import no.uio.medisin.bag.ngssmallrna.pipeline.ReferenceDataLocations;
 import no.uio.medisin.bag.ngssmallrna.pipeline.GFFEntry;
 import no.uio.medisin.bag.ngssmallrna.pipeline.GFFSet;
 import no.uio.medisin.bag.ngssmallrna.pipeline.GenomeSeq;
@@ -40,7 +40,7 @@ import org.apache.logging.log4j.Logger;
  */
 public class StepAnalyzeMappedReads extends NGSStep {
     
-    public  static final String     STEP_ID_STRING      = "SINGLE_MAPPING_BOWTIE:";
+    public  static final String     STEP_ID_STRING      = "AnalyzeStartPositions";
     private static final String     ID_BLEED            = "bleed:";
     private static final String     ID_BASELINE         = "baseline_percent:";
     private static final String     ID_ISOMIRS          = "analyze_isomirs:";
@@ -229,14 +229,9 @@ public class StepAnalyzeMappedReads extends NGSStep {
      * @throws IOException
      */
     @Override
-    public void execute() {
-        try {
-            stepInputData.verifyInputData();            
-        } catch (IOException exIO) {
-            logger.info("exception parsing InputData" + exIO);
-        }
-
-
+    public void execute() throws IOException{
+        
+        stepInputData.verifyInputData();            
         this.setPaths();
     
         
@@ -246,7 +241,7 @@ public class StepAnalyzeMappedReads extends NGSStep {
         String hostCode = this.getReferenceGenome();
         genomeFasta = new GenomeSeq(hostCode);
         String pathToFasta = stepInputData.getDataLocations().getGenomeRootFolder()
-                + FILESEPARATOR + hostCode + FILESEPARATOR + DataLocations.ID_REL_WHOLE_GENSEQ_PATH;
+                + FILESEPARATOR + hostCode + FILESEPARATOR + ReferenceDataLocations.ID_REL_WHOLE_GENSEQ_PATH;
         String genomeFastaFile = pathToFasta + FILESEPARATOR + "genome.fa";
         genomeFastaFile = genomeFastaFile.replace(FILESEPARATOR + FILESEPARATOR, FILESEPARATOR).trim();
         try{
@@ -265,7 +260,7 @@ public class StepAnalyzeMappedReads extends NGSStep {
          */
         String annotationFile = "";
         String pathToAnnotation = stepInputData.getDataLocations().getGenomeRootFolder()
-                + FILESEPARATOR + hostCode + DataLocations.ID_GENE_ANNOTATION;
+                + FILESEPARATOR + hostCode + ReferenceDataLocations.ID_GENE_ANNOTATION;
         File f = new File(pathToAnnotation + FILESEPARATOR + "genes.gtf");
         if (new File(pathToAnnotation + FILESEPARATOR + "genes.gtf").exists()) {
             annotationFile = pathToAnnotation + FILESEPARATOR + "genes.gtf";
@@ -757,31 +752,64 @@ public class StepAnalyzeMappedReads extends NGSStep {
      *
      */    
     @Override
-    public void verifyInputData() {
-        // Check for presence of GTF file and genome files
+    public void verifyInputData()  throws IOException, NullPointerException{
+        logger.info("verify input data");
+        
+        
+                    
+        // check the data files
         Iterator itSD = this.stepInputData.getSampleData().iterator();
-        while (itSD.hasNext()) {
-            SampleDataEntry sampleData = (SampleDataEntry) itSD.next();
-            /*
-             if (sampleData.getDataFile().toUpperCase().endsWith(infileExtension.toUpperCase())==false)
-             {
-             throw new IllegalArgumentException("AdapterTrimming: incorrect file extension for input file <" 
-             + sampleData.getDataFile() + ">. " 
-             + "should have <" + infileExtension + "> as extension");
-             }
+        while (itSD.hasNext()){
+            SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
+            String fastqFile1 = (String)sampleData.getFastqFile1();
+            String fastqFile2 = (String)sampleData.getFastqFile2();
             
-             if (sampleData.getDataFile().toUpperCase().endsWith(outfileExtension.toUpperCase())==true)
-             {
-             logger.warn("AdapterTrimming: input file has output file extension (.trim.fastq)");
-             logger.warn("this file has already been trimmed");
-             }
-             */
+            //Fastq 1
+            if (fastqFile1==null) throw new IOException("no Fastq1 file specified");
             
+            if ((new File(fastqFile1)).exists()==false){
+                throw new IOException("unzipFastqFiles: fastq File1 <" 
+                  + fastqFile1 + "> does not exist");
+            }
+            if (fastqFile1.toUpperCase().endsWith(INFILE_EXTENSION.toUpperCase())==false)
+            {
+                throw new IOException("unzipFastqFiles: incorrect file extension for input file <" 
+                  + fastqFile1 + ">.  \n" 
+                  + "should have <" + INFILE_EXTENSION + "> as extension");
+            }
         }
-        // does input file have correct extension?
-        // does input file have the same extension as expected for the output file?
     }
     
+    /**
+     * generate sample configuration data so the user can see what can be
+     * specified
+     *
+     * @return
+     */
+    @Override
+    public HashMap generateExampleConfigurationData() {
+
+        logger.info(STEP_ID_STRING + ": generate example configuration data");
+
+        HashMap configData = new HashMap();
+        HashMap paramData = new HashMap();
+
+        paramData.put(ID_REF_GENOME, "hsa");
+        paramData.put(ID_BLEED, 2);
+        paramData.put(ID_BASELINE, 5);
+        paramData.put(ID_SHORTEST_FEATURE, 2);
+        paramData.put(ID_LONGEST_FEATURE, 2);
+        paramData.put(ID_MIN_COUNTS, 10);
+        
+        configData.put(STEP_ID_STRING, paramData);
+
+        return configData;
+    }
+
+
+
+
+
     @Override
     public void verifyOutputData() {
         

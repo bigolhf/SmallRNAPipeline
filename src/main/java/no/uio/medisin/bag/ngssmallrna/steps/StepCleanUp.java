@@ -34,6 +34,7 @@ import org.apache.logging.log4j.Logger;
  *   Input is a zipped FASTQ file
  *   Output is a unzipped FASTQ file
  * 
+ * need to add the ability to define which types of files to compress. e.g., fastq, fasta, sam
  * 
  * @author sr
  */
@@ -41,9 +42,12 @@ import org.apache.logging.log4j.Logger;
 public class StepCleanUp extends NGSStep{
     
     static Logger                       logger = LogManager.getLogger();
+    public  static final String     STEP_ID_STRING                  = "CleanUp";
+    
+    
     static  String                      FileSeparator = System.getProperty("file.separator");
     
-    private static final String         infileExtension     = ".fastq.gz";
+    private static final String         INFILE_EXTENSION     = ".fastq.gz";
     private static final String         outfileExtension    = ".fastq";
     private static final String         inFolder            = "fastq_files";
     private static final String         outFolder           = "fastq_files";
@@ -140,7 +144,7 @@ public class StepCleanUp extends NGSStep{
                 String pathToData = stepInputData.getProjectRoot() + FileSeparator + stepInputData.getProjectID();
                 
                 String outputFolder = pathToData + FileSeparator + outFolder;
-                String outputFile = outputFolder + FileSeparator + sampleData.getFastqFile1().replace(infileExtension, outfileExtension);
+                String outputFile = outputFolder + FileSeparator + sampleData.getFastqFile1().replace(INFILE_EXTENSION, outfileExtension);
                 if(new File(outputFile).exists()){
                     logger.info("Output file <" + outputFile + "> exists. Skipping");
                     continue;

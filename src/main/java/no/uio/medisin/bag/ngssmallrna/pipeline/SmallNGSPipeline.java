@@ -50,46 +50,9 @@ public class SmallNGSPipeline {
     private String                      dataFile = "";
     
     private HashMap                     pipelineConfigurationDataHash;    
-    private DataLocations               dataLocations;
-    
-    private String                      softwareRootFolder = "";
-    private String                      zipSoftware = "";
-//    private String                      adapterTrimmingSoftware = "";
-    private String                      fastq2fastaSoftware = "";
-    private String                      collapseFastaSoftware = "";
-    private String                      bowtieMappingCommand = "";
-    private String                      rScriptCommand = "";
-    
-//    private String                      genomeRootFolder = "";
-//    private String                      mirbaseRootFolder = "";
+    private ReferenceDataLocations      refDataLocations;
     
     
-//    private String                      trimAdapterFile = "";
-//    private int                         trimNoOfMismatches = 2;
-//    private int                         trimMinAlignScore = 7;
-//    private int                         trimNoOfThreads = 4;
-//    private int                         trimMinAvgReadQuality = 30;
-
-/*    
-    private String                      bowtieSMappingAlignMode = "";
-    private int                         bowtieSMappingNoOfMismatches = 2;
-    private int                         bowtieSMappingNoOfThreads = 4;
-    private String                      bowtieSMappingReferenceGenome = "";
-*/    
-    
-    private int                         samParseForMiRNAsBleed = 2;
-    private int                         samParseForMiRNAsBaselinePercent = 5;
-    private String                      samParseForMiRNAsMiRBaseVersion = "21";
-    private Boolean                     samParseForMiRNAsAnalyzeIsomirs = false;
-    
-    private int                         samParseStartPosBleed = 2;
-    private int                         samParseFeatureSeparation = 10;
-    private int                         samParseLongestFeature = 40;
-    private int                         samParseShortestFeature = 14;
-    private int                         samParseMinCounts = 10;
-    private ArrayList<String>           samParseFeatureTypes = new ArrayList<>();
-    
-    private double                      analyzeIsomiRDispPVal = 0.05;
     
     private double                      diffExpressionPVal = 0.05;
     
@@ -205,7 +168,7 @@ public class SmallNGSPipeline {
     private void executeStepUnzipInputFiles(NGSRunStepData stepData) throws IOException, Exception{
         
         StepInputData sidUnzip = new StepInputData(this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), 
-                 dataLocations, stepData.getInputFileList(), stepData.getOutputFileList(), this.getSampleData());
+                 refDataLocations, stepData.getInputFileList(), stepData.getOutputFileList(), this.getSampleData());
         StepUnzipInputFiles ngsUnzipFastqStep = new StepUnzipInputFiles(sidUnzip);        
         ngsUnzipFastqStep.parseConfigurationData((HashMap) pipelineConfigurationDataHash.get(StepUnzipInputFiles.STEP_ID_STRING));        
         ngsUnzipFastqStep.execute();
@@ -221,7 +184,7 @@ public class SmallNGSPipeline {
     private void executeStepSingleTrimAdapters(NGSRunStepData stepData) throws IOException, Exception{
 
         StepInputData sidTrim = new StepInputData(this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), 
-                 dataLocations, stepData.getInputFileList(), stepData.getOutputFileList(), this.getSampleData());
+                 refDataLocations, stepData.getInputFileList(), stepData.getOutputFileList(), this.getSampleData());
         StepSingleTrimAdapters ngsSingleTrimStep = new StepSingleTrimAdapters(sidTrim);
         ngsSingleTrimStep.parseConfigurationData((HashMap) pipelineConfigurationDataHash.get(StepSingleTrimAdapters.STEP_ID_STRING));        
 
@@ -240,7 +203,7 @@ public class SmallNGSPipeline {
     private void executeStepCollapseReads(NGSRunStepData stepData) throws IOException, Exception{
 
         StepInputData sidCollapse = new StepInputData(this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), 
-                 dataLocations, stepData.getInputFileList(), stepData.getOutputFileList(), this.getSampleData());
+                 refDataLocations, stepData.getInputFileList(), stepData.getOutputFileList(), this.getSampleData());
         StepCollapseReads ngsCollapseStep = new StepCollapseReads(sidCollapse);
         ngsCollapseStep.parseConfigurationData((HashMap) pipelineConfigurationDataHash.get(StepCollapseReads.STEP_ID_STRING));
 
@@ -257,9 +220,9 @@ public class SmallNGSPipeline {
     private void executeStepBowtieMapSingleReads(NGSRunStepData stepData) throws IOException, Exception{
 
         StepInputData sidMapSR = new StepInputData(this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), 
-                 dataLocations, stepData.getInputFileList(), stepData.getOutputFileList(), this.getSampleData());
+                 refDataLocations, stepData.getInputFileList(), stepData.getOutputFileList(), this.getSampleData());
         StepBowtieMapSingleReads ngsBowtieMapReads = new StepBowtieMapSingleReads(sidMapSR);
-
+        ngsBowtieMapReads.parseConfigurationData((HashMap)pipelineConfigurationDataHash.get(StepBowtieMapSingleReads.STEP_ID_STRING));
         ngsBowtieMapReads.execute();
         
     }
@@ -274,7 +237,7 @@ public class SmallNGSPipeline {
 
 
         StepInputData sidMapPR = new StepInputData(this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), 
-                 dataLocations, stepData.getInputFileList(), stepData.getOutputFileList(), this.getSampleData());
+                 refDataLocations, stepData.getInputFileList(), stepData.getOutputFileList(), this.getSampleData());
         StepBowtieMapPairedReads ngsBowtieMapPairedReads = new StepBowtieMapPairedReads(sidMapPR);
 
         ngsBowtieMapPairedReads.execute();
@@ -289,18 +252,11 @@ public class SmallNGSPipeline {
      */
     private void executeStepParseSAMForMiRNAs(NGSRunStepData stepData) throws IOException, Exception{
         
-       HashMap parseSAMmiRNAsParams = new HashMap();
-       parseSAMmiRNAsParams.put("inputFolder", stepData.getInputFileList());
-       parseSAMmiRNAsParams.put("outputFolder", stepData.getOutputFileList());
-       parseSAMmiRNAsParams.put("bleed", this.getSamParseForMiRNAsBleed());
-       parseSAMmiRNAsParams.put("baseline_percent", this.getSamParseForMiRNAsBaselinePercent());
-       parseSAMmiRNAsParams.put("host", this.getBowtieSMappingReferenceGenome());
-       parseSAMmiRNAsParams.put("miRBaseHostGFFFile", this.getMiRBaseHostGFF());
-       parseSAMmiRNAsParams.put("analyze_isomirs", this.getSamParseForMiRNAsAnalyzeIsomirs());
 
-       StepInputData sidSAM = new StepInputData(parseSAMmiRNAsParams, this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), 
-                stepData.getInputFileList(), stepData.getOutputFileList(), this.getSampleData());
+       StepInputData sidSAM = new StepInputData(this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), 
+                refDataLocations, stepData.getInputFileList(), stepData.getOutputFileList(), this.getSampleData());
        StepParseSAMForMiRNAs ngsParseSAMForMiRNAs = new StepParseSAMForMiRNAs(sidSAM);
+       ngsParseSAMForMiRNAs.parseConfigurationData((HashMap)pipelineConfigurationDataHash.get(StepParseSAMForMiRNAs.STEP_ID_STRING));
 
        ngsParseSAMForMiRNAs.execute();
        
@@ -314,23 +270,11 @@ public class SmallNGSPipeline {
      * @param stepData 
      */
     private void executeStepAnalyzeStartPositions(NGSRunStepData stepData) throws IOException, Exception{
-        
-        HashMap analyzeSAMStartPositionsParams = new HashMap();
-        analyzeSAMStartPositionsParams.put("bleed", this.getSamParseStartPosBleed());
-        analyzeSAMStartPositionsParams.put("separation", this.getSamParseFeatureSeparation());
-        analyzeSAMStartPositionsParams.put("shortest_feature", this.getSamParseShortestFeature());    
-        analyzeSAMStartPositionsParams.put("longest_feature", this.getSamParseLongestFeature());    
-        analyzeSAMStartPositionsParams.put("min_counts", this.getSamParseMinCounts());
-        analyzeSAMStartPositionsParams.put("feature_types", this.getSamParseFeatureTypes());
-        analyzeSAMStartPositionsParams.put("host", this.getBowtieSMappingReferenceGenome());
-        analyzeSAMStartPositionsParams.put("genomeReferenceGFFFile", this.getGenomeAnnotationGFF());
-        analyzeSAMStartPositionsParams.put("bowtieMapGenomeRootFolder", this.getGenomeRootFolder());
-        analyzeSAMStartPositionsParams.put("bowtieReferenceGenome", this.getBowtieSMappingReferenceGenome());
 
         StepInputData sidStart = new StepInputData(this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), 
-                 dataLocations, stepData.getInputFileList(), stepData.getOutputFileList(), this.getSampleData());
+                 refDataLocations, stepData.getInputFileList(), stepData.getOutputFileList(), this.getSampleData());
         StepAnalyzeMappedReads ngsAnalyzeSAMStartPos = new StepAnalyzeMappedReads(sidStart);
-
+        ngsAnalyzeSAMStartPos.parseConfigurationData((HashMap)pipelineConfigurationDataHash.get(StepAnalyzeMappedReads.STEP_ID_STRING));
         ngsAnalyzeSAMStartPos.execute();
         
     }
@@ -343,15 +287,11 @@ public class SmallNGSPipeline {
      */
     private void executeStepAnalyzeIsomiRDispersion(NGSRunStepData stepData) throws IOException, Exception{
         
-        HashMap isomiRDispersionAnalysisParams = new HashMap();
-        isomiRDispersionAnalysisParams.put("pvalue", this.getAnalyzeIsomiRDispPVal());
-        isomiRDispersionAnalysisParams.put("host", this.getBowtieSMappingReferenceGenome());
-        isomiRDispersionAnalysisParams.put("miRBaseHostGFFFile", this.getMiRBaseHostGFF());
 
-        StepInputData sidIsoDisp = new StepInputData(isomiRDispersionAnalysisParams, this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), 
-                 stepData.getInputFileList(), stepData.getOutputFileList(), this.getSampleData());
+        StepInputData sidIsoDisp = new StepInputData(this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), 
+                 refDataLocations, stepData.getInputFileList(), stepData.getOutputFileList(), this.getSampleData());
         StepAnalyzeIsomiRDispersion analyzeIsomiRDispersions = new StepAnalyzeIsomiRDispersion(sidIsoDisp);
-
+        analyzeIsomiRDispersions.parseConfigurationData((HashMap)pipelineConfigurationDataHash.get(StepAnalyzeIsomiRDispersion.STEP_ID_STRING));
         analyzeIsomiRDispersions.execute();
         
     }
@@ -364,23 +304,12 @@ public class SmallNGSPipeline {
      * @param stepData 
      */
     private void executeStepDifferentialExpression(NGSRunStepData stepData) throws IOException, Exception{
-        /*
-        Need to add:
-            Number of Tags to report
-            minimum counts for cut off
-            plot size: width and height, resolution
 
-        */
-        HashMap diffExpressionAnalysisParams = new HashMap();
-        diffExpressionAnalysisParams.put("rScriptCommand", this.getrScriptCommand());
-        diffExpressionAnalysisParams.put("pvalue", this.getDiffExpressionPVal());
-        diffExpressionAnalysisParams.put("host", this.getBowtieSMappingReferenceGenome());
-        diffExpressionAnalysisParams.put("miRBaseHostGFFFile", this.getMiRBaseHostGFF());
-
-        StepInputData siodDiffExpr = new StepInputData(diffExpressionAnalysisParams, this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), 
-                 stepData.getInputFileList(), stepData.getOutputFileList(), this.getSampleData());
+        StepInputData siodDiffExpr = new StepInputData(this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), 
+                 refDataLocations, stepData.getInputFileList(), stepData.getOutputFileList(), this.getSampleData());
         StepDEwithEdgeR edgeRDE = new StepDEwithEdgeR(siodDiffExpr);
 
+        edgeRDE.parseConfigurationData((HashMap)pipelineConfigurationDataHash.get(StepDEwithEdgeR.STEP_ID_STRING));
         edgeRDE.execute();
         
     }
@@ -393,13 +322,9 @@ public class SmallNGSPipeline {
      */
     private void executeStepCleanup(NGSRunStepData stepData) throws IOException, Exception{
 
-        HashMap cleanUpParams = new HashMap();
-        cleanUpParams.put("zipSoftware",          this.getZipSoftware());
-        cleanUpParams.put("trimNoOfThreads",        this.getTrimNoOfThreads());
-        cleanUpParams.put("fileTypes",              this.getCleanupFiles());
 
-        StepInputData sidCleanUp = new StepInputData(cleanUpParams, this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), 
-                 stepData.getInputFileList(), stepData.getOutputFileList(), this.getSampleData());
+        StepInputData sidCleanUp = new StepInputData(this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), 
+                 refDataLocations, stepData.getInputFileList(), stepData.getOutputFileList(), this.getSampleData());
         StepCleanUp cleanUp = new StepCleanUp(sidCleanUp);
 
         cleanUp.execute();
@@ -462,64 +387,14 @@ public class SmallNGSPipeline {
         pipelineConfigurationDataHash = (HashMap) yaml.load(new FileInputStream(new File(getConfigurationFile())));
         
         HashMap dataOptions = (HashMap) pipelineConfigurationDataHash.get("data");
-        dataLocations = new DataLocations();
-        dataLocations.setGenomeRootFolder((String) dataOptions.get(DataLocations.ID_GENOME_FOLDER));
-        dataLocations.setMirbaseFolder((String)dataOptions.get(DataLocations.ID_MIRBASE_FOLDER));
+        refDataLocations = new ReferenceDataLocations();
+        refDataLocations.setGenomeRootFolder((String) dataOptions.get(ReferenceDataLocations.ID_GENOME_FOLDER));
+        refDataLocations.setMirbaseFolder((String)dataOptions.get(ReferenceDataLocations.ID_MIRBASE_FOLDER));
+        
 
         HashMap softwareOptions = (HashMap) pipelineConfigurationDataHash.get("software");
-        this.setSoftwareRootFolder((String) softwareOptions.get("root_folder"));
-        this.setZipSoftware((String) softwareOptions.get("unzip"));
-//        this.setAdapterTrimmingSoftware((String) softwareOptions.get("adapter_trimming"));
-        this.setFastq2fastaSoftware((String) softwareOptions.get("fastq_to_fasta"));
-        this.setCollapseFastaSoftware((String) softwareOptions.get("fastx_collapser"));
-        this.setBowtieMappingCommand((String) softwareOptions.get("bowtie_mapping_command"));
-        this.setrScriptCommand((String) softwareOptions.get("rscript_command"));
         
-//        HashMap unzipOptions = (HashMap) pipelineConfigurationDataHash.get("unzip");
-//        this.setUnzipNoOfThreads((int) unzipOptions.get("no_of_threads"));
-        
-//        HashMap trimAdapterOptions = (HashMap) pipelineConfigurationDataHash.get("single_adapter_trimming");
-//        this.setTrimAdapterFile((String) trimAdapterOptions.get("adapter_file"));
-//        this.setTrimMinAlignScore((int) trimAdapterOptions.get("no_of_mismatches"));
-//        this.setTrimNoOfMismatches((int) trimAdapterOptions.get("min_align_score"));
-//        this.setTrimNoOfThreads((int) trimAdapterOptions.get("no_of_threads"));
-//        this.setTrimMinAvgReadQuality((int) trimAdapterOptions.get("min_avg_read_qual"));
-        
-        HashMap mapSingleReadsOptions = (HashMap) pipelineConfigurationDataHash.get("bowtie_single_mapping");
-        this.setBowtieSMappingAlignMode((String) mapSingleReadsOptions.get("alignment_mode"));
-        this.setBowtieSMappingNoOfMismatches((int) mapSingleReadsOptions.get("no_of_mismatches"));
-        this.setBowtieSMappingNoOfThreads((int) mapSingleReadsOptions.get("no_of_threads"));
-        this.setBowtieSMappingReferenceGenome((String) mapSingleReadsOptions.get("host"));
-        
-        HashMap mapPairedReadsOptions = (HashMap) pipelineConfigurationDataHash.get("bowtie_paired_mapping");
-        this.setBowtiePMappingAlignMode((String) mapPairedReadsOptions.get("alignment_mode"));
-        this.setBowtiePMappingNoOfMismatches((int) mapPairedReadsOptions.get("no_of_mismatches"));
-        this.setBowtiePMappingNoOfThreads((int) mapPairedReadsOptions.get("no_of_threads"));
-        this.setBowtiePMappingReferenceGenome((String) mapPairedReadsOptions.get("host"));
-        
-        HashMap processSAMForMiRNAsOptions  = (HashMap) pipelineConfigurationDataHash.get("sam_mirna_processing");
-        this.setSamParseForMiRNAsBleed((int) processSAMForMiRNAsOptions.get("bleed"));
-        this.setSamParseForMiRNAsMiRBaseVersion( String.valueOf(processSAMForMiRNAsOptions.get("mirbase_release")));
-        this.setSamParseForMiRNAsBaselinePercent((int) processSAMForMiRNAsOptions.get("baseline_percent"));
-        this.setSamParseForMiRNAsAnalyzeIsomirs((Boolean) processSAMForMiRNAsOptions.get("analyze_isomirs"));
-        
-        HashMap processSAMStartPosOptions = (HashMap) pipelineConfigurationDataHash.get("sam_startpos_processing");
-        this.setSamParseStartPosBleed((int) processSAMStartPosOptions.get("bleed"));
-        this.setSamParseFeatureSeparation((int) processSAMStartPosOptions.get("separation"));
-        this.setSamParseShortestFeature((int) processSAMStartPosOptions.get("shortest_feature"));
-        this.setSamParseLongestFeature((int) processSAMStartPosOptions.get("longest_feature"));
-        this.setSamParseMinCounts((int) processSAMStartPosOptions.get("min_counts"));
-        this.setSamParseFeatureTypes((ArrayList<String>)processSAMStartPosOptions.get("feature_types"));
-        
-        HashMap analyzeIsomiRDispersionOptions = (HashMap) pipelineConfigurationDataHash.get("analyze_isomir_dispersion");
-        this.setAnalyzeIsomiRDispPVal((double) analyzeIsomiRDispersionOptions.get("pvalue"));
-        
-        HashMap diffExpressionOptions = (HashMap) pipelineConfigurationDataHash.get("differential_expression");
-        this.setDiffExpressionPVal((double) diffExpressionOptions.get("pvalue"));
-        
-        HashMap cleanupOptions = (HashMap) pipelineConfigurationDataHash.get("cleanup");
-        this.setCleanupFiles((ArrayList<String>)cleanupOptions.get("file_types"));
-        this.setCleanupNoOfThreads((int) cleanupOptions.get("no_of_threads"));
+                
         
         
         logger.info("done\n");
@@ -589,41 +464,6 @@ public class SmallNGSPipeline {
     
     
     
-    /**
-     * return path to the file containing location information for the known miRNAs
-     * for the specified reference genome
-     * 
-     * @return 
-     */
-    public String getMiRBaseHostGFF(){
-        return this.mirbaseRootFolder + FileSeparator + this.samParseForMiRNAsMiRBaseVersion + FileSeparator + this.getBowtieSMappingReferenceGenome() + ".gff3";
-    }
-    
-    
-    
-    
-    /**
-     * return path to the GFF/GTF file containing annotation information 
-     * for the specified reference genome
-     * 
-     * @return 
-     */
-    public String getGenomeAnnotationGFF(){
-        return this.getGenomeRootFolder() + FileSeparator + this.getBowtieSMappingReferenceGenome() + FileSeparator + "Annotation/Genes/genes.gtf";
-    }
-    
-    
-    
-    
-    /**
-     * return path to root folder for MirBase version
-     * 
-     * @return 
-     */
-    public String getMirBaseRootFolder(){
-        return this.mirbaseRootFolder + FileSeparator + this.samParseForMiRNAsMiRBaseVersion;
-    }
-    
     
     /**
      * @return the configurationFile
@@ -674,19 +514,6 @@ public class SmallNGSPipeline {
         return pipelineData;
     }
 
-    /**
-     * @return the softwareRootFolder
-     */
-    public String getSoftwareRootFolder() {
-        return softwareRootFolder;
-    }
-
-    /**
-     * @param softwareRootFolder the softwareRootFolder to set
-     */
-    public void setSoftwareRootFolder(String softwareRootFolder) {
-        this.softwareRootFolder = softwareRootFolder;
-    }
 
     /**
      * @return the NGSSteps
@@ -703,117 +530,8 @@ public class SmallNGSPipeline {
         return SampleData;
     }
 
-    /**
-     * @return the fastq2fastaSoftware
-     */
-    public String getFastq2fastaSoftware() {
-        return fastq2fastaSoftware;
-    }
 
-    /**
-     * @param fastq2fastaSoftware the fastq2fastaSoftware to set
-     */
-    public void setFastq2fastaSoftware(String fastq2fastaSoftware) {
-        this.fastq2fastaSoftware = fastq2fastaSoftware;
-    }
 
-    /**
-     * @return the collapseFastaSoftware
-     */
-    public String getCollapseFastaSoftware() {
-        return collapseFastaSoftware;
-    }
-
-    /**
-     * @param collapseFastaSoftware the collapseFastaSoftware to set
-     */
-    public void setCollapseFastaSoftware(String collapseFastaSoftware) {
-        this.collapseFastaSoftware = collapseFastaSoftware;
-    }
-
-    /**
-     * @return the samParseForMiRNAsBleed
-     */
-    public int getSamParseForMiRNAsBleed() {
-        return samParseForMiRNAsBleed;
-    }
-
-    /**
-     * @param samParseForMiRNAsBleed the samParseForMiRNAsBleed to set
-     */
-    public void setSamParseForMiRNAsBleed(int samParseForMiRNAsBleed) {
-        this.samParseForMiRNAsBleed = samParseForMiRNAsBleed;
-    }
-
-    /**
-     * @return the samParseForMiRNAsMiRBaseVersion
-     */
-    public String getSamParseForMiRNAsMiRBaseVersion() {
-        return samParseForMiRNAsMiRBaseVersion;
-    }
-
-    /**
-     * @param samParseForMiRNAsMiRBaseVersion the samParseForMiRNAsMiRBaseVersion to set
-     */
-    public void setSamParseForMiRNAsMiRBaseVersion(String samParseForMiRNAsMiRBaseVersion) {
-        this.samParseForMiRNAsMiRBaseVersion = samParseForMiRNAsMiRBaseVersion;
-    }
-
-    /**
-     * @return the samParseForMiRNAsBaselinePercent
-     */
-    public int getSamParseForMiRNAsBaselinePercent() {
-        return samParseForMiRNAsBaselinePercent;
-    }
-
-    /**
-     * @param samParseForMiRNAsBaselinePercent the samParseForMiRNAsBaselinePercent to set
-     */
-    public void setSamParseForMiRNAsBaselinePercent(int samParseForMiRNAsBaselinePercent) {
-        this.samParseForMiRNAsBaselinePercent = samParseForMiRNAsBaselinePercent;
-    }
-
-    /**
-     * @return the samParseStartPosBleed
-     */
-    public int getSamParseStartPosBleed() {
-        return samParseStartPosBleed;
-    }
-
-    /**
-     * @param samParseStartPosBleed the samParseStartPosBleed to set
-     */
-    public void setSamParseStartPosBleed(int samParseStartPosBleed) {
-        this.samParseStartPosBleed = samParseStartPosBleed;
-    }
-
-    /**
-     * @return the samParseFeatureTypes
-     */
-    public ArrayList<String> getSamParseFeatureTypes() {
-        return samParseFeatureTypes;
-    }
-
-    /**
-     * @param samParseFeatureTypes the samParseFeatureTypes to set
-     */
-    public void setSamParseFeatureTypes(ArrayList<String> samParseFeatureTypes) {
-        this.samParseFeatureTypes = samParseFeatureTypes;
-    }
-
-    /**
-     * @return the analyzeIsomiRDispPVal
-     */
-    public double getAnalyzeIsomiRDispPVal() {
-        return analyzeIsomiRDispPVal;
-    }
-
-    /**
-     * @param analyzeIsomiRDispPVal the analyzeIsomiRDispPVal to set
-     */
-    public void setAnalyzeIsomiRDispPVal(double analyzeIsomiRDispPVal) {
-        this.analyzeIsomiRDispPVal = analyzeIsomiRDispPVal;
-    }
 
     /**
      * @return the diffExpressionPVal
@@ -827,90 +545,6 @@ public class SmallNGSPipeline {
      */
     public void setDiffExpressionPVal(double diffExpressionPVal) {
         this.diffExpressionPVal = diffExpressionPVal;
-    }
-
-    /**
-     * @return the mappingCommand
-     */
-    public String getBowtieMappingCommand() {
-        return bowtieMappingCommand;
-    }
-
-    /**
-     * @param mappingCommand the mappingCommand to set
-     */
-    public void setBowtieMappingCommand(String mappingCommand) {
-        this.bowtieMappingCommand = mappingCommand;
-    }
-
-    /**
-     * @return the samParseFeatureSeparation
-     */
-    public int getSamParseFeatureSeparation() {
-        return samParseFeatureSeparation;
-    }
-
-    /**
-     * @param samParseFeatureSeparation the samParseFeatureSeparation to set
-     */
-    public void setSamParseFeatureSeparation(int samParseFeatureSeparation) {
-        this.samParseFeatureSeparation = samParseFeatureSeparation;
-    }
-
-    /**
-     * @return the samParseLongestFeature
-     */
-    public int getSamParseLongestFeature() {
-        return samParseLongestFeature;
-    }
-
-    /**
-     * @param samParseLongestFeature the samParseLongestFeature to set
-     */
-    public void setSamParseLongestFeature(int samParseLongestFeature) {
-        this.samParseLongestFeature = samParseLongestFeature;
-    }
-
-    /**
-     * @return the samParseMinCounts
-     */
-    public int getSamParseMinCounts() {
-        return samParseMinCounts;
-    }
-
-    /**
-     * @param samParseMinCounts the samParseMinCounts to set
-     */
-    public void setSamParseMinCounts(int samParseMinCounts) {
-        this.samParseMinCounts = samParseMinCounts;
-    }
-
-    /**
-     * @return the samParseShortestFeature
-     */
-    public int getSamParseShortestFeature() {
-        return samParseShortestFeature;
-    }
-
-    /**
-     * @param samParseShortestFeature the samParseShortestFeature to set
-     */
-    public void setSamParseShortestFeature(int samParseShortestFeature) {
-        this.samParseShortestFeature = samParseShortestFeature;
-    }
-
-    /**
-     * @return the samParseForMiRNAsAnalyzeIsomirs
-     */
-    public Boolean getSamParseForMiRNAsAnalyzeIsomirs() {
-        return samParseForMiRNAsAnalyzeIsomirs;
-    }
-
-    /**
-     * @param samParseForMiRNAsAnalyzeIsomirs the samParseForMiRNAsAnalyzeIsomirs to set
-     */
-    public void setSamParseForMiRNAsAnalyzeIsomirs(Boolean samParseForMiRNAsAnalyzeIsomirs) {
-        this.samParseForMiRNAsAnalyzeIsomirs = samParseForMiRNAsAnalyzeIsomirs;
     }
 
     /**
@@ -928,20 +562,6 @@ public class SmallNGSPipeline {
     }
 
     /**
-     * @return the zipSoftware
-     */
-    public String getZipSoftware() {
-        return zipSoftware;
-    }
-
-    /**
-     * @param zipSoftware the zipSoftware to set
-     */
-    public void setZipSoftware(String zipSoftware) {
-        this.zipSoftware = zipSoftware;
-    }
-
-    /**
      * @return the cleanupNoOfThreads
      */
     public int getCleanupNoOfThreads() {
@@ -953,20 +573,6 @@ public class SmallNGSPipeline {
      */
     public void setCleanupNoOfThreads(int cleanupNoOfThreads) {
         this.cleanupNoOfThreads = cleanupNoOfThreads;
-    }
-
-    /**
-     * @return the rScriptCommand
-     */
-    public String getrScriptCommand() {
-        return rScriptCommand;
-    }
-
-    /**
-     * @param rScriptCommand the rScriptCommand to set
-     */
-    public void setrScriptCommand(String rScriptCommand) {
-        this.rScriptCommand = rScriptCommand;
     }
 
     /**
@@ -986,15 +592,15 @@ public class SmallNGSPipeline {
     /**
      * @return the dataLocations
      */
-    public DataLocations getDataLocations() {
-        return dataLocations;
+    public ReferenceDataLocations getDataLocations() {
+        return refDataLocations;
     }
 
     /**
      * @param dataLocations the dataLocations to set
      */
-    public void setDataLocations(DataLocations dataLocations) {
-        this.dataLocations = dataLocations;
+    public void setDataLocations(ReferenceDataLocations dataLocations) {
+        this.refDataLocations = dataLocations;
     }
 
     

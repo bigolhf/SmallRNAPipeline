@@ -17,12 +17,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.security.SecureRandom;
-import java.sql.Timestamp;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Random;
 
 import no.uio.medisin.bag.ngssmallrna.pipeline.MiRNAFeature;
-import no.uio.medisin.bag.ngssmallrna.pipeline.MirBaseSet;
+import no.uio.medisin.bag.ngssmallrna.pipeline.MirFeatureSet;
 import no.uio.medisin.bag.ngssmallrna.pipeline.SampleDataEntry;
 import org.apache.commons.lang3.StringUtils;
 
@@ -43,37 +43,47 @@ import org.apache.logging.log4j.Logger;
 public class StepDEwithEdgeR extends NGSStep{
     
     static Logger                       logger                      = LogManager.getLogger();
+    
+    public  static final String     STEP_ID_STRING                  = "AnalyzeStartPositions";
+    private static final String     ID_REF_GENOME                   = "host:";
+    private static final String     ID_PVALUE                       = "pValue:";
+    private static final String     ID_MIRBASE_VERSION              = "mirbase_release:";
 
-    private              String         rScriptFilename             = "";
+    private static final String     GROUPS_FILE_EXTENSION           = ".groups.tsv";
+    private static final String     MIR_COUNTS_EXTENSION            = ".trim.clp.gen.mircounts.tsv";
+    private static final String     DE_RESULTS_EXTENSION            = ".DE.edgeR.sort.csv";
+    private static final String     DE_SUMMARY_COUNTS_EXTENSION     = ".DE.edgeR.cbs.csv";
+    private static final String     DE_SUMMARY_EXTENSION            = ".DE.edgeR.summary.txt";
+    private static final String     DE_MDS_PLOT_EXTENSION           = ".DE.edgeR.MDS.";
+    private static final String     DE_BCV_PLOT_EXTENSION           = ".DE.edgeR.BCV.";
+    private static final String     DE_SMEAR_PLOT_EXTENSION         = ".DE.edgeR.Smear.";
+    
+    private double                  pValue                          = 0.05;
+    private String                  referenceGenome                 = "";
+    private int                     miRBaseRelease                  = 20;
+    
+    MirFeatureSet                   mirBaseSet                      = new MirFeatureSet();           
+    
+    private              String     rScriptFilename                 = "";
+    
+    //private double                  diffExpressionPVal              = 0.05;
+    
+    private String                  mergedCountsFile;
+    private String                  groupsFile;
+    private String                  deResultsFile;
+    private String                  deCountsBySampleFile;
+    private String                  deSummaryFile;
+    private String                  dePlotBCVfile;
+    private String                  dePlotMDSfile;
+    private String                  dePlotSmearfile;
+    
+    private static final int            PLOT_WIDTH                  = 8;
+    private static final int            PLOT_HEIGHT                 = 8;
+    private static final String         PLOT_UNITS                  = "in";
+    private static final int            PLOT_RESOLUTION             = 300;
     
     
-    private static final String         infileExtension             = "";
-    private static final String         groupsFileExtension         = ".groups.tsv";
-    private static final String         miRCountsExtension          = ".trim.clp.gen.mircounts.tsv";
-    private static final String         deResultsExtension          = ".DE.edgeR.sort.csv";
-    private static final String         deSampleCountsExtension     = ".DE.edgeR.cbs.csv";
-    private static final String         deSummaryExtension          = ".DE.edgeR.summary.txt";
-    private static final String         dePlotMDSExtension          = ".DE.edgeR.MDS.";
-    private static final String         dePlotBCVExtension          = ".DE.edgeR.BCV.";
-    private static final String         dePlotSmearExtension        = ".DE.edgeR.Smear.";
-    
-    
-    private String                      mergedCountsFile;
-    private String                      groupsFile;
-    private String                      deResultsFile;
-    private String                      deCountsBySampleFile;
-    private String                      deSummaryFile;
-    private String                      dePlotBCVfile;
-    private String                      dePlotMDSfile;
-    private String                      dePlotSmearfile;
-    
-    private static final int            width                       = 8;
-    private static final int            height                      = 8;
-    private static final String         units                       = "in";
-    private static final int            resolution                  = 300;
-    
-    
-    private MirBaseSet                  miRBaseMiRNAList            = new MirBaseSet();
+    private MirFeatureSet                  miRBaseMiRNAList            = new MirFeatureSet();
     /**
      * 
      * @param sid StepInputData
@@ -83,8 +93,66 @@ public class StepDEwithEdgeR extends NGSStep{
         stepInputData = sid;
     }
     
+    /**
+     * in this method we are simply checking that the configuration file 
+     * has all the entries we need. We dont check if the values are acceptable
+     * that is the role of the NGSStep.
+    private static final String     ID_REF_GENOME                   = "host:";
+    private static final String     ID_PVALUE                       = "pValue:";
+    private static final String     ID_MIRBASE_VERSION              = "mirbase_release:";
+     * 
+     * @param configData
+     * @throws Exception 
+     */
     @Override
-    public void execute(){
+    public void parseConfigurationData(HashMap configData) throws Exception{
+        logger.info(STEP_ID_STRING + ": verify configuration data");
+        
+        if(configData.get(ID_PVALUE)==null) {
+            throw new NullPointerException("<" + ID_PVALUE + "> : Missing Definition in Configuration File");
+        }
+        if(configData.get(ID_REF_GENOME)==null) {
+            throw new NullPointerException("<" + ID_REF_GENOME + "> : Missing Definition in Configuration File");
+        }
+        if(configData.get(ID_MIRBASE_VERSION)==null) {
+            throw new NullPointerException("<" + ID_MIRBASE_VERSION + "> : Missing Definition in Configuration File");
+        }
+        
+
+      
+        try{
+            Integer.parseInt((String) configData.get(ID_MIRBASE_VERSION));
+        }
+        catch(NumberFormatException exNm){
+            throw new NumberFormatException(ID_MIRBASE_VERSION + " <" + configData.get(ID_MIRBASE_VERSION) + "> is not an integer");
+        }        
+        if (Integer.parseInt((String) configData.get(ID_MIRBASE_VERSION)) <= 0){
+            throw new IllegalArgumentException(ID_MIRBASE_VERSION + " <" + (String) configData.get(ID_MIRBASE_VERSION) + "> must be positive integer");
+        }
+        this.setMiRBaseRelease(Integer.parseInt((String) configData.get(ID_MIRBASE_VERSION)));
+
+        
+        try{
+            Double.parseDouble((String) configData.get(ID_PVALUE));
+        }
+        catch(NumberFormatException exNm){
+            throw new NumberFormatException(ID_PVALUE + " <" + configData.get(ID_PVALUE) + "> is not an integer");
+        }        
+        if (Double.parseDouble((String) configData.get(ID_PVALUE)) <= 0 || Double.parseDouble((String) configData.get(ID_PVALUE)) > 1.0){
+            throw new IllegalArgumentException(ID_PVALUE + " <" + (String) configData.get(ID_PVALUE) + "> must be an float between 0.0 and 1.0");
+        }
+        this.setpValue(Double.parseDouble((String) configData.get(ID_PVALUE)));
+        
+
+        
+
+        logger.info("passed");
+    }
+    
+    
+    
+    @Override
+    public void execute() throws IOException{
         this.setPaths();
         
         /*
@@ -92,12 +160,7 @@ public class StepDEwithEdgeR extends NGSStep{
             diffExpressionAnalysisParams.put("host", this.getBowtieMappingReferenceGenome());
             diffExpressionAnalysisParams.put("miRBaseHostGFFFile", this.getMiRBaseHostGFF());
         */
-        try{
-            stepInputData.verifyInputData();            
-        }
-        catch(IOException exIO){
-            logger.info("exception parsing InputData" + exIO);
-        }
+        stepInputData.verifyInputData();            
     
         
         
@@ -107,12 +170,9 @@ public class StepDEwithEdgeR extends NGSStep{
             3. generate R script to perform DE using EdgeR
             4. process EdgeR output file 
         */
-        try{
-            miRBaseMiRNAList.loadMiRBaseData((String) stepInputData.getStepParams().get("host"), (String) stepInputData.getStepParams().get("miRBaseHostGFFFile"));
-        }
-        catch(IOException exIO){
-            logger.error("error reading miRBase reference file <" + (String) stepInputData.getStepParams().get("miRBaseHostGFFFile") + ">\n" + exIO.toString());
-        }
+        String gffFileMirBase = stepInputData.getDataLocations().getMirbaseFolder() + FILESEPARATOR + this.getMiRBaseRelease() + this.getReferenceGenome() + ".gff3";
+        String faFileMirBase = gffFileMirBase.replace("gff3", "fasta");
+        mirBaseSet.loadMiRBaseData(gffFileMirBase, faFileMirBase, this.getReferenceGenome());
         
         
         Boolean fA = new File(outFolder).mkdir();       
@@ -128,7 +188,7 @@ public class StepDEwithEdgeR extends NGSStep{
         while (itSD.hasNext()){
             SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
             headerLine = headerLine.concat("\t" + sampleData.getFastqFile1().replace(".fastq", ""));
-            String  miRCountsFile  = inFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", miRCountsExtension);
+            String  miRCountsFile  = inFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", MIR_COUNTS_EXTENSION);
             miRCountsFile = miRCountsFile.replace(FILESEPARATOR + FILESEPARATOR, FILESEPARATOR).trim();
             try{
                 int m=0;
@@ -209,7 +269,7 @@ public class StepDEwithEdgeR extends NGSStep{
             sampleString = sampleString.concat("\t" + sampleData.getFastqFile1().replace(".fastq", ""));
         }        
         
-        groupsFile = outFolder + FILESEPARATOR + stepInputData.getProjectID() + groupsFileExtension;
+        groupsFile = outFolder + FILESEPARATOR + stepInputData.getProjectID() + GROUPS_FILE_EXTENSION;
         logger.info("writing groups file "  + groupsFile);
         try{
             BufferedWriter bwGF = new BufferedWriter(new FileWriter(new File(groupsFile)));    
@@ -246,9 +306,9 @@ public class StepDEwithEdgeR extends NGSStep{
         rScriptFilename = outFolder + FILESEPARATOR + randomName + ".R";
         rScriptFilename = rScriptFilename.replace(FILESEPARATOR + FILESEPARATOR, FILESEPARATOR);
         
-        deResultsFile           = outFolder + FILESEPARATOR + stepInputData.getProjectID() + deResultsExtension;    
-        deCountsBySampleFile    = outFolder + FILESEPARATOR + stepInputData.getProjectID() + deSampleCountsExtension;
-        deSummaryFile           = outFolder + FILESEPARATOR + stepInputData.getProjectID() + deSummaryExtension;
+        deResultsFile           = outFolder + FILESEPARATOR + stepInputData.getProjectID() + DE_RESULTS_EXTENSION;    
+        deCountsBySampleFile    = outFolder + FILESEPARATOR + stepInputData.getProjectID() + DE_SUMMARY_COUNTS_EXTENSION;
+        deSummaryFile           = outFolder + FILESEPARATOR + stepInputData.getProjectID() + DE_SUMMARY_EXTENSION;
         
         int minCounts = 10;
         ArrayList<String> cmdSet = new ArrayList<>();
@@ -279,30 +339,30 @@ public class StepDEwithEdgeR extends NGSStep{
         cmdSet.add("");
         cmdSet.add("");
         cmdSet.add("resultFile<-\"" + deResultsFile + "\"");
-        cmdSet.add("write.table(tTags[tTags$table$PValue<=" + this.stepInputData.getStepParams().get("pvalue") + ", ], file=\"" + deResultsFile + "\", " + " sep=\",\", row.names=TRUE)");
+        cmdSet.add("write.table(tTags[tTags$table$PValue<=" + this.getpValue() + ", ], file=\"" + deResultsFile + "\", " + " sep=\",\", row.names=TRUE)");
         
-        cmdSet.add("deTags<-rownames(tTags[tTags$table$PValue<=" + this.stepInputData.getStepParams().get("pvalue") + ", ])");
+        cmdSet.add("deTags<-rownames(tTags[tTags$table$PValue<=" + this.getpValue()+ ", ])");
         cmdSet.add("");
         cmdSet.add("write.table(cpm(TagwiseDispersion)[deTags,], file=\"" + deCountsBySampleFile + "\", " + " sep=\",\", row.names=TRUE)");
         cmdSet.add("");
-        cmdSet.add("write.table(summary(decideTestsDGE(ExactTestTagDisp, p=" + this.stepInputData.getStepParams().get("pvalue") + ", adjust=\"BH\")), file=\"" + deSummaryFile + "\", " + " sep=\",\")");
+        cmdSet.add("write.table(summary(decideTestsDGE(ExactTestTagDisp, p=" + this.getpValue() + ", adjust=\"BH\")), file=\"" + deSummaryFile + "\", " + " sep=\",\")");
         cmdSet.add("");
         
         
-        dePlotBCVfile           = outFolder + FILESEPARATOR + stepInputData.getProjectID() + dePlotBCVExtension + "png";
-        cmdSet.add("png(\"" + dePlotBCVfile + "\", width=" + width + ", height=" + height + ", units=\"" + units + "\", res=" + resolution + ")");
+        dePlotBCVfile           = outFolder + FILESEPARATOR + stepInputData.getProjectID() + DE_BCV_PLOT_EXTENSION + "png";
+        cmdSet.add("png(\"" + dePlotBCVfile + "\", width=" + PLOT_WIDTH + ", height=" + PLOT_HEIGHT + ", units=\"" + PLOT_UNITS + "\", res=" + PLOT_RESOLUTION + ")");
         cmdSet.add("plotBCV(TagwiseDispersion)");
         cmdSet.add("dev.off()");
         cmdSet.add("");
         
-        dePlotMDSfile           = outFolder + FILESEPARATOR + stepInputData.getProjectID() + dePlotMDSExtension + "png";
-        cmdSet.add("png(\"" + dePlotMDSfile + "\", width=" + width + ", height=" + height + ", units=\"" + units + "\", res=" + resolution + ")");
+        dePlotMDSfile           = outFolder + FILESEPARATOR + stepInputData.getProjectID() + DE_MDS_PLOT_EXTENSION + "png";
+        cmdSet.add("png(\"" + dePlotMDSfile + "\", width=" + PLOT_WIDTH + ", height=" + PLOT_HEIGHT + ", units=\"" + PLOT_UNITS + "\", res=" + PLOT_RESOLUTION + ")");
         cmdSet.add("plotMDS(TagwiseDispersion)");
         cmdSet.add("dev.off()");
         cmdSet.add("");
 
-        dePlotSmearfile         = outFolder + FILESEPARATOR + stepInputData.getProjectID() + dePlotSmearExtension + "png";
-        cmdSet.add("png(\"" + dePlotSmearfile + "\", width=" + width + ", height=" + height + ", units=\"" + units + "\", res=" + resolution + ")");
+        dePlotSmearfile         = outFolder + FILESEPARATOR + stepInputData.getProjectID() + DE_SMEAR_PLOT_EXTENSION + "png";
+        cmdSet.add("png(\"" + dePlotSmearfile + "\", width=" + PLOT_WIDTH + ", height=" + PLOT_HEIGHT + ", units=\"" + PLOT_UNITS + "\", res=" + PLOT_RESOLUTION + ")");
         cmdSet.add("plotSmear(TagwiseDispersion)");
         cmdSet.add("dev.off()");        
         cmdSet.add("");
@@ -403,8 +463,77 @@ public class StepDEwithEdgeR extends NGSStep{
     
     
     
+    /**
+     * generate sample configuration data so the user can see what can be
+     * specified
+     *
+     * @return
+     */
+    @Override
+    public HashMap generateExampleConfigurationData() {
+
+        logger.info(STEP_ID_STRING + ": generate example configuration data");
+
+        HashMap configData = new HashMap();
+        HashMap paramData = new HashMap();
+
+        paramData.put(ID_REF_GENOME, "hsa");
+        paramData.put(ID_MIRBASE_VERSION, 20);
+        paramData.put(ID_PVALUE, 2);
+
+        configData.put(STEP_ID_STRING, paramData);
+
+        return configData;
+    }
+
+
+    
+    
+    
     @Override
     public void verifyOutputData(){
         
+    }
+
+    /**
+     * @return the pValue
+     */
+    public double getpValue() {
+        return pValue;
+    }
+
+    /**
+     * @param pValue the pValue to set
+     */
+    public void setpValue(double pValue) {
+        this.pValue = pValue;
+    }
+
+    /**
+     * @return the referenceGenome
+     */
+    public String getReferenceGenome() {
+        return referenceGenome;
+    }
+
+    /**
+     * @param referenceGenome the referenceGenome to set
+     */
+    public void setReferenceGenome(String referenceGenome) {
+        this.referenceGenome = referenceGenome;
+    }
+
+    /**
+     * @return the miRBaseRelease
+     */
+    public int getMiRBaseRelease() {
+        return miRBaseRelease;
+    }
+
+    /**
+     * @param miRBaseRelease the miRBaseRelease to set
+     */
+    public void setMiRBaseRelease(int miRBaseRelease) {
+        this.miRBaseRelease = miRBaseRelease;
     }
 }

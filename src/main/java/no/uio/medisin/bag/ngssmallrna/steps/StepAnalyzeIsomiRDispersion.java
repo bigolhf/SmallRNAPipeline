@@ -20,73 +20,13 @@ import no.uio.medisin.bag.ngssmallrna.pipeline.ConditionSet;
 import no.uio.medisin.bag.ngssmallrna.pipeline.MiRNADispAnalysisResult;
 import no.uio.medisin.bag.ngssmallrna.pipeline.IsomiRSet;
 import no.uio.medisin.bag.ngssmallrna.pipeline.MiRNAFeature;
+import no.uio.medisin.bag.ngssmallrna.pipeline.MirFeatureSet;
 import no.uio.medisin.bag.ngssmallrna.pipeline.SampleDataEntry;
 import org.apache.commons.lang3.ArrayUtils;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+
 import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
 import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
 
@@ -102,18 +42,27 @@ import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
 
 public class StepAnalyzeIsomiRDispersion extends NGSStep{
     
-    static Logger                       logger                      = LogManager.getLogger();
+    static Logger                   logger                          = LogManager.getLogger();
+    public  static final String     STEP_ID_STRING                  = "AnalyzeStartPositions";
+    private static final String     ID_REF_GENOME                   = "host:";
+    private static final String     ID_MIRBASE_VERSION              = "mirbase_release:";
+    private static final String     ID_PVALUE                       = "pValue:";
     
-    private static final String         infileExtension             = ".disp.summary.tsv";
-    private static final String         dispersionResultsExtension  = ".disp.test.tsv";
+    private static final String     INFILE_EXTENSION                = ".disp.summary.tsv";
+    private static final String     DISPERSION_RESULTS_EXTENSION    = ".disp.test.tsv";
     
-    private ArrayList<String>           sourceList;
-    private ArrayList<String>           conditionList;
-    private ConditionSet                pairedSet;
+    private ArrayList<String>       sourceList;
+    private ArrayList<String>       conditionList;
+    private ConditionSet            pairedSet;
 
-    private List<MiRNAFeature>          miRNAList                   = new ArrayList<>();
-    private ArrayList<IsomiRSet>        isomiRList;
+    //private List<MiRNAFeature>      miRNAList                       = new ArrayList<>();
+    MirFeatureSet                   mirBaseSet                      = new MirFeatureSet();           
+    private ArrayList<IsomiRSet>    isomiRList;
     private ArrayList<MiRNADispAnalysisResult> miRNAdispAnalysisResList;
+    
+    private double                  pValue                          = 0.05;
+    private String                  referenceGenome                 = "";
+    private int                     miRBaseRelease                  = 20;
     
     
     
@@ -126,19 +75,65 @@ public class StepAnalyzeIsomiRDispersion extends NGSStep{
         stepInputData = sid;
     }
     
+    /**
+     * in this method we are simply checking that the configuration file 
+     * has all the entries we need. We dont check if the values are acceptable
+     * that is the role of the NGSStep.
+     * 
+     * @param configData
+     * @throws Exception 
+     */
     @Override
-    public void execute(){
-        this.setPaths();
-        /*
-            isomiRDispersionAnalysisParams.put("pvalue", this.getAnalyzeIsomiRDispPVal());
-            
-        */
+    public void parseConfigurationData(HashMap configData) throws Exception{
+        logger.info(STEP_ID_STRING + ": verify configuration data");
+        
+        if(configData.get(ID_PVALUE)==null) {
+            throw new NullPointerException("<" + ID_PVALUE + "> : Missing Definition in Configuration File");
+        }
+        if(configData.get(ID_REF_GENOME)==null) {
+            throw new NullPointerException("<" + ID_REF_GENOME + "> : Missing Definition in Configuration File");
+        }
+        if(configData.get(ID_MIRBASE_VERSION)==null) {
+            throw new NullPointerException("<" + ID_MIRBASE_VERSION + "> : Missing Definition in Configuration File");
+        }
+        
+
+      
         try{
-            stepInputData.verifyInputData();            
+            Integer.parseInt((String) configData.get(ID_MIRBASE_VERSION));
         }
-        catch(IOException exIO){
-            logger.info("exception parsing InputData" + exIO);
+        catch(NumberFormatException exNm){
+            throw new NumberFormatException(ID_MIRBASE_VERSION + " <" + configData.get(ID_MIRBASE_VERSION) + "> is not an integer");
+        }        
+        if (Integer.parseInt((String) configData.get(ID_MIRBASE_VERSION)) <= 0){
+            throw new IllegalArgumentException(ID_MIRBASE_VERSION + " <" + (String) configData.get(ID_MIRBASE_VERSION) + "> must be positive integer");
         }
+        this.setMiRBaseRelease(Integer.parseInt((String) configData.get(ID_MIRBASE_VERSION)));
+
+        
+        try{
+            Double.parseDouble((String) configData.get(ID_PVALUE));
+        }
+        catch(NumberFormatException exNm){
+            throw new NumberFormatException(ID_PVALUE + " <" + configData.get(ID_PVALUE) + "> is not an integer");
+        }        
+        if (Double.parseDouble((String) configData.get(ID_PVALUE)) <= 0 || Double.parseDouble((String) configData.get(ID_PVALUE)) > 1.0){
+            throw new IllegalArgumentException(ID_PVALUE + " <" + (String) configData.get(ID_PVALUE) + "> must be an float between 0.0 and 1.0");
+        }
+        this.setpValue(Double.parseDouble((String) configData.get(ID_PVALUE)));
+
+        
+
+        logger.info("passed");
+    }
+    
+    
+    
+    @Override
+    public void execute() throws IOException{
+        this.setPaths();
+
+        stepInputData.verifyInputData();            
 
         sourceList      = new ArrayList<>();
         conditionList   = new ArrayList<>();
@@ -180,7 +175,7 @@ public class StepAnalyzeIsomiRDispersion extends NGSStep{
         try{
 
 
-            String isomiRDispFile = inFolder + FILESEPARATOR + stepInputData.getProjectID() + infileExtension;
+            String isomiRDispFile = inFolder + FILESEPARATOR + stepInputData.getProjectID() + INFILE_EXTENSION;
             logger.info("reading " + isomiRDispFile);
 
             String isoDispLine = null;
@@ -202,18 +197,14 @@ public class StepAnalyzeIsomiRDispersion extends NGSStep{
         
         logger.info("read " + isomiRList.size() + " entries");
         
-        
-        try{
-            this.loadMiRBaseData((String) stepInputData.getStepParams().get("host"), (String) stepInputData.getStepParams().get("miRBaseHostGFFFile"));
-        }
-        catch(IOException ex){
-            logger.error("error reading miRBase reference file <" + (String) stepInputData.getStepParams().get("miRBaseHostGFFFile") + ">\n" + ex.toString());
-        }
+        String gffFileMirBase = stepInputData.getDataLocations().getMirbaseFolder() + FILESEPARATOR + this.getMiRBaseRelease() + this.getReferenceGenome() + ".gff3";
+        String faFileMirBase = gffFileMirBase.replace("gff3", "fasta");
+        mirBaseSet.loadMiRBaseData(gffFileMirBase, faFileMirBase, this.getReferenceGenome());
         
         
         logger.info("testing...\n");
         
-        for(MiRNAFeature miRFeature: miRNAList){
+        for(MiRNAFeature miRFeature: this.mirBaseSet.getMiRBaseMiRNAList()){
             logger.info(miRFeature.getName());
             ArrayList<IsomiRSet>  localIsomiRList = new ArrayList();
             for(IsomiRSet isomiREntry: isomiRList){
@@ -233,7 +224,7 @@ public class StepAnalyzeIsomiRDispersion extends NGSStep{
         }
         
         
-        String dispersionFile   = outFolder + FILESEPARATOR + stepInputData.getProjectID() + dispersionResultsExtension;
+        String dispersionFile   = outFolder + FILESEPARATOR + stepInputData.getProjectID() + DISPERSION_RESULTS_EXTENSION;
         logger.info("write dispersions to file <" + dispersionFile + ">");
         try{
             BufferedWriter bwDp = new BufferedWriter(new FileWriter(new File(dispersionFile)));
@@ -361,107 +352,79 @@ public class StepAnalyzeIsomiRDispersion extends NGSStep{
       }
     
 
+    
+    
+    
     /**
-     * 1. 
-     * load miRNA specs (name and Chromosome position) from GFF file
-     * downloaded from miRBase
-     * Because different releases of miRBase use different releases of
-     * reference genome, we have to track both miRBase and genome reference IDs
-     * 2.
-     * Load Sequence from Mature.fa file
-     * 
-     * @param host              String : 3 char abbreviation for host
-     * @param miRBaseGFFFile    String : absolute path to file
-     * @throws IOException
-     * 
+     * generate sample configuration data so the user can see what can be
+     * specified
+     *
+     * @return
      */
-    public void loadMiRBaseData(String host, String miRBaseGFFFile) throws IOException{
+    @Override
+    public HashMap generateExampleConfigurationData() {
 
-        HashMap <String, String> miRBaseSeq = new HashMap();
-        String matureFAFile = new File(miRBaseGFFFile).getParent() + FILESEPARATOR + "mature.fa";
-        BufferedReader brFA = new BufferedReader(new FileReader(new File(matureFAFile)));
-        String lineFA = null;
-        while ((lineFA = brFA.readLine())!=null){
+        logger.info(STEP_ID_STRING + ": generate example configuration data");
 
-            String seq = brFA.readLine().trim();
-            String entryHost = lineFA.split(" ")[0].substring(1).split("-")[0].trim();
-            if(entryHost.equals(host)){
-                String mimatID = lineFA.split(" ")[1].trim();
-                miRBaseSeq.put(mimatID, seq);
-            }
-            
-        }
-        
-        
-        
-        String line = null;
-        BufferedReader brMiR = new BufferedReader(new FileReader(new File(miRBaseGFFFile)));
-            while((line = brMiR.readLine())!= null){
-                
-                if(line.startsWith("#")) continue;
-                if(line.contains("miRNA_primary_transcript")) continue;
-                /*
-                    chr1            chromosome
-                    source          n/a here
-                    miRNA           feature type (n/a)
-                    start pos
-                    end pos
-                    score           n/a here               
-                    strand          (+/-)
-                    frame           n/a here
-                    attributes      e.g. ID=MIMAT0027619;Alias=MIMAT0027619;Name=hsa-miR-6859-3p;Derives_from=MI0022705
-                
-                */
-                String chr = line.split("\t")[0].trim();
-                if(chr.contains("chr")) chr = chr.replace("chr", "");
-                int startPos = Integer.parseInt(line.split("\t")[3].trim());
-                int endPos = Integer.parseInt(line.split("\t")[4].trim());
-                String strand = line.split("\t")[6].trim();
-                
-                String id = "";
-                String name = "";
-                String parent = "";
-                String attribs[] = line.split("\t")[8].split(";");
-                
-                for (String attribStr: attribs){
-                    String attribType = attribStr.split("=")[0].trim();
-                    String attribValue = attribStr.split("=")[1].trim();
-                    switch (attribType){
-                        case "ID":
-                            id = attribValue;
-                            break;
-                            
-                        case "Alias":                            
-                            break;
-                            
-                        case "Name":
-                            name = attribValue;
-                            break;
-                            
-                        case "Derives_from":
-                            parent = attribValue;
-                            break;
-                            
-                        default:
-                            logger.warn("unknown attribute in parsing miRNA entry from GFF file " + miRBaseGFFFile + ">");
-                            break;
-                    }
-                }
-                String seq = miRBaseSeq.get(id);
-                if(seq != null) 
-                    this.miRNAList.add(new MiRNAFeature(name, chr, startPos, endPos, strand, id, parent, seq));
-                else
-                    logger.warn("no sequence found for entry <" + id + ">. Skipping");
-            }
-        brMiR.close();
-        logger.info("read " + miRNAList.size() + "miRNA entries");
-        
+        HashMap configData = new HashMap();
+        HashMap paramData = new HashMap();
+
+        paramData.put(ID_REF_GENOME, "hsa");
+        paramData.put(ID_PVALUE, 2);
+
+        configData.put(STEP_ID_STRING, paramData);
+
+        return configData;
     }
+
+
     
     
     
     @Override
     public void verifyOutputData(){
         
+    }
+
+    /**
+     * @return the pValue
+     */
+    public double getpValue() {
+        return pValue;
+    }
+
+    /**
+     * @param pValue the pValue to set
+     */
+    public void setpValue(double pValue) {
+        this.pValue = pValue;
+    }
+
+    /**
+     * @return the referenceGenome
+     */
+    public String getReferenceGenome() {
+        return referenceGenome;
+    }
+
+    /**
+     * @param referenceGenome the referenceGenome to set
+     */
+    public void setReferenceGenome(String referenceGenome) {
+        this.referenceGenome = referenceGenome;
+    }
+
+    /**
+     * @return the miRBaseRelease
+     */
+    public int getMiRBaseRelease() {
+        return miRBaseRelease;
+    }
+
+    /**
+     * @param miRBaseRelease the miRBaseRelease to set
+     */
+    public void setMiRBaseRelease(int miRBaseRelease) {
+        this.miRBaseRelease = miRBaseRelease;
     }
 }

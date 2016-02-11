@@ -29,7 +29,7 @@ import org.apache.logging.log4j.Logger;
  * @author sr
  */
 
-public class StepPairedTrimAdapters extends NGSStep{
+public class DStepPairedTrimAdapters extends NGSStep{
     
     static Logger                       logger = LogManager.getLogger();
     static  String                      FileSeparator = System.getProperty("file.separator");
@@ -43,7 +43,7 @@ public class StepPairedTrimAdapters extends NGSStep{
      * @param sid StepInputData
      * 
      */
-    public StepPairedTrimAdapters(StepInputData sid){
+    public DStepPairedTrimAdapters(StepInputData sid){
         try{
             stepInputData = sid;
             stepInputData.verifyInputData();

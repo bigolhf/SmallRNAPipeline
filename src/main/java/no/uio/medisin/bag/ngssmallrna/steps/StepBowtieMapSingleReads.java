@@ -15,7 +15,7 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import no.uio.medisin.bag.ngssmallrna.pipeline.DataLocations;
+import no.uio.medisin.bag.ngssmallrna.pipeline.ReferenceDataLocations;
 import no.uio.medisin.bag.ngssmallrna.pipeline.SampleDataEntry;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -36,6 +36,12 @@ public class StepBowtieMapSingleReads extends NGSStep {
 
     public  static final String STEP_ID_STRING                  = "SINGLE_MAPPING_BOWTIE:";
 
+    private static final String ID_SOFTWARE                     = "adapter_software:";
+    private static final String ID_REF_GENOME                   = "host:";
+    private static final String ID_MISMATCHES                   = "no_of_mismatches:";
+    private static final String ID_ALIGN_MODE                   = "alignment_mode:";
+    private static final String ID_THREADS                      = "no_of_threads:";
+
     private static final String INFILE_EXTENSION                = ".trim.clp.fasta";
     private static final String FASTQ_ABUNALN_EXTENSION         = ".trim.clp.abun.fasta";
     private static final String FASTQ_ABUNUNALN_EXTENSION       = ".trim.clp.notabun.fasta";
@@ -44,12 +50,6 @@ public class StepBowtieMapSingleReads extends NGSStep {
     private static final String FASTQ_UNALN_EXTENSION           = ".trim.clp.unmap.fasta";
     private static final String SAM_GENALN_EXTENSION            = ".trim.clp.gen.sam";
     private static final String MAPPING_SUMMARY_EXTENSION       = ".trim.clp.gen.mapping.txt";
-
-    private static final String ID_SOFTWARE                     = "adapter_software:";
-    private static final String ID_REF_GENOME                   = "host:";
-    private static final String ID_MISMATCHES                   = "no_of_mismatches:";
-    private static final String ID_ALIGN_MODE                   = "alignment_mode:";
-    private static final String ID_THREADS                      = "no_of_threads:";
 
     private             String  mappingSoftware                 = "";
     private             String  AlignMode                       = "";
@@ -168,7 +168,7 @@ public class StepBowtieMapSingleReads extends NGSStep {
         String mappingCmd = this.getMappingSoftware();
         logger.info("Mapping software is " + mappingCmd);
         String pathToBowtieGenomeIndex = stepInputData.getDataLocations().getGenomeRootFolder()
-                + FILESEPARATOR + this.getReferenceGenome() + DataLocations.ID_REL_BOWTIE_PATH;
+                + FILESEPARATOR + this.getReferenceGenome() + ReferenceDataLocations.ID_REL_BOWTIE_PATH;
         
         
         
@@ -283,11 +283,11 @@ public class StepBowtieMapSingleReads extends NGSStep {
         String mappingCmd = this.getMappingSoftware();
 
         String pathToBowtieGenomeIndex = stepInputData.getDataLocations().getGenomeRootFolder()
-                + FILESEPARATOR + this.getReferenceGenome() + DataLocations.ID_REL_BOWTIE_PATH;
+                + FILESEPARATOR + this.getReferenceGenome() + ReferenceDataLocations.ID_REL_BOWTIE_PATH;
         
             cmd.add(mappingCmd);
             String pathToBowtieIndex = this.getRootDataFolder()
-                    + FILESEPARATOR + this.getReferenceGenome() + DataLocations.ID_REL_ABUN_DATA_PATH;
+                    + FILESEPARATOR + this.getReferenceGenome() + ReferenceDataLocations.ID_REL_ABUN_DATA_PATH;
             cmd.add(pathToBowtieIndex);
 
             String fastqTrimmedInputFile = inFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", INFILE_EXTENSION);
@@ -359,7 +359,7 @@ public class StepBowtieMapSingleReads extends NGSStep {
     private void mapReadsToGenome(SampleDataEntry sampleData) throws IOException, InterruptedException{
                  
         String pathToBowtieGenomeIndex = stepInputData.getDataLocations().getGenomeRootFolder()
-                + FILESEPARATOR + this.getReferenceGenome() + DataLocations.ID_REL_BOWTIE_PATH;
+                + FILESEPARATOR + this.getReferenceGenome() + ReferenceDataLocations.ID_REL_BOWTIE_PATH;
                 
         ArrayList cmd = new ArrayList<>();
         cmd.add(this.getMappingSoftware());
@@ -425,10 +425,8 @@ public class StepBowtieMapSingleReads extends NGSStep {
     public void verifyInputData()  throws IOException, NullPointerException{
         logger.info("verify input data");
         
-        // does unzip software exist?
         Validate.notNull((String) this.getMappingSoftware());
         
-        // is no of threads a positive integer?
         if (this.getNoOfThreads() <= 0)
         {
             logger.error("number of threads <" + this.getNoOfThreads() + "> must be positive");    

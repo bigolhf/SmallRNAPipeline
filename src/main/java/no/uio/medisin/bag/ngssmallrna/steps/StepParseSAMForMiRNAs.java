@@ -20,6 +20,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import no.uio.medisin.bag.ngssmallrna.pipeline.IsomiRSet;
 import no.uio.medisin.bag.ngssmallrna.pipeline.MiRNAFeature;
+import no.uio.medisin.bag.ngssmallrna.pipeline.MirFeatureSet;
 import no.uio.medisin.bag.ngssmallrna.pipeline.SampleDataEntry;
 
 import org.apache.logging.log4j.LogManager;
@@ -39,21 +40,34 @@ import org.apache.logging.log4j.Logger;
 public class StepParseSAMForMiRNAs extends NGSStep{
     
     static Logger                       logger                      = LogManager.getLogger();
-    static String                       FileSeparator               = System.getProperty("file.separator");
-    
-    private static final String         miRNAAnalysisOutFolder      = "mirna_isomir_analysis";
     
     
-    private static final String         infileExtension             = ".trim.clp.gen.sam";
-    private static final String         isomirSummaryExtension      = ".trim.clp.gen.iso_summary.tsv";
-    private static final String         isomirPrettyExtension       = ".trim.clp.gen.iso_pretty.tsv";
-    private static final String         miRCountsExtension          = ".trim.clp.gen.mircounts.tsv";
     
+    
+    public  static final String     STEP_ID_STRING                  = "AnalyzeStartPositions";
+    private static final String     ID_BLEED                        = "bleed:";
+    private static final String     ID_ISOMIRS                      = "analyze_isomirs:";
+    private static final String     ID_MIRBASE_VERSION              = "mirbase_release:";
+    private static final String     ID_REF_GENOME                   = "host:";
+    private static final String     ID_BASELINE                     = "baseline_percent:";
         
 
-    private List<MiRNAFeature>          miRBaseMiRNAList                   = new ArrayList<>();
+    private static final String     INFILE_EXTENSION                = ".trim.clp.gen.sam";
+    private static final String     ISOMIR_SUMMARY_EXTENSION        = ".trim.clp.gen.iso_summary.tsv";
+    private static final String     ISOMIR_PRETTY_EXTENSION         = ".trim.clp.gen.iso_pretty.tsv";
+    private static final String     MIRCOUNTS_EXTENSION             = ".trim.clp.gen.mircounts.tsv";
+
+    //private List<MiRNAFeature>          miRBaseMiRNAList            = new ArrayList<>();
     private List<MiRNAFeature>          miRNAHitList;
     private ArrayList<IsomiRSet>        isomiRList;
+    MirFeatureSet                      mirBaseSet                      = new MirFeatureSet();           
+    
+    private int                     locationBleed                   = 2;
+    private Boolean                 analyzeIsomirs                  = false;
+    private int                     miRBaseRelease                  = 20;
+    private String                  referenceGenome                 = "";
+    private int                     baselinePercent                 = 5;
+    
     /**
      * 
      * @param sid StepInputData
@@ -63,34 +77,110 @@ public class StepParseSAMForMiRNAs extends NGSStep{
         stepInputData = sid;
     }
     
-    @Override
-    public void execute(){
-        this.setPaths();
-        /*
-            parseSAMmiRNAsParams.put("bleed", this.getSamParseForMiRNAsBleed());
-            parseSAMmiRNAsParams.put("miRBaseHostGFFFile", this.getMiRBaseHostGFF());
-            parseSAMmiRNAsParams.put("miRBaseRootFolder", this.getMirBaseVersionRoot());
-            parseSAMmiRNAsParams.put("host", this.getBowtieMappingReferenceGenome());
-            parseSAMmiRNAsParams.put("baseline_percent", this.getSamParseForMiRNAsBaselinePercent());
-            parseSAMmiRNAsParams.put("analyze_isomirs", this.getSamParseForMiRNAsAnalyzeIsomirs());
-        */
-        try{
-            stepInputData.verifyInputData();            
-        }
-        catch(IOException exIO){
-            logger.info("exception parsing InputData" + exIO);
-        }
     
+    
+    
+    
+    /**
+     * in this method we are simply checking that the configuration file 
+     * has all the entries we need. We dont check if the values are acceptable
+     * that is the role of the NGSStep.
+     * 
+     * @param configData
+     * @throws Exception 
+     */
+    @Override
+    public void parseConfigurationData(HashMap configData) throws Exception{
+        logger.info(STEP_ID_STRING + ": verify configuration data");
+        
+        if(configData.get(ID_BLEED)==null) {
+            throw new NullPointerException("<" + ID_BLEED + "> : Missing Definition in Configuration File");
+        }
+        if(configData.get(ID_REF_GENOME)==null) {
+            throw new NullPointerException("<" + ID_REF_GENOME + "> : Missing Definition in Configuration File");
+        }
+        if(configData.get(ID_MIRBASE_VERSION)==null) {
+            throw new NullPointerException("<" + ID_MIRBASE_VERSION + "> : Missing Definition in Configuration File");
+        }
+        if(configData.get(ID_BASELINE)==null) {
+            throw new NullPointerException("<" + ID_BASELINE + "> : Missing Definition in Configuration File");
+        }
+        if(configData.get(ID_ISOMIRS)==null) {
+            throw new NullPointerException("<" + ID_ISOMIRS + "> : Missing Definition in Configuration File");
+        }
+        
+
+      
+        try{
+            Integer.parseInt((String) configData.get(ID_MIRBASE_VERSION));
+        }
+        catch(NumberFormatException exNm){
+            throw new NumberFormatException(ID_MIRBASE_VERSION + " <" + configData.get(ID_MIRBASE_VERSION) + "> is not an integer");
+        }        
+        if (Integer.parseInt((String) configData.get(ID_MIRBASE_VERSION)) <= 0){
+            throw new IllegalArgumentException(ID_MIRBASE_VERSION + " <" + (String) configData.get(ID_MIRBASE_VERSION) + "> must be positive integer");
+        }
+        this.setBaselinePercent(Integer.parseInt((String) configData.get(ID_MIRBASE_VERSION)));
+
         
         try{
-            this.loadMiRBaseData((String) stepInputData.getStepParams().get("host"), (String) stepInputData.getStepParams().get("miRBaseHostGFFFile"));
+            Integer.parseInt((String) configData.get(ID_BASELINE));
         }
-        catch(IOException ex){
-            logger.error("error reading miRBase reference file <" + (String) stepInputData.getStepParams().get("miRBaseHostGFFFile") + ">\n" + ex.toString());
+        catch(NumberFormatException exNm){
+            throw new NumberFormatException(ID_BASELINE + " <" + configData.get(ID_BASELINE) + "> is not an integer");
+        }        
+        if (Integer.parseInt((String) configData.get(ID_BASELINE)) <= 0){
+            throw new IllegalArgumentException(ID_BASELINE + " <" + (String) configData.get(ID_BASELINE) + "> must be an integer between 0 and 100");
         }
-        
-        Boolean analyzeIsomirs = (Boolean) stepInputData.getStepParams().get("analyze_isomirs");
+        this.setBaselinePercent(Integer.parseInt((String) configData.get(ID_BASELINE)));
 
+        try{
+            Integer.parseInt((String) configData.get(ID_BLEED));
+        }
+        catch(NumberFormatException exNm){
+            throw new NumberFormatException(ID_BLEED + " <" + ID_BLEED + "> is not an integer");
+        }        
+        if (Integer.parseInt((String) configData.get(ID_BLEED)) <= 0 ){
+            throw new IllegalArgumentException(ID_BLEED + " <" + (String) configData.get(ID_BLEED) + "> must be > 0 ");
+        }
+        this.setLocationBleed(Integer.parseInt((String) configData.get(ID_BLEED)));
+        
+
+        this.setReferenceGenome((String) configData.get(ID_REF_GENOME));
+        if(this.getReferenceGenome().length() !=3 ){
+            throw new IllegalArgumentException(ID_REF_GENOME + " <" + (String) configData.get(ID_REF_GENOME) + "> must be a 3 letter string");            
+        }
+
+        try{
+            Boolean.parseBoolean((String) configData.get(ID_ISOMIRS));
+        }
+        catch(NumberFormatException exNm){
+            throw new NumberFormatException(ID_BLEED + " <" + (String) configData.get(ID_BLEED) + "> cannot be cast as Boolean");
+        }        
+        this.setAnalyzeIsomirs(Boolean.parseBoolean((String) configData.get(ID_ISOMIRS)));
+        
+
+        logger.info("passed");
+    }
+    
+    
+    
+    /**
+     * count up reads that overlap features specified in the GFF file
+     * 
+     * @throws IOException 
+     */
+    @Override
+    public void execute()  throws IOException{
+        
+        
+        this.setPaths();
+        stepInputData.verifyInputData();            
+    
+        String gffFileMirBase = stepInputData.getDataLocations().getMirbaseFolder() + FILESEPARATOR + this.getMiRBaseRelease() + this.getReferenceGenome() + ".gff3";
+        String faFileMirBase = gffFileMirBase.replace("gff3", "fasta");
+        mirBaseSet.loadMiRBaseData(gffFileMirBase, faFileMirBase, this.getReferenceGenome());
+        
         Boolean fA = new File(outFolder).mkdir();       
         if (fA) logger.info("created output folder <" + outFolder + "> for results" );
         String samLine = null;
@@ -99,11 +189,11 @@ public class StepParseSAMForMiRNAs extends NGSStep{
         while (itSD.hasNext()){
             try{
                 
-                int bleed = (int) stepInputData.getStepParams().get("bleed");
+                int bleed = this.getLocationBleed();
                 SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
                 
-                String samInputFile = inFolder + FileSeparator + sampleData.getFastqFile1().replace(".fastq", infileExtension);
-                logger.info(sampleData.getFastqFile1().replace(".fastq", infileExtension));
+                String samInputFile = inFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", INFILE_EXTENSION);
+                logger.info(sampleData.getFastqFile1().replace(".fastq", INFILE_EXTENSION));
                 int matchCount5 = 0;
                 int matchCount3 = 0;
                 int preMatchCount5 = 0;
@@ -180,14 +270,19 @@ public class StepParseSAMForMiRNAs extends NGSStep{
                         }
                     }
                     logger.info("  total mapped counts = " + totalCounts);
-                    Double minCounts = (double) totalCounts /100000.0;
+                    /*
+                        the following is rather approximate.
+                        apparently, for 5,000,000 reads, the lowest detectable by qPCR is 50. so, we divide total counts by 100000
+                        there has to be a better way....
+                    */
+                    Double minCountsForSingleFeature = (double) totalCounts /100000.0; // <= this is rather approximate
                     logger.info((matchCount5 + matchCount3) + " reads (" + matchCount5 + " 5'" + "/" + matchCount3 + " 3' ) were mapped");
                     
                     if(analyzeIsomirs){
                         logger.info("  calculate isomiR dispersions");
                         for(MiRNAFeature miRHit: miRNAHitList){
-                            if (miRHit.getTotalCounts() > minCounts.intValue()){
-                                ArrayList isomirPtsAsHash = miRHit.characterizeIsomiRs((int) stepInputData.getStepParams().get("baseline_percent"), minCounts.intValue());
+                            if (miRHit.getTotalCounts() > minCountsForSingleFeature.intValue()){
+                                ArrayList isomirPtsAsHash = miRHit.characterizeIsomiRs(this.getBaselinePercent());
                                 this.isomiRList.add(new IsomiRSet(miRHit.getMimatID(), sampleData.getNote(), sampleData.getFastqFile1().replace(".fastq", ""), isomirPtsAsHash));
                             }
                         }
@@ -196,16 +291,16 @@ public class StepParseSAMForMiRNAs extends NGSStep{
 
                         logger.info("  write isomiRs");
 
-                        String  isoDetailsFile = outFolder + FileSeparator + sampleData.getFastqFile1().replace(".fastq", isomirSummaryExtension);
-                        String  isoPrettyFile  = outFolder + FileSeparator + sampleData.getFastqFile1().replace(".fastq", isomirPrettyExtension);
+                        String  isoDetailsFile = outFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", ISOMIR_SUMMARY_EXTENSION);
+                        String  isoPrettyFile  = outFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", ISOMIR_PRETTY_EXTENSION);
 
                         BufferedWriter brDetails = new BufferedWriter(new FileWriter(new File(isoDetailsFile)));
                         BufferedWriter brPretty  = new BufferedWriter(new FileWriter(new File(isoPrettyFile)));
                             for(MiRNAFeature miRHit: this.miRNAHitList){
-                                if (miRHit.getTotalCounts() > minCounts.intValue()){
+                                if (miRHit.getTotalCounts() > minCountsForSingleFeature.intValue()){
                                     logger.debug(miRHit.getName());
-                                    brDetails.write(miRHit.reportIsomiRs((int) stepInputData.getStepParams().get("baseline_percent"), minCounts.intValue()));
-                                    brPretty.write(miRHit.prettyReportIsomiRs((int) stepInputData.getStepParams().get("baseline_percent"), minCounts.intValue()));
+                                    brDetails.write(miRHit.reportIsomiRs(this.getBaselinePercent(), minCountsForSingleFeature.intValue()));
+                                    brPretty.write(miRHit.prettyReportIsomiRs(this.getBaselinePercent(), minCountsForSingleFeature.intValue()));
                                 }
                             }
                         brPretty.close();
@@ -214,10 +309,10 @@ public class StepParseSAMForMiRNAs extends NGSStep{
                     
                     logger.info("  write miRNA counts");
 
-                    String  miRCountsFile  = outFolder + FileSeparator + sampleData.getFastqFile1().replace(".fastq", miRCountsExtension);
+                    String  miRCountsFile  = outFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", MIRCOUNTS_EXTENSION);
                     
                     BufferedWriter brCounts  = new BufferedWriter(new FileWriter(new File(miRCountsFile)));
-                        for(MiRNAFeature miR: this.miRBaseMiRNAList){
+                        for(MiRNAFeature miR: this.mirBaseSet.getMiRBaseMiRNAList()){
                             if(miRNAHitList.contains(miR)){
                                 for(MiRNAFeature miRHit: this.miRNAHitList){
                                     if(miRHit.equals(miR)){
@@ -247,8 +342,8 @@ public class StepParseSAMForMiRNAs extends NGSStep{
         }
         
         if(analyzeIsomirs){
-            String dispersionFile   = outFolder + FileSeparator + stepInputData.getProjectID() + ".disp.tsv";
-            String summaryFile      = outFolder + FileSeparator + stepInputData.getProjectID() + ".disp.summary.tsv";
+            String dispersionFile   = outFolder + FILESEPARATOR + stepInputData.getProjectID() + ".disp.tsv";
+            String summaryFile      = outFolder + FILESEPARATOR + stepInputData.getProjectID() + ".disp.summary.tsv";
             logger.info("write dispersions to file <" + dispersionFile + ">");
             try{
                 BufferedWriter bwDp = new BufferedWriter(new FileWriter(new File(dispersionFile)));
@@ -287,7 +382,7 @@ public class StepParseSAMForMiRNAs extends NGSStep{
      */
     public MiRNAFeature doesReadOverlapKnownMiRNA(int start, int stop, String chr, String strand, int bleed){
         
-        for(MiRNAFeature miRBaseEntry: this.miRBaseMiRNAList){
+        for(MiRNAFeature miRBaseEntry: this.mirBaseSet.getMiRBaseMiRNAList()){
             if (miRBaseEntry.chromosomeMatch(chr)){
                 if(strand.equals(miRBaseEntry.getStrand())){
                     
@@ -339,109 +434,110 @@ public class StepParseSAMForMiRNAs extends NGSStep{
         // does input file have the same extension as expected for the output file?
     }
     
+    
+    
+    
     /**
-     * 1. 
-     * load miRNA specs (name and Chromosome position) from GFF file
-     * downloaded from miRBase
-     * Because different releases of miRBase use different releases of
-     * reference genome, we have to track both miRBase and genome reference IDs
-     * 2.
-     * Load Sequence from Mature.fa file
-     * 
-     * @param host              String : 3 char abbreviation for host
-     * @param miRBaseGFFFile    String : absolute path to file
-     * @throws IOException
-     * 
+     * generate sample configuration data so the user can see what can be
+     * specified
+     *
+     * @return
      */
-    public void loadMiRBaseData(String host, String miRBaseGFFFile) throws IOException{
+    @Override
+    public HashMap generateExampleConfigurationData() {
 
-        HashMap <String, String> miRBaseSeq = new HashMap();
-        String matureFAFile = miRBaseGFFFile.replace("gff3", "mature.fa");
-        //String matureFAFile = new File(miRBaseGFFFile).getParent() + FileSeparator + "mature.fa";
-        BufferedReader brFA = new BufferedReader(new FileReader(new File(matureFAFile)));
-        String lineFA = null;
-        while ((lineFA = brFA.readLine())!=null){
+        logger.info(STEP_ID_STRING + ": generate example configuration data");
 
-            String seq = brFA.readLine().trim();
-            String entryHost = lineFA.split(" ")[0].substring(1).split("-")[0].trim();
-            if(entryHost.equals(host)){
-                String mimatID = lineFA.split(" ")[1].trim();
-                miRBaseSeq.put(mimatID, seq);
-            }
-            
-        }
-        
-        
-        
-        String line = null;
-        BufferedReader brMiR = new BufferedReader(new FileReader(new File(miRBaseGFFFile)));
-            while((line = brMiR.readLine())!= null){
-                
-                if(line.startsWith("#")) continue;
-                if(line.contains("miRNA_primary_transcript")) continue;
-                /*
-                    chr1            chromosome
-                    source          n/a here
-                    miRNA           feature type (n/a)
-                    start pos
-                    end pos
-                    score           n/a here               
-                    strand          (+/-)
-                    frame           n/a here
-                    attributes      e.g. ID=MIMAT0027619;Alias=MIMAT0027619;Name=hsa-miR-6859-3p;Derives_from=MI0022705
-                
-                */
-                String chr = line.split("\t")[0].trim();
-                if(chr.contains("chr")) chr = chr.replace("chr", "");
-                int startPos = Integer.parseInt(line.split("\t")[3].trim());
-                int endPos = Integer.parseInt(line.split("\t")[4].trim());
-                String strand = line.split("\t")[6].trim();
-                
-                String id = "";
-                String name = "";
-                String parent = "";
-                String attribs[] = line.split("\t")[8].split(";");
-                
-                for (String attribStr: attribs){
-                    String attribType = attribStr.split("=")[0].trim();
-                    String attribValue = attribStr.split("=")[1].trim();
-                    switch (attribType){
-                        case "ID":
-                            id = attribValue;
-                            break;
-                            
-                        case "Alias":                            
-                            break;
-                            
-                        case "Name":
-                            name = attribValue;
-                            break;
-                            
-                        case "Derives_from":
-                            parent = attribValue;
-                            break;
-                            
-                        default:
-                            logger.warn("unknown attribute in parsing miRNA entry from GFF file " + miRBaseGFFFile + ">");
-                            break;
-                    }
-                }
-                // this may need revising. In some cases we dont care if there is no sequence, we still want the feature
-                String seq = miRBaseSeq.get(id);
-                this.miRBaseMiRNAList.add(new MiRNAFeature(name, chr, startPos, endPos, strand, id, parent, seq));
-                if(seq == null) 
-                    logger.warn("no sequence found for entry <" + id + ">. Skipping");
+        HashMap configData = new HashMap();
+        HashMap paramData = new HashMap();
 
-            }
-        brMiR.close();
-        logger.info("read " + miRBaseMiRNAList.size() + " miRNA entries");
-        
+        paramData.put(ID_REF_GENOME, "hsa");
+        paramData.put(ID_BLEED, 2);
+        paramData.put(ID_BASELINE, 5);
+        paramData.put(ID_MIRBASE_VERSION, 20);
+        paramData.put(ID_ISOMIRS, "true");
+
+        configData.put(STEP_ID_STRING, paramData);
+
+        return configData;
     }
-    
-    
-    
+
+
+
+
+
     @Override
     public void verifyOutputData(){
         
+    }
+
+    /**
+     * @return the locationBleed
+     */
+    public int getLocationBleed() {
+        return locationBleed;
+    }
+
+    /**
+     * @param locationBleed the locationBleed to set
+     */
+    public void setLocationBleed(int locationBleed) {
+        this.locationBleed = locationBleed;
+    }
+
+    /**
+     * @return the analyzeIsomirs
+     */
+    public Boolean getAnalyzeIsomirs() {
+        return analyzeIsomirs;
+    }
+
+    /**
+     * @param analyzeIsomirs the analyzeIsomirs to set
+     */
+    public void setAnalyzeIsomirs(Boolean analyzeIsomirs) {
+        this.analyzeIsomirs = analyzeIsomirs;
+    }
+
+    /**
+     * @return the miRBaseRelease
+     */
+    public int getMiRBaseRelease() {
+        return miRBaseRelease;
+    }
+
+    /**
+     * @param miRBaseRelease the miRBaseRelease to set
+     */
+    public void setMiRBaseRelease(int miRBaseRelease) {
+        this.miRBaseRelease = miRBaseRelease;
+    }
+
+    /**
+     * @return the ReferenceGenome
+     */
+    public String getReferenceGenome() {
+        return referenceGenome;
+    }
+
+    /**
+     * @param ReferenceGenome the ReferenceGenome to set
+     */
+    public void setReferenceGenome(String ReferenceGenome) {
+        this.referenceGenome = ReferenceGenome;
+    }
+
+    /**
+     * @return the baselinePercent
+     */
+    public int getBaselinePercent() {
+        return baselinePercent;
+    }
+
+    /**
+     * @param baselinePercent the baselinePercent to set
+     */
+    public void setBaselinePercent(int baselinePercent) {
+        this.baselinePercent = baselinePercent;
     }
 }

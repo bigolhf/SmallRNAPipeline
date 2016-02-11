@@ -8,7 +8,7 @@ package no.uio.medisin.bag.ngssmallrna.steps;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import no.uio.medisin.bag.ngssmallrna.pipeline.DataLocations;
+import no.uio.medisin.bag.ngssmallrna.pipeline.ReferenceDataLocations;
 import no.uio.medisin.bag.ngssmallrna.pipeline.SampleDataEntry;
 import org.apache.logging.log4j.LogManager;
 
@@ -25,13 +25,13 @@ public class StepInputData {
 
     private String                      projectID;
     private String                      projectRoot;
-    private DataLocations               dataLocations;
+    private ReferenceDataLocations               dataLocations;
     private String                      inputFolder;
     private String                      outputFolder;
     private ArrayList<SampleDataEntry>  sampleData;
     
     
-    public StepInputData(String pid, String pRoot, DataLocations dataLoc, String inFolder, String outFolder, ArrayList<SampleDataEntry>sdata){
+    public StepInputData(String pid, String pRoot, ReferenceDataLocations dataLoc, String inFolder, String outFolder, ArrayList<SampleDataEntry>sdata){
         
         projectID   = pid;
         projectRoot = pRoot;
@@ -136,7 +136,7 @@ public class StepInputData {
     /**
      * @return the dataLocations
      */
-    public DataLocations getDataLocations() {
+    public ReferenceDataLocations getDataLocations() {
         return dataLocations;
     }
     
