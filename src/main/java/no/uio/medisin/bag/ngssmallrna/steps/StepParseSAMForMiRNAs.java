@@ -453,8 +453,6 @@ public class StepParseSAMForMiRNAs extends NGSStep implements NGSBase{
         configData.put(ID_MIRBASE_VERSION, 20);
         configData.put(ID_ISOMIRS, "true");
 
-        configData.put(STEP_ID_STRING, configData);
-
         return configData;
         
     }
