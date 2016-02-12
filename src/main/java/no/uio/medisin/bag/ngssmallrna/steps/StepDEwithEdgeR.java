@@ -40,14 +40,14 @@ import org.apache.logging.log4j.Logger;
  * @author sr
  */
 
-public class StepDEwithEdgeR extends NGSStep{
+public class StepDEwithEdgeR extends NGSStep implements NGSBase{
     
     static Logger                       logger                      = LogManager.getLogger();
     
-    public  static final String     STEP_ID_STRING                  = "AnalyzeStartPositions";
-    private static final String     ID_REF_GENOME                   = "host:";
-    private static final String     ID_PVALUE                       = "pValue:";
-    private static final String     ID_MIRBASE_VERSION              = "mirbase_release:";
+    public  static final String     STEP_ID_STRING                  = "DEwithEdgeR";
+    private static final String     ID_REF_GENOME                   = "host";
+    private static final String     ID_PVALUE                       = "pValue";
+    private static final String     ID_MIRBASE_VERSION              = "mirbaseVersion";
 
     private static final String     GROUPS_FILE_EXTENSION           = ".groups.tsv";
     private static final String     MIR_COUNTS_EXTENSION            = ".trim.clp.gen.mircounts.tsv";
@@ -59,15 +59,9 @@ public class StepDEwithEdgeR extends NGSStep{
     private static final String     DE_SMEAR_PLOT_EXTENSION         = ".DE.edgeR.Smear.";
     
     private double                  pValue                          = 0.05;
-    private String                  referenceGenome                 = "";
-    private int                     miRBaseRelease                  = 20;
-    
-    MirFeatureSet                   mirBaseSet                      = new MirFeatureSet();           
-    
+        
     private              String     rScriptFilename                 = "";
-    
-    //private double                  diffExpressionPVal              = 0.05;
-    
+        
     private String                  mergedCountsFile;
     private String                  groupsFile;
     private String                  deResultsFile;
@@ -77,18 +71,14 @@ public class StepDEwithEdgeR extends NGSStep{
     private String                  dePlotMDSfile;
     private String                  dePlotSmearfile;
     
-    private static final int            PLOT_WIDTH                  = 8;
-    private static final int            PLOT_HEIGHT                 = 8;
-    private static final String         PLOT_UNITS                  = "in";
-    private static final int            PLOT_RESOLUTION             = 300;
+    private static final int        PLOT_WIDTH                      = 8;
+    private static final int        PLOT_HEIGHT                     = 8;
+    private static final String     PLOT_UNITS                      = "in";
+    private static final int        PLOT_RESOLUTION                 = 300;
     
     
-    private MirFeatureSet                  miRBaseMiRNAList            = new MirFeatureSet();
-    /**
-     * 
-     * @param sid StepInputData
-     * 
-     */
+    private MirFeatureSet           miRBaseMiRNAList                = new MirFeatureSet();
+
     public StepDEwithEdgeR(StepInputData sid){
         stepInputData = sid;
     }
@@ -111,25 +101,6 @@ public class StepDEwithEdgeR extends NGSStep{
         if(configData.get(ID_PVALUE)==null) {
             throw new NullPointerException("<" + ID_PVALUE + "> : Missing Definition in Configuration File");
         }
-        if(configData.get(ID_REF_GENOME)==null) {
-            throw new NullPointerException("<" + ID_REF_GENOME + "> : Missing Definition in Configuration File");
-        }
-        if(configData.get(ID_MIRBASE_VERSION)==null) {
-            throw new NullPointerException("<" + ID_MIRBASE_VERSION + "> : Missing Definition in Configuration File");
-        }
-        
-
-      
-        try{
-            Integer.parseInt((String) configData.get(ID_MIRBASE_VERSION));
-        }
-        catch(NumberFormatException exNm){
-            throw new NumberFormatException(ID_MIRBASE_VERSION + " <" + configData.get(ID_MIRBASE_VERSION) + "> is not an integer");
-        }        
-        if (Integer.parseInt((String) configData.get(ID_MIRBASE_VERSION)) <= 0){
-            throw new IllegalArgumentException(ID_MIRBASE_VERSION + " <" + (String) configData.get(ID_MIRBASE_VERSION) + "> must be positive integer");
-        }
-        this.setMiRBaseRelease(Integer.parseInt((String) configData.get(ID_MIRBASE_VERSION)));
 
         
         try{
@@ -142,9 +113,6 @@ public class StepDEwithEdgeR extends NGSStep{
             throw new IllegalArgumentException(ID_PVALUE + " <" + (String) configData.get(ID_PVALUE) + "> must be an float between 0.0 and 1.0");
         }
         this.setpValue(Double.parseDouble((String) configData.get(ID_PVALUE)));
-        
-
-        
 
         logger.info("passed");
     }
@@ -155,11 +123,6 @@ public class StepDEwithEdgeR extends NGSStep{
     public void execute() throws IOException{
         this.setPaths();
         
-        /*
-            diffExpressionAnalysisParams.put("pvalue", this.getDiffExpressionPVal());
-            diffExpressionAnalysisParams.put("host", this.getBowtieMappingReferenceGenome());
-            diffExpressionAnalysisParams.put("miRBaseHostGFFFile", this.getMiRBaseHostGFF());
-        */
         stepInputData.verifyInputData();            
     
         
@@ -170,11 +133,6 @@ public class StepDEwithEdgeR extends NGSStep{
             3. generate R script to perform DE using EdgeR
             4. process EdgeR output file 
         */
-        String gffFileMirBase = stepInputData.getDataLocations().getMirbaseFolder() + FILESEPARATOR + this.getMiRBaseRelease() + this.getReferenceGenome() + ".gff3";
-        String faFileMirBase = gffFileMirBase.replace("gff3", "fasta");
-        mirBaseSet.loadMiRBaseData(gffFileMirBase, faFileMirBase, this.getReferenceGenome());
-        
-        
         Boolean fA = new File(outFolder).mkdir();       
         if (fA) logger.info("created output folder <" + outFolder + "> for results" );
         
@@ -187,7 +145,7 @@ public class StepDEwithEdgeR extends NGSStep{
         Iterator itSD = this.stepInputData.getSampleData().iterator();
         while (itSD.hasNext()){
             SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
-            headerLine = headerLine.concat("\t" + sampleData.getFastqFile1().replace(".fastq", ""));
+            //headerLine = headerLine.concat("\t" + sampleData.getFastqFile1().replace(".fastq", ""));
             String  miRCountsFile  = inFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", MIR_COUNTS_EXTENSION);
             miRCountsFile = miRCountsFile.replace(FILESEPARATOR + FILESEPARATOR, FILESEPARATOR).trim();
             try{
@@ -202,6 +160,7 @@ public class StepDEwithEdgeR extends NGSStep{
             }
             catch(IOException ex){
                 logger.error("error reading count files for merging <" + miRCountsFile + "> \n" + ex.toString());
+                throw new IOException(STEP_ID_STRING + " :error reading counts file  <" + miRCountsFile + ">");
             }
         }
         
@@ -222,6 +181,7 @@ public class StepDEwithEdgeR extends NGSStep{
         }
         catch(IOException exIO){
             logger.info("error writing merged counts File <" + mergedCountsFile + ">\n" + exIO);        
+            throw new IOException(STEP_ID_STRING + " :error writing merged counts file  <" + mergedCountsFile + ">");
         }
         generateGroupsFile();
         buildRScript();
@@ -256,7 +216,7 @@ public class StepDEwithEdgeR extends NGSStep{
 
      * 
      */
-    private void generateGroupsFile(){
+    private void generateGroupsFile() throws IOException{
         
 
         String groupString = "Group";
@@ -280,6 +240,7 @@ public class StepDEwithEdgeR extends NGSStep{
         catch(IOException exGF){
             logger.error("error writing groups file "  + groupsFile);
             logger.error(exGF);
+            throw new IOException(STEP_ID_STRING + " :error writing groups file "  + groupsFile);
         }
 
                 
@@ -297,8 +258,9 @@ public class StepDEwithEdgeR extends NGSStep{
      * 
      * need to generate the input files based on the specified groups
      * 
+     * @throws IOException
      */
-    private void buildRScript(){
+    private void buildRScript() throws IOException{
 
 
         BigInteger big = new BigInteger(130, new Random());
@@ -377,15 +339,18 @@ public class StepDEwithEdgeR extends NGSStep{
         catch(IOException exIO){
             logger.error("error writing generated RScript to file <" + rScriptFilename + ">");
             logger.error(exIO);
+            throw new IOException(STEP_ID_STRING + ": error writing generated RScript to file <" + rScriptFilename + ">");
         }
     }
     
     
-    
-    private void executeRScript(){
+    /**
+     * 
+     * @throws IOException 
+     */
+    private void executeRScript() throws IOException{
         
 
-        String pathToData = stepInputData.getProjectRoot() + FILESEPARATOR + stepInputData.getProjectID();
         ArrayList<String> cmd = new ArrayList<>();
 
         cmd.add("/usr/local/bin/Rscript");
@@ -424,40 +389,34 @@ public class StepDEwithEdgeR extends NGSStep{
         catch(IOException exIO){
             logger.info("error executing RScript command\n" + cmdRunRScript);
             logger.info(exIO);
+            throw new IOException(STEP_ID_STRING + ": error executing RScript command\n" + cmdRunRScript);
+            
         }
         catch(InterruptedException exIE){
             logger.info("error executing RScript command\n" + exIE);            
+            logger.info(exIE);
+            throw new IOException(STEP_ID_STRING + ": error executing RScript command\n" + cmdRunRScript);
         }
     }
     
     
     /**
-     * Verify Input Data for parsing SAM file for miRNAs
+     * Verify Input Data 
      * 
+     * @throws IOException
      */        
     @Override
-    public void verifyInputData(){
+    public void verifyInputData() throws IOException{
+        
         Iterator itSD = this.stepInputData.getSampleData().iterator();
         while (itSD.hasNext()){
             SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
-            /*
-            if (sampleData.getDataFile().toUpperCase().endsWith(infileExtension.toUpperCase())==false)
-            {
-                throw new IllegalArgumentException("AdapterTrimming: incorrect file extension for input file <" 
-                  + sampleData.getDataFile() + ">. " 
-                  + "should have <" + infileExtension + "> as extension");
+            String  miRCountsFile  = inFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", MIR_COUNTS_EXTENSION);            
+            if ((new File(miRCountsFile)).exists()==false){
+                throw new IOException(STEP_ID_STRING + ": counts file <" + sampleData + "> does not exist");
             }
-            
-            if (sampleData.getDataFile().toUpperCase().endsWith(outfileExtension.toUpperCase())==true)
-            {
-                logger.warn("AdapterTrimming: input file has output file extension (.trim.fastq)");
-                logger.warn("this file has already been trimmed");
-            }
-            */
             
         }
-            // does input file have correct extension?
-        // does input file have the same extension as expected for the output file?
     }
     
     
@@ -475,13 +434,8 @@ public class StepDEwithEdgeR extends NGSStep{
         logger.info(STEP_ID_STRING + ": generate example configuration data");
 
         HashMap configData = new HashMap();
-        HashMap paramData = new HashMap();
 
-        paramData.put(ID_REF_GENOME, "hsa");
-        paramData.put(ID_MIRBASE_VERSION, 20);
-        paramData.put(ID_PVALUE, 2);
-
-        configData.put(STEP_ID_STRING, paramData);
+        configData.put(ID_PVALUE, 2);
 
         return configData;
     }
@@ -509,31 +463,4 @@ public class StepDEwithEdgeR extends NGSStep{
         this.pValue = pValue;
     }
 
-    /**
-     * @return the referenceGenome
-     */
-    public String getReferenceGenome() {
-        return referenceGenome;
-    }
-
-    /**
-     * @param referenceGenome the referenceGenome to set
-     */
-    public void setReferenceGenome(String referenceGenome) {
-        this.referenceGenome = referenceGenome;
-    }
-
-    /**
-     * @return the miRBaseRelease
-     */
-    public int getMiRBaseRelease() {
-        return miRBaseRelease;
-    }
-
-    /**
-     * @param miRBaseRelease the miRBaseRelease to set
-     */
-    public void setMiRBaseRelease(int miRBaseRelease) {
-        this.miRBaseRelease = miRBaseRelease;
-    }
 }

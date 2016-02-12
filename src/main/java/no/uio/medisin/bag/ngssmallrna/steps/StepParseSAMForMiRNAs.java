@@ -12,7 +12,6 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -37,19 +36,16 @@ import org.apache.logging.log4j.Logger;
  * @author sr
  */
 
-public class StepParseSAMForMiRNAs extends NGSStep{
+public class StepParseSAMForMiRNAs extends NGSStep implements NGSBase{
     
-    static Logger                       logger                      = LogManager.getLogger();
+    static Logger                   logger                          = LogManager.getLogger();
     
-    
-    
-    
-    public  static final String     STEP_ID_STRING                  = "AnalyzeStartPositions";
-    private static final String     ID_BLEED                        = "bleed:";
-    private static final String     ID_ISOMIRS                      = "analyze_isomirs:";
-    private static final String     ID_MIRBASE_VERSION              = "mirbase_release:";
-    private static final String     ID_REF_GENOME                   = "host:";
-    private static final String     ID_BASELINE                     = "baseline_percent:";
+    public  static final String     STEP_ID_STRING                  = "ParseSAMForMiRNAs";
+    private static final String     ID_BLEED                        = "bleed";
+    private static final String     ID_ISOMIRS                      = "analyzeIsomirs";
+    private static final String     ID_MIRBASE_VERSION              = "mirbaseVersion";
+    private static final String     ID_REF_GENOME                   = "host";
+    private static final String     ID_BASELINE                     = "baselinePercent";
         
 
     private static final String     INFILE_EXTENSION                = ".trim.clp.gen.sam";
@@ -57,10 +53,9 @@ public class StepParseSAMForMiRNAs extends NGSStep{
     private static final String     ISOMIR_PRETTY_EXTENSION         = ".trim.clp.gen.iso_pretty.tsv";
     private static final String     MIRCOUNTS_EXTENSION             = ".trim.clp.gen.mircounts.tsv";
 
-    //private List<MiRNAFeature>          miRBaseMiRNAList            = new ArrayList<>();
-    private List<MiRNAFeature>          miRNAHitList;
-    private ArrayList<IsomiRSet>        isomiRList;
-    MirFeatureSet                      mirBaseSet                      = new MirFeatureSet();           
+    private List<MiRNAFeature>      miRNAHitList;
+    private ArrayList<IsomiRSet>    isomiRList;
+    MirFeatureSet                   mirBaseSet                      = new MirFeatureSet();           
     
     private int                     locationBleed                   = 2;
     private Boolean                 analyzeIsomirs                  = false;
@@ -96,17 +91,17 @@ public class StepParseSAMForMiRNAs extends NGSStep{
         if(configData.get(ID_BLEED)==null) {
             throw new NullPointerException("<" + ID_BLEED + "> : Missing Definition in Configuration File");
         }
-        if(configData.get(ID_REF_GENOME)==null) {
-            throw new NullPointerException("<" + ID_REF_GENOME + "> : Missing Definition in Configuration File");
+        if(configData.get(ID_ISOMIRS)==null) {
+            throw new NullPointerException("<" + ID_ISOMIRS + "> : Missing Definition in Configuration File");
         }
         if(configData.get(ID_MIRBASE_VERSION)==null) {
             throw new NullPointerException("<" + ID_MIRBASE_VERSION + "> : Missing Definition in Configuration File");
         }
+        if(configData.get(ID_REF_GENOME)==null) {
+            throw new NullPointerException("<" + ID_REF_GENOME + "> : Missing Definition in Configuration File");
+        }
         if(configData.get(ID_BASELINE)==null) {
             throw new NullPointerException("<" + ID_BASELINE + "> : Missing Definition in Configuration File");
-        }
-        if(configData.get(ID_ISOMIRS)==null) {
-            throw new NullPointerException("<" + ID_ISOMIRS + "> : Missing Definition in Configuration File");
         }
         
 
@@ -184,7 +179,7 @@ public class StepParseSAMForMiRNAs extends NGSStep{
         Boolean fA = new File(outFolder).mkdir();       
         if (fA) logger.info("created output folder <" + outFolder + "> for results" );
         String samLine = null;
-        
+        String samInputFile = "";
         Iterator itSD = this.stepInputData.getSampleData().iterator();
         while (itSD.hasNext()){
             try{
@@ -192,7 +187,7 @@ public class StepParseSAMForMiRNAs extends NGSStep{
                 int bleed = this.getLocationBleed();
                 SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
                 
-                String samInputFile = inFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", INFILE_EXTENSION);
+                samInputFile = inFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", INFILE_EXTENSION);
                 logger.info(sampleData.getFastqFile1().replace(".fastq", INFILE_EXTENSION));
                 int matchCount5 = 0;
                 int matchCount3 = 0;
@@ -333,11 +328,13 @@ public class StepParseSAMForMiRNAs extends NGSStep{
                 
             }
             catch(IOException ex){
-                logger.error("error executing parse SAM for miRNAs command\n" + ex.toString());
+                logger.error("error processing sample <" + samInputFile + ">\n" + ex.toString());
+                throw new IOException(STEP_ID_STRING + ": error processing sample <" + samInputFile + ">");
             }
             catch(ArrayIndexOutOfBoundsException exBnd){
                 logger.error("error parsing line " + samLine);
                 logger.error(exBnd);
+                throw new IOException(STEP_ID_STRING + ": error processing sample <" + samInputFile + ">: samLine was \n" + samLine);
             }
         }
         
@@ -359,6 +356,7 @@ public class StepParseSAMForMiRNAs extends NGSStep{
             }
             catch(IOException exIO){
                 logger.info("error writing isomiR dispersion File <" + dispersionFile + ">\n" + exIO);
+                throw new IOException(STEP_ID_STRING + "error writing isomiR dispersion File <" + dispersionFile + ">");
             }
         }
         
@@ -410,28 +408,27 @@ public class StepParseSAMForMiRNAs extends NGSStep{
      * 
      */        
     @Override
-    public void verifyInputData(){
+    public void verifyInputData() throws IOException{
+        
+        // check the SAM files exist
         Iterator itSD = this.stepInputData.getSampleData().iterator();
         while (itSD.hasNext()){
             SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
-            /*
-            if (sampleData.getDataFile().toUpperCase().endsWith(infileExtension.toUpperCase())==false)
-            {
-                throw new IllegalArgumentException("AdapterTrimming: incorrect file extension for input file <" 
-                  + sampleData.getDataFile() + ">. " 
-                  + "should have <" + infileExtension + "> as extension");
-            }
+            if (sampleData.getFastqFile1()==null) throw new IOException("no Fastq1 file specified");
+            String samInputFile = inFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", INFILE_EXTENSION);            
             
-            if (sampleData.getDataFile().toUpperCase().endsWith(outfileExtension.toUpperCase())==true)
-            {
-                logger.warn("AdapterTrimming: input file has output file extension (.trim.fastq)");
-                logger.warn("this file has already been trimmed");
+            if ((new File(samInputFile)).exists()==false){
+                throw new IOException(STEP_ID_STRING + ": SAM file <" + samInputFile + "> does not exist");
             }
-            */
+            if (samInputFile.toUpperCase().endsWith(INFILE_EXTENSION.toUpperCase())==false)
+            {
+                throw new IOException(STEP_ID_STRING + ": incorrect file extension for input file <" 
+                  + samInputFile + ">.  \n" 
+                  + "should have <" + INFILE_EXTENSION + "> as extension");
+            }
             
         }
-            // does input file have correct extension?
-        // does input file have the same extension as expected for the output file?
+
     }
     
     
@@ -449,17 +446,17 @@ public class StepParseSAMForMiRNAs extends NGSStep{
         logger.info(STEP_ID_STRING + ": generate example configuration data");
 
         HashMap configData = new HashMap();
-        HashMap paramData = new HashMap();
 
-        paramData.put(ID_REF_GENOME, "hsa");
-        paramData.put(ID_BLEED, 2);
-        paramData.put(ID_BASELINE, 5);
-        paramData.put(ID_MIRBASE_VERSION, 20);
-        paramData.put(ID_ISOMIRS, "true");
+        configData.put(ID_REF_GENOME, "hsa");
+        configData.put(ID_BLEED, 2);
+        configData.put(ID_BASELINE, 5);
+        configData.put(ID_MIRBASE_VERSION, 20);
+        configData.put(ID_ISOMIRS, "true");
 
-        configData.put(STEP_ID_STRING, paramData);
+        configData.put(STEP_ID_STRING, configData);
 
         return configData;
+        
     }
 
 

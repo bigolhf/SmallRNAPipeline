@@ -33,19 +33,17 @@ import org.apache.logging.log4j.Logger;
  * @author sr
  */
 
-public class StepUnzipInputFiles extends NGSStep{
+public class StepUnzipInputFiles extends NGSStep implements NGSBase{
     
     static Logger                       logger = LogManager.getLogger();
     static  String                      FileSeparator = System.getProperty("file.separator");
     
-    public static final String          STEP_ID_STRING          = "UNZIP:";
-    private static final String         ID_SOFTWARE             = "unzip_software:";    
-    private static final String         ID_THREADS              = "no_of_threads:";
+    public static final String          STEP_ID_STRING          = "UnzipInputFiles";
+    private static final String         ID_SOFTWARE             = "unzipSoftware";    
+    private static final String         ID_THREADS              = "noOfThreads";
     
     private static final String         INFILE_EXTENSION         = ".fastq.gz";
     private static final String         OUTFILE_EXTENSION        = ".fastq";
-    //private static final String         inFolder                = "fastq_files";
-    //private static final String         outFolder               = "fastq_files";
     
     private int                         noOfThreads             = 4;
     private String                      unzipSoftware           = "";
@@ -65,14 +63,7 @@ public class StepUnzipInputFiles extends NGSStep{
      * 
      */
     public StepUnzipInputFiles(StepInputData sid){
-        try{
-            stepInputData = sid;
-            stepInputData.verifyInputData();
-            
-        }
-        catch(IOException exIO){
-            
-        }
+       stepInputData = sid;
     }
     
     
@@ -87,6 +78,9 @@ public class StepUnzipInputFiles extends NGSStep{
     public void parseConfigurationData(HashMap configData) throws Exception{
 
         logger.info(STEP_ID_STRING + ": verify configuration data");
+        if(configData.get(ID_SOFTWARE)==null) {
+            throw new NullPointerException("<" + configData.get(ID_SOFTWARE) + "> : Missing Definition in Configuration File");
+        }
         if(configData.get(ID_THREADS)==null) {
             throw new NullPointerException("<" + configData.get(ID_THREADS) + "> : Missing Definition in Configuration File");
         }
@@ -109,16 +103,16 @@ public class StepUnzipInputFiles extends NGSStep{
     
     
     
-    
+    /**
+     * unzip specified file types
+     * 
+     * @throws IOException 
+     */
     @Override
     public void execute() throws IOException{
         /*
-        
-        unzipFastqParams.put("unzipSoftware",           this.getUnzipSoftware());
-        unzipFastqParams.put("trimNoOfThreads",         this.getTrimNoOfThreads());
-               
-        pigz -p 4 -d /data/ngsdata/project1/sra_data.fastq.gz     
-
+            sample unzip command       
+            pigz -p 4 -d /data/ngsdata/project1/sra_data.fastq.gz     
         */
         
         Iterator itSD = this.stepInputData.getSampleData().iterator();
@@ -217,14 +211,14 @@ public class StepUnzipInputFiles extends NGSStep{
      * @throws IOException
      */
     @Override
-    public void verifyInputData() throws IOException, NullPointerException{
+    public void verifyInputData() throws IOException{
         
         logger.info("verify input data");
         
-        // does unzip software exist?
-        Validate.notNull((String) this.getUnzipSoftware());
+        if(new File(this.getUnzipSoftware()).exists() == false){
+            throw new IOException("unzip software not found at location < " + this.getUnzipSoftware() +">");
+        }
         
-        // is no of threads a positive integer?
         if (this.getNoOfThreads() <= 0)
         {
             logger.error("number of threads <" + this.getNoOfThreads() + "> must be positive");    
@@ -242,12 +236,12 @@ public class StepUnzipInputFiles extends NGSStep{
             if (fastqFile1==null) throw new IOException("no Fastq1 file specified");
             
             if ((new File(fastqFile1)).exists()==false){
-                throw new IOException("unzipFastqFiles: fastq File1 <" 
+                throw new IOException(STEP_ID_STRING + ": fastq File1 <" 
                   + fastqFile1 + "> does not exist");
             }
             if (fastqFile1.toUpperCase().endsWith(INFILE_EXTENSION.toUpperCase())==false)
             {
-                throw new IOException("unzipFastqFiles: incorrect file extension for input file <" 
+                throw new IOException(STEP_ID_STRING + ": incorrect file extension for input file <" 
                   + fastqFile1 + ">.  \n" 
                   + "should have <" + INFILE_EXTENSION + "> as extension");
             }
@@ -257,12 +251,12 @@ public class StepUnzipInputFiles extends NGSStep{
             if (fastqFile2==null) continue;
             
             if ((new File(fastqFile2)).exists()==false){
-                throw new IOException("unzipFastqFiles: fastq File2 <" 
+                throw new IOException(STEP_ID_STRING + ": fastq File2 <" 
                   + fastqFile2 + "> does not exist");
             }
             if (fastqFile2.toUpperCase().endsWith(INFILE_EXTENSION.toUpperCase())==false)
             {
-                throw new IOException("unzipFastqFiles: incorrect file extension for fastq file 2 <" 
+                throw new IOException(STEP_ID_STRING + ": incorrect file extension for fastq file 2 <" 
                   + fastqFile2 + ">. \n" 
                   + "should have <" + INFILE_EXTENSION + "> as extension");
             }
@@ -292,14 +286,13 @@ public class StepUnzipInputFiles extends NGSStep{
 
         logger.info(STEP_ID_STRING + ": generate example configuration data");
         
-        HashMap configData = new HashMap();
-        HashMap paramData = new HashMap();
+        HashMap<String, Object> configData = new HashMap();
         
-        paramData.put(ID_THREADS, 4);
-        configData.put(STEP_ID_STRING, paramData);
-
+        configData.put(ID_SOFTWARE, "/usr/local/pigz");
+        configData.put(ID_THREADS, 4);
         
         return configData;
+        
     }
 
     

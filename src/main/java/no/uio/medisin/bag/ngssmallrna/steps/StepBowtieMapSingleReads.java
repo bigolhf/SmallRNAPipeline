@@ -18,7 +18,6 @@ import java.util.Iterator;
 import no.uio.medisin.bag.ngssmallrna.pipeline.ReferenceDataLocations;
 import no.uio.medisin.bag.ngssmallrna.pipeline.SampleDataEntry;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.Validate;
 import org.apache.logging.log4j.LogManager;
 
 import org.apache.logging.log4j.Logger;
@@ -30,17 +29,17 @@ import org.apache.logging.log4j.Logger;
  *
  * @author sr
  */
-public class StepBowtieMapSingleReads extends NGSStep {
+public class StepBowtieMapSingleReads extends NGSStep implements NGSBase{
 
     static Logger logger = LogManager.getLogger();
 
-    public  static final String STEP_ID_STRING                  = "SINGLE_MAPPING_BOWTIE:";
+    public  static final String STEP_ID_STRING                  = "BowtieSingleReadMap";
 
-    private static final String ID_SOFTWARE                     = "adapter_software:";
-    private static final String ID_REF_GENOME                   = "host:";
-    private static final String ID_MISMATCHES                   = "no_of_mismatches:";
-    private static final String ID_ALIGN_MODE                   = "alignment_mode:";
-    private static final String ID_THREADS                      = "no_of_threads:";
+    private static final String ID_SOFTWARE                     = "mappingSoftware";
+    private static final String ID_REF_GENOME                   = "host";
+    private static final String ID_MISMATCHES                   = "noOfMismatches";
+    private static final String ID_ALIGN_MODE                   = "alignmentMode";
+    private static final String ID_THREADS                      = "noOfThreads";
 
     private static final String INFILE_EXTENSION                = ".trim.clp.fasta";
     private static final String FASTQ_ABUNALN_EXTENSION         = ".trim.clp.abun.fasta";
@@ -72,13 +71,7 @@ public class StepBowtieMapSingleReads extends NGSStep {
      *
      */
     public StepBowtieMapSingleReads(StepInputData sid) {
-        try {
-            stepInputData = sid;
-            stepInputData.verifyInputData();
-
-        } catch (IOException exIO) {
-
-        }
+        stepInputData = sid;
     }
     
     
@@ -123,7 +116,7 @@ public class StepBowtieMapSingleReads extends NGSStep {
             throw new NumberFormatException(ID_THREADS + " <" + configData.get(ID_THREADS) + "> is not an integer");
         }        
         if (Integer.parseInt((String) configData.get(ID_THREADS)) <= 0){
-            throw new IllegalArgumentException(ID_THREADS + " <" + (String) configData.get(ID_THREADS) + "> must be positive");
+            throw new IllegalArgumentException(ID_THREADS + " <" + (String) configData.get(ID_THREADS) + "> must be positive integer");
         }
         this.setNoOfThreads(Integer.parseInt((String) configData.get(ID_THREADS)));
 
@@ -135,14 +128,14 @@ public class StepBowtieMapSingleReads extends NGSStep {
             throw new NumberFormatException(ID_MISMATCHES + " <" + ID_MISMATCHES + "> is not an integer");
         }        
         if (Integer.parseInt((String) configData.get(ID_MISMATCHES)) <= 0){
-            throw new IllegalArgumentException(ID_MISMATCHES + " <" + (String) configData.get(ID_MISMATCHES) + "> must be positive");
+            throw new IllegalArgumentException(ID_MISMATCHES + " <" + (String) configData.get(ID_MISMATCHES) + "> must be positive integer");
         }
         this.setNoOfMismatches(Integer.parseInt((String) configData.get(ID_MISMATCHES)));
         
 
         this.setReferenceGenome((String) configData.get(ID_REF_GENOME));
         if(this.getReferenceGenome().length() !=3 ){
-            throw new IllegalArgumentException(ID_REF_GENOME + " <" + (String) configData.get(ID_MISMATCHES) + "> must be a 3 letter string");            
+            throw new IllegalArgumentException(ID_REF_GENOME + " <" + (String) configData.get(ID_REF_GENOME) + "> must be a 3 letter string");            
         }
         this.setAlignMode((String) configData.get(ID_ALIGN_MODE));
         this.setMappingSoftware((String) configData.get(ID_SOFTWARE));
@@ -155,9 +148,13 @@ public class StepBowtieMapSingleReads extends NGSStep {
     
     
     
-    
+    /**
+     * perform bowtie mapping on specified files
+     * 
+     * @throws IOException 
+     */
     @Override
-    public void execute() {
+    public void execute() throws IOException{
 
         this.setPaths();
 
@@ -263,6 +260,7 @@ public class StepBowtieMapSingleReads extends NGSStep {
                 logger.error("error executing Bowtie Mapping command\n");
                 logger.error(cmd);
                 logger.error(ex.toString());
+                throw new IOException(STEP_ID_STRING + ": \"error executing Bowtie Mapping command " + cmd);
             }
         }
 
@@ -421,17 +419,21 @@ public class StepBowtieMapSingleReads extends NGSStep {
         
     }
     
+    
+    
+    
+    /**
+     * @throws IOException
+     * @throws NullPointerException 
+     */
     @Override
     public void verifyInputData()  throws IOException, NullPointerException{
         logger.info("verify input data");
         
-        Validate.notNull((String) this.getMappingSoftware());
-        
-        if (this.getNoOfThreads() <= 0)
-        {
-            logger.error("number of threads <" + this.getNoOfThreads() + "> must be positive");    
-            return;            
+        if(new File(this.getMappingSoftware()).exists() == false){
+            throw new IOException("mapping software not found at location < " + this.getMappingSoftware() +">");
         }
+        
                     
         // check the data files
         Iterator itSD = this.stepInputData.getSampleData().iterator();
@@ -478,13 +480,11 @@ public class StepBowtieMapSingleReads extends NGSStep {
         logger.info(STEP_ID_STRING + ": generate example configuration data");
 
         HashMap configData = new HashMap();
-        HashMap paramData = new HashMap();
 
-        paramData.put(ID_SOFTWARE, "/usr/local/bin/bowtie");
-        paramData.put(ID_REF_GENOME, "hsa");
-        paramData.put(ID_MISMATCHES, 2);
-        paramData.put(ID_ALIGN_MODE, "v");
-        configData.put(STEP_ID_STRING, paramData);
+        configData.put(ID_SOFTWARE, "/usr/local/bin/bowtie");
+        configData.put(ID_REF_GENOME, "hsa");
+        configData.put(ID_MISMATCHES, 2);
+        configData.put(ID_ALIGN_MODE, "v");
 
         return configData;
     }

@@ -14,7 +14,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import no.uio.medisin.bag.ngssmallrna.pipeline.SampleDataEntry;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.Validate;
 import org.apache.logging.log4j.LogManager;
 
 import org.apache.logging.log4j.Logger;
@@ -29,14 +28,14 @@ import org.apache.logging.log4j.Logger;
  * @author sr
  */
 
-public class StepCollapseReads extends NGSStep{
+public class StepCollapseReads extends NGSStep implements NGSBase {
     
     static  Logger                      logger = LogManager.getLogger();
     static  String                      FileSeparator = System.getProperty("file.separator");
 
-    public static final String          STEP_ID_STRING          = "COLLAPSE_READS:";
-    private static final String         ID_Q2A_SOFTWARE         = "/usr/local/bin/fastq_to_fasta";   
-    private static final String         ID_COLLAPSE_SOFTWARE    = "/usr/local/bin/fastx_collapser";   
+    public static final String          STEP_ID_STRING          = "CollapseReads";
+    private static final String         ID_Q2A_SOFTWARE         = "fastq2fastaLocation";   
+    private static final String         ID_COLLAPSE_SOFTWARE    = "fastxCollapserLocation";   
     
     
     private static final String         INFILE_EXTENSION        = ".trim.fastq";
@@ -55,14 +54,7 @@ public class StepCollapseReads extends NGSStep{
      * 
      */
     public StepCollapseReads(StepInputData sid){
-        try{
-            stepInputData = sid;
-            stepInputData.verifyInputData();
-            
-        }
-        catch(IOException exIO){
-            
-        }
+        stepInputData = sid;
     }
     
     
@@ -98,12 +90,6 @@ public class StepCollapseReads extends NGSStep{
     public void execute() throws IOException{
         this.setPaths();
         
-        /*
-        
-            collapseReadsParams.put("fastqTofasta", this.getFastq2fastaSoftware());
-            collapseReadsParams.put("collapseFasta", this.getCollapseFastaSoftware());
-
-        */
         String cmdFQ2FA = "";
         String cmdClp = "";
         
@@ -116,8 +102,6 @@ public class StepCollapseReads extends NGSStep{
                 SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
                 Boolean f = new File(outFolder).mkdir(); 
                 if (f) logger.info("created output folder <" + outFolder + "> for results" );
-
-                
  
                 /*
                     fastq_to_fasta -i 1000.fastq -o 1000.fasta -Q33
@@ -167,7 +151,7 @@ public class StepCollapseReads extends NGSStep{
             catch(IOException|InterruptedException exIE){
                 logger.error("error executing Fastq2Fasta command\n");
                 logger.error("CMD is " + cmdFQ2FA);
-                throw new IOException("error executing Fastq2Fasta command\n" + cmdFQ2FA);
+                throw new IOException(STEP_ID_STRING + ": error executing Fastq2Fasta command " + cmdFQ2FA);
             }
             
             
@@ -221,7 +205,7 @@ public class StepCollapseReads extends NGSStep{
             catch(IOException|InterruptedException exIE){
                 logger.error("error executing CollapseReads command\n");
                 logger.error("CMD is " + cmdClp);
-                throw new IOException("error executing CollapseReads command\n" + cmdClp);
+                throw new IOException(STEP_ID_STRING + ": error executing CollapseReads command " + cmdClp);
              }
         }
         
@@ -239,8 +223,12 @@ public class StepCollapseReads extends NGSStep{
         logger.info("verify input data");
         
         // does software exist?
-        Validate.notNull(this.getFastq2fasta_software());
-        Validate.notNull(this.getCollapseFastaSoftware());
+        if(new File(this.getFastq2fasta_software()).exists() == false){
+            throw new IOException(STEP_ID_STRING + ": fastq2fasta software not found at location < " + this.getFastq2fasta_software() +">");
+        }
+        if(new File(this.getCollapseFastaSoftware()).exists() == false){
+            throw new IOException(STEP_ID_STRING + ": fastq2fasta software not found at location < " + this.getCollapseFastaSoftware() +">");
+        }
         
         // check the data files
         Iterator itSD = this.stepInputData.getSampleData().iterator();
@@ -250,7 +238,7 @@ public class StepCollapseReads extends NGSStep{
             String fastqFile2 = (String)sampleData.getFastqFile2();
             
             //Fastq 1
-            if (fastqFile1==null) throw new IOException("no Fastq1 file specified");
+            if (fastqFile1==null) throw new IOException(STEP_ID_STRING + ": no Fastq1 file specified");
             
             if ((new File(fastqFile1)).exists()==false){
                 throw new IOException("unzipFastqFiles: fastq File1 <" 
@@ -258,7 +246,7 @@ public class StepCollapseReads extends NGSStep{
             }
             if (fastqFile1.toUpperCase().endsWith(INFILE_EXTENSION.toUpperCase())==false)
             {
-                throw new IOException("unzipFastqFiles: incorrect file extension for input file <" 
+                throw new IOException(STEP_ID_STRING + ": incorrect file extension for input file <" 
                   + fastqFile1 + ">.  \n" 
                   + "should have <" + INFILE_EXTENSION + "> as extension");
             }
@@ -268,12 +256,12 @@ public class StepCollapseReads extends NGSStep{
             if (fastqFile2==null) continue;
             
             if ((new File(fastqFile2)).exists()==false){
-                throw new IOException("unzipFastqFiles: fastq File2 <" 
+                throw new IOException(STEP_ID_STRING + " : fastq File2 <" 
                   + fastqFile2 + "> does not exist");
             }
             if (fastqFile2.toUpperCase().endsWith(INFILE_EXTENSION.toUpperCase())==false)
             {
-                throw new IOException("unzipFastqFiles: incorrect file extension for fastq file 2 <" 
+                throw new IOException(STEP_ID_STRING + " : incorrect file extension for fastq file 2 <" 
                   + fastqFile2 + ">. \n" 
                   + "should have <" + INFILE_EXTENSION + "> as extension");
             }
@@ -301,14 +289,11 @@ public class StepCollapseReads extends NGSStep{
     public HashMap generateExampleConfigurationData() {
 
         logger.info(STEP_ID_STRING + ": generate example configuration data");
-
         
         HashMap configData = new HashMap();
-        HashMap paramData = new HashMap();
         
-        paramData.put(ID_Q2A_SOFTWARE, "/usr/local/bin/fastq_to_fasta");
-        paramData.put(ID_COLLAPSE_SOFTWARE, "/usr/local/bin/fastx_collapser");
-        configData.put(STEP_ID_STRING, paramData);
+        configData.put(ID_Q2A_SOFTWARE, "/usr/local/bin/fastq_to_fasta");
+        configData.put(ID_COLLAPSE_SOFTWARE, "/usr/local/bin/fastx_collapser");
         
         return configData;
     }   

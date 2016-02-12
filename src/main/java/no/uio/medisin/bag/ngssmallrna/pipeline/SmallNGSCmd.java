@@ -29,13 +29,17 @@ public class SmallNGSCmd {
         SmallNGSPipeline smallPipeline = new SmallNGSPipeline();
         parseArguments(args, smallPipeline);
         
-        if(smallPipeline.getGenerateSampleFiles()){
-            
+        if(smallPipeline.getGenerateExampleConfigurationFile()){
+            try{smallPipeline.generateSampleConfigurationFile();}
+            catch(IOException exIO){
+                logger.error(exIO.toString());
+            }
             return;
+
         }
         try{
             smallPipeline.prepare_pipeline();
-            smallPipeline.runPipeline();
+            smallPipeline.prepareSteps();
         }
         catch(IOException exIO){
             logger.info("error while executing pipeline");
@@ -71,7 +75,7 @@ public class SmallNGSCmd {
         options.addOption("p", "config",    true,   "pipeline configuration file");
         options.addOption("d", "data",      true,   "data file list with grouping");
         options.addOption("s", "steps",     true,   "step file in JSON format");
-        options.addOption("g", "generate",  false,  "generate sample run files");
+        options.addOption("G", "generate",  false,  "generate sample run files");
         
         CommandLineParser clParser = new BasicParser();
         CommandLine cmd = null;
@@ -85,7 +89,7 @@ public class SmallNGSCmd {
             }
             if (cmd.hasOption("G")) {
                 logger.info("generate example run files ");
-                smallPipeline.setGenerateSampleFiles(Boolean.TRUE);
+                smallPipeline.setGenerateExampleConfigurationFile(Boolean.TRUE);
             }                    
             
             if (cmd.hasOption("r")) {

@@ -21,13 +21,14 @@ abstract public class NGSStep {
     protected               String      outFolder       = null;
     
     protected static final  String      FILESEPARATOR   = System.getProperty("file.separator");
-    
+
+/*    
     abstract void       verifyInputData() throws IOException, NullPointerException;
     abstract void       verifyOutputData();
     abstract void       parseConfigurationData(HashMap configData) throws Exception;
     abstract HashMap    generateExampleConfigurationData();
     abstract void       execute() throws IOException;
-    
+*/    
     
     /**
      * set paths for input and output data folders

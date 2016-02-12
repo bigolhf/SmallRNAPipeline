@@ -38,18 +38,18 @@ import org.apache.logging.log4j.Logger;
  *
  * @author sr
  */
-public class StepAnalyzeMappedReads extends NGSStep {
+public class StepAnalyzeSAMforStartPositions extends NGSStep implements NGSBase{
     
     public  static final String     STEP_ID_STRING      = "AnalyzeStartPositions";
-    private static final String     ID_BLEED            = "bleed:";
-    private static final String     ID_BASELINE         = "baseline_percent:";
-    private static final String     ID_ISOMIRS          = "analyze_isomirs:";
-    private static final String     ID_MIRBASE_VERSION  = "mirbase_release:";
-    private static final String     ID_REF_GENOME       = "host:";
-    private static final String     ID_SHORTEST_FEATURE = "shortest_feature:";
-    private static final String     ID_LONGEST_FEATURE  = "longest_feature:";
-    private static final String     ID_MIN_COUNTS       = "min_counts:";
-    private static final String     ID_SEPARATION       = "feature_separation:";
+    private static final String     ID_BLEED            = "bleed";
+    private static final String     ID_BASELINE         = "baselinePercent";
+    private static final String     ID_ISOMIRS          = "analyzeIsomirs";
+    private static final String     ID_MIRBASE_VERSION  = "mirbaseVersion";
+    private static final String     ID_REF_GENOME       = "host";
+    private static final String     ID_SHORTEST_FEATURE = "shortestFeature";
+    private static final String     ID_LONGEST_FEATURE  = "longestFeature";
+    private static final String     ID_MIN_COUNTS       = "minCounts";
+    private static final String     ID_SEPARATION       = "featureSeparation";
     
     private static final String     INFILE_EXTENSION    = ".trim.clp.gen.sam";
     private static final String     POS_FILE_EXT        = ".trim.clp.gen.pos.tsv";
@@ -81,7 +81,7 @@ public class StepAnalyzeMappedReads extends NGSStep {
     private GFFSet                  featureSet          = new GFFSet(); // stores the identified features
     
 
-    public StepAnalyzeMappedReads(StepInputData sid) {
+    public StepAnalyzeSAMforStartPositions(StepInputData sid) {
         stepInputData = sid;
     }
 
@@ -254,6 +254,7 @@ public class StepAnalyzeMappedReads extends NGSStep {
         catch(IOException exIO){
             logger.error("exception reading Genome reference file + <" + genomeFastaFile + ">");
             logger.error(exIO.toString());
+            throw new IOException(STEP_ID_STRING + ": exception reading Genome reference file + <" + genomeFastaFile + ">");
         }
         /**
          * read genes.gtf or genes.gff3 file
@@ -277,6 +278,7 @@ public class StepAnalyzeMappedReads extends NGSStep {
         } catch (IOException exIO) {
             logger.error("Exception trying to read Annotation file ");
             logger.error(exIO);
+            throw new IOException(STEP_ID_STRING + ": exception reading Genome reference file + <" + genomeFastaFile + ">");
         }
 
         /**
@@ -333,6 +335,7 @@ public class StepAnalyzeMappedReads extends NGSStep {
                 logger.error("error parsing SAM file " + samInputFile);
                 logger.error(samLine);
                 logger.error(smIO);
+                throw new IOException(STEP_ID_STRING + ": error parsing SAM file <" + samInputFile + ">");
             }
 
             /**
@@ -524,6 +527,7 @@ public class StepAnalyzeMappedReads extends NGSStep {
                             this.addCounts5(mappedRead.getStartPos() - coverage5Start, mappedRead.getEndPos() - coverage5Start, mappedRead.getCount());
                         } catch (ArrayIndexOutOfBoundsException exAB) {
                             logger.error("5' Array out of bounds when writing data");
+                            throw new IOException(STEP_ID_STRING + ": 5' Array out of bounds when writing data");
                         }
                         
                         currentStrand = mappedRead.getStrand();
@@ -557,6 +561,7 @@ public class StepAnalyzeMappedReads extends NGSStep {
                                 this.addCounts3(coverage3Start - mappedRead.getStartPos(), coverage3Start - mappedRead.getEndPos(), mappedRead.getCount());
                             } catch (ArrayIndexOutOfBoundsException exAB) {
                                 logger.error("3' Array out of bounds when writing data");
+                                throw new IOException(STEP_ID_STRING + ": 3' Array out of bounds when writing data");
                             }
                             currentStrand = mappedRead.getStrand();
                             currentChr = mappedRead.getChr();                           
@@ -569,6 +574,7 @@ public class StepAnalyzeMappedReads extends NGSStep {
                 bwFT.close();
             } catch (IOException exIO) {
                 logger.error(exIO);
+                throw new IOException(STEP_ID_STRING + ": error writing feature details file <" + featureOutFile + ">");
             }
             
         }
@@ -582,6 +588,7 @@ public class StepAnalyzeMappedReads extends NGSStep {
         catch(IOException exIO){
             logger.error("error writing feature file <" + featureFile + ">");
             logger.error(exIO);
+            throw new IOException(STEP_ID_STRING + ": error writing feature tsv file <" + featureFile + ">");
         }
 
         String freqFile = outFolder + FILESEPARATOR + stepInputData.getProjectID() + ".freq.tsv";
@@ -591,8 +598,9 @@ public class StepAnalyzeMappedReads extends NGSStep {
             bwFQ.close();
         }
         catch(IOException exIO){
-            logger.error("error writing frequenct file <" + freqFile + ">");
+            logger.error("error writing frequency file <" + freqFile + ">");
             logger.error(exIO);
+            throw new IOException(STEP_ID_STRING + ": error writing frequency file <" + freqFile + ">");
         }
 
         
@@ -606,6 +614,7 @@ public class StepAnalyzeMappedReads extends NGSStep {
         catch(IOException exIO){
             logger.error("error writing fasta feature file <" + fastaFile + ">");
             logger.error(exIO);
+            throw new IOException(STEP_ID_STRING + ": error writing fasta feature file <" + fastaFile + ">");
         }
     }
 
@@ -755,6 +764,33 @@ public class StepAnalyzeMappedReads extends NGSStep {
     public void verifyInputData()  throws IOException, NullPointerException{
         logger.info("verify input data");
         
+
+        String pathToFasta = stepInputData.getDataLocations().getGenomeRootFolder()
+                + FILESEPARATOR + this.getReferenceGenome() + FILESEPARATOR + ReferenceDataLocations.ID_REL_WHOLE_GENSEQ_PATH;
+        String genomeFastaFile = pathToFasta + FILESEPARATOR + "genome.fa";
+        genomeFastaFile = genomeFastaFile.replace(FILESEPARATOR + FILESEPARATOR, FILESEPARATOR).trim();
+        if (new File(genomeFastaFile + FILESEPARATOR + "genes.gtf").exists()==false){
+            throw new IOException("no fasta file was found for reference genome <" 
+                    + this.getReferenceGenome() + "> at location <" 
+                    + genomeFastaFile + ">");
+
+        }
+        
+        String annotationFile = "";
+        String pathToAnnotation = stepInputData.getDataLocations().getGenomeRootFolder()
+                + FILESEPARATOR + this.getReferenceGenome() + ReferenceDataLocations.ID_GENE_ANNOTATION;
+        File f = new File(pathToAnnotation + FILESEPARATOR + "genes.gtf");
+        if (new File(pathToAnnotation + FILESEPARATOR + "genes.gtf").exists()) {
+            annotationFile = pathToAnnotation + FILESEPARATOR + "genes.gtf";
+        } else if (new File(pathToAnnotation + FILESEPARATOR + "genes.gff").exists()) {
+            annotationFile = pathToAnnotation + FILESEPARATOR + "genes.gff";
+        }
+        if (annotationFile == null) {
+            throw new IOException("no fasta file was found for reference genome <" 
+                    + this.getReferenceGenome() + "> at location <"
+                    + annotationFile + ">");
+        }
+        
         
                     
         // check the data files
@@ -762,7 +798,6 @@ public class StepAnalyzeMappedReads extends NGSStep {
         while (itSD.hasNext()){
             SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
             String fastqFile1 = (String)sampleData.getFastqFile1();
-            String fastqFile2 = (String)sampleData.getFastqFile2();
             
             //Fastq 1
             if (fastqFile1==null) throw new IOException("no Fastq1 file specified");

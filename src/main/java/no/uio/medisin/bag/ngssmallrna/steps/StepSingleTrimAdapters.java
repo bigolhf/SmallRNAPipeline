@@ -14,7 +14,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import no.uio.medisin.bag.ngssmallrna.pipeline.SampleDataEntry;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.Validate;
 import org.apache.logging.log4j.LogManager;
 
 import org.apache.logging.log4j.Logger;
@@ -31,17 +30,17 @@ import org.apache.logging.log4j.Logger;
  * @author sr
  */
 
-public class StepSingleTrimAdapters extends NGSStep{
+public class StepSingleTrimAdapters extends NGSStep implements NGSBase{
     
     static Logger                       logger = LogManager.getLogger();
     
-    public static final String          STEP_ID_STRING          = "ADAPTER_TRIMMING_SINGLE:";
-    private static final String         ID_SOFTWARE             = "adapter_software:";
-    private static final String         ID_ADAPTOR_FILE         = "adapter_file:";
-    private static final String         ID_MISMATCHES           = "no_of_mismatches:";
-    private static final String         ID_MIN_ALIGN_SCORE      = "min_align_score:";
-    private static final String         ID_MIN_AVGREAD_QUAL     = "min_avg_read_qual:";
-    private static final String         ID_THREADS              = "no_of_threads:";
+    public static final String          STEP_ID_STRING          = "SingleReadAdapterTrim";
+    private static final String         ID_SOFTWARE             = "adapterSoftware";
+    private static final String         ID_ADAPTOR_FILE         = "adapterFile";
+    private static final String         ID_MISMATCHES           = "noOfMismatches";
+    private static final String         ID_MIN_ALIGN_SCORE      = "minAlignScore";
+    private static final String         ID_MIN_AVGREAD_QUAL     = "minAvgReadQual";
+    private static final String         ID_THREADS              = "noOfThreads";
 
     private static final String         INFILE_EXTENSION        = ".fastq";
     private static final String         OUTFILE_EXTENSION       = ".trim.fastq";
@@ -54,14 +53,6 @@ public class StepSingleTrimAdapters extends NGSStep{
     private int                         minAvgReadQuality       = 30;
     
     
-    /**
-     * @return the STEP_ID_STRING
-     */
-    public static String getSTEP_ID_STRING() {
-        return STEP_ID_STRING;
-    }
-    
-    
 
     /**
      * 
@@ -69,14 +60,7 @@ public class StepSingleTrimAdapters extends NGSStep{
      * 
      */
     public StepSingleTrimAdapters(StepInputData sid){
-        try{
-            stepInputData = sid;
-            stepInputData.verifyInputData();
-            
-        }
-        catch(IOException exIO){
-            
-        }
+        stepInputData = sid;
     }
     
     
@@ -163,9 +147,11 @@ public class StepSingleTrimAdapters extends NGSStep{
     
     
     @Override
-    public void execute(){
+    public void execute() throws IOException{
         
         this.setPaths();
+        this.verifyInputData();
+        String cmdTrimAdapters = "";
         
         Iterator itSD = this.stepInputData.getSampleData().iterator();
         while (itSD.hasNext()){
@@ -202,7 +188,7 @@ public class StepSingleTrimAdapters extends NGSStep{
                 -threads
                 */      
 
-                String cmdTrimAdapters = StringUtils.join(cmd, " ");
+                cmdTrimAdapters = StringUtils.join(cmd, " ");
                 cmdTrimAdapters = cmdTrimAdapters.replace(FILESEPARATOR + FILESEPARATOR, FILESEPARATOR);
                 logger.info("Adapter Trim command:\t" + cmdTrimAdapters);
 
@@ -231,6 +217,7 @@ public class StepSingleTrimAdapters extends NGSStep{
             }
             catch(IOException|InterruptedException ex){
                 logger.error("error executing AdapterTrimming command\n" + ex.toString());
+                throw new IOException(STEP_ID_STRING + "error executing AdapterTrimming command " + cmdTrimAdapters);
             }
         }
         
@@ -242,20 +229,25 @@ public class StepSingleTrimAdapters extends NGSStep{
             
     @Override
     public void verifyInputData() throws IOException{
+
+        if(new File(this.getTrimSoftware()).exists() == false){
+            throw new IOException(STEP_ID_STRING + ": Adapter Trimming software not found at location < " + this.getTrimSoftware() +">");
+        }
+        
         Iterator itSD = this.stepInputData.getSampleData().iterator();
         while (itSD.hasNext()){
             SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
             String fastqFile1 = (String)sampleData.getFastqFile1();
-            String fastqFile2 = (String)sampleData.getFastqFile2();
+            String fastqFile2 = (String)sampleData.getFastqFile2(); // single end reads, no need to check fastq2
             
-            if (fastqFile1==null) throw new IOException("no Fastq1 file specified");
+            if (fastqFile1==null) throw new IOException(STEP_ID_STRING+ " :no Fastq1 file specified");
             
             if ((new File(fastqFile1)).exists()==false){
                 throw new IOException("AdapterTrimming: fastq File1 <" 
                   + fastqFile1 + "> does not exist");
             }
             if (fastqFile1.toUpperCase().endsWith(INFILE_EXTENSION.toUpperCase())==false){
-                throw new IOException("AdapterTrimming: incorrect file extension for input file <" 
+                throw new IOException(STEP_ID_STRING + " : incorrect file extension for input file <" 
                   + fastqFile1 + ">. " 
                   + "should have <" + INFILE_EXTENSION + "> as extension");
             }
@@ -284,16 +276,13 @@ public class StepSingleTrimAdapters extends NGSStep{
         logger.info(STEP_ID_STRING + ": generate example configuration data");
         
         HashMap configData = new HashMap();
-        HashMap paramData = new HashMap();        
         
-        paramData.put(StepSingleTrimAdapters.ID_SOFTWARE, "trimmomatic/Trimmomatic-0.33/trimmomatic-0.33.jar");
-        paramData.put(StepSingleTrimAdapters.ID_ADAPTOR_FILE, "/Users/simonray/NetBeansProjects/SmallRNAPipeline/test/TruSeqE-SE.fa");
-        paramData.put(StepSingleTrimAdapters.ID_MISMATCHES, 2);
-        paramData.put(StepSingleTrimAdapters.ID_MIN_ALIGN_SCORE, 7);
-        paramData.put(StepSingleTrimAdapters.ID_MIN_AVGREAD_QUAL, 30);        
-        paramData.put(StepSingleTrimAdapters.ID_THREADS, 4);
-        configData.put(STEP_ID_STRING, paramData);
-
+        configData.put(StepSingleTrimAdapters.ID_SOFTWARE, "/Users/simonray/software/trimmomatic/Trimmomatic-0.33/trimmomatic-0.33.jar");
+        configData.put(StepSingleTrimAdapters.ID_ADAPTOR_FILE, "/Users/simonray/NetBeansProjects/SmallRNAPipeline/test/TruSeqE-SE.fa");
+        configData.put(StepSingleTrimAdapters.ID_MISMATCHES, 2);
+        configData.put(StepSingleTrimAdapters.ID_MIN_ALIGN_SCORE, 7);
+        configData.put(StepSingleTrimAdapters.ID_MIN_AVGREAD_QUAL, 30);        
+        configData.put(StepSingleTrimAdapters.ID_THREADS, 4);
         
         return configData;
     }

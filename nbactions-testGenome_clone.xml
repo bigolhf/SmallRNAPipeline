@@ -10,7 +10,7 @@
                 <goal>org.codehaus.mojo:exec-maven-plugin:1.2.1:exec</goal>
             </goals>
             <properties>
-                <exec.args>-classpath %classpath no.uio.medisin.bag.ngssmallrna.pipeline.SmallNGSCmd</exec.args>
+                <exec.args>-Dlog4j.configurationFile=file:/data/ngsdata/sweden/log4j2.xml -classpath %classpath no.uio.medisin.bag.ngssmallrna.pipeline.SmallNGSCmd -G</exec.args>
                 <exec.executable>java</exec.executable>
                 <exec.workingdir>/Users/simonray/NetBeansProjects/SmallRNAPipeline</exec.workingdir>
             </properties>
@@ -25,9 +25,9 @@
                 <goal>org.codehaus.mojo:exec-maven-plugin:1.2.1:exec</goal>
             </goals>
             <properties>
-                <exec.args>-Xdebug -Xrunjdwp:transport=dt_socket,server=n,address=${jpda.address} -classpath %classpath no.uio.medisin.bag.ngssmallrna.pipeline.SmallNGSCmd</exec.args>
-                <exec.executable>java</exec.executable>
+                <exec.args>-Xdebug -Xrunjdwp:transport=dt_socket,server=n,address=${jpda.address} -Dlog4j.configurationFile=file:/data/ngsdata/sweden/log4j2.xml -classpath %classpath no.uio.medisin.bag.ngssmallrna.pipeline.SmallNGSCmd -G</exec.args>
                 <jpda.listen>true</jpda.listen>
+                <exec.executable>java</exec.executable>
                 <exec.workingdir>/Users/simonray/NetBeansProjects/SmallRNAPipeline</exec.workingdir>
             </properties>
         </action>
@@ -41,7 +41,7 @@
                 <goal>org.codehaus.mojo:exec-maven-plugin:1.2.1:exec</goal>
             </goals>
             <properties>
-                <exec.args>-classpath %classpath no.uio.medisin.bag.ngssmallrna.pipeline.SmallNGSCmd</exec.args>
+                <exec.args>-Dlog4j.configurationFile=file:/data/ngsdata/sweden/log4j2.xml -classpath %classpath no.uio.medisin.bag.ngssmallrna.pipeline.SmallNGSCmd -G</exec.args>
                 <exec.executable>java</exec.executable>
                 <exec.workingdir>/Users/simonray/NetBeansProjects/SmallRNAPipeline</exec.workingdir>
             </properties>

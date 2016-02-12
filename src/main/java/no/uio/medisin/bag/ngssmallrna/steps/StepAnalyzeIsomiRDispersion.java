@@ -28,7 +28,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
 
 
 
@@ -40,12 +39,12 @@ import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
  * @author sr
  */
 
-public class StepAnalyzeIsomiRDispersion extends NGSStep{
+public class StepAnalyzeIsomiRDispersion extends NGSStep implements NGSBase{
     
     static Logger                   logger                          = LogManager.getLogger();
-    public  static final String     STEP_ID_STRING                  = "AnalyzeStartPositions";
-    private static final String     ID_REF_GENOME                   = "host:";
-    private static final String     ID_MIRBASE_VERSION              = "mirbase_release:";
+    public  static final String     STEP_ID_STRING                  = "AnalyzeIsomiRDispersion";
+    private static final String     ID_REF_GENOME                   = "host";
+    private static final String     ID_MIRBASE_VERSION              = "mirbaseVersion";
     private static final String     ID_PVALUE                       = "pValue:";
     
     private static final String     INFILE_EXTENSION                = ".disp.summary.tsv";
@@ -122,6 +121,10 @@ public class StepAnalyzeIsomiRDispersion extends NGSStep{
         }
         this.setpValue(Double.parseDouble((String) configData.get(ID_PVALUE)));
 
+        this.setReferenceGenome((String) configData.get(ID_REF_GENOME));
+        if(this.getReferenceGenome().length() !=3 ){
+            throw new IllegalArgumentException(ID_REF_GENOME + " <" + (String) configData.get(ID_REF_GENOME) + "> must be a 3 letter string");            
+        }
         
 
         logger.info("passed");
@@ -171,11 +174,11 @@ public class StepAnalyzeIsomiRDispersion extends NGSStep{
         if (fA) logger.info("created output folder <" + outFolder + "> for results" );
         isomiRList = new ArrayList<>();
         miRNAdispAnalysisResList = new ArrayList<>();
-        
+        String isomiRDispFile = "";
         try{
 
 
-            String isomiRDispFile = inFolder + FILESEPARATOR + stepInputData.getProjectID() + INFILE_EXTENSION;
+            isomiRDispFile = inFolder + FILESEPARATOR + stepInputData.getProjectID() + INFILE_EXTENSION;
             logger.info("reading " + isomiRDispFile);
 
             String isoDispLine = null;
@@ -193,6 +196,7 @@ public class StepAnalyzeIsomiRDispersion extends NGSStep{
         }
         catch(IOException ex){
             logger.error("error reading isomiR dispersion file\n" + ex.toString());
+            throw new IOException(STEP_ID_STRING + ": error reading isomiR dispersion file <" + isomiRDispFile + ">");
         }
         
         logger.info("read " + isomiRList.size() + " entries");
@@ -236,6 +240,7 @@ public class StepAnalyzeIsomiRDispersion extends NGSStep{
         }
         catch(IOException exIO){
             logger.info("error writing isomiR dispersion File <" + dispersionFile + ">\n" + exIO);
+            throw new IOException(STEP_ID_STRING + ": error writing isomiR dispersion File <" + dispersionFile + ">");
         }
                     
         
@@ -319,35 +324,30 @@ public class StepAnalyzeIsomiRDispersion extends NGSStep{
     
     
     /**
-     * Verify Input Data for parsing SAM file for miRNAs
+     * Verify Input Data 
      * 
+     * @throws IOException
      */        
     @Override
-    public void verifyInputData(){
+    public void verifyInputData() throws IOException{
         
         
-        
-        Iterator itSD = this.stepInputData.getSampleData().iterator();
-        while (itSD.hasNext()){
-            SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
-            /*
-            if (sampleData.getDataFile().toUpperCase().endsWith(infileExtension.toUpperCase())==false)
-            {
-                throw new IllegalArgumentException("AdapterTrimming: incorrect file extension for input file <" 
-                  + sampleData.getDataFile() + ">. " 
-                  + "should have <" + infileExtension + "> as extension");
-            }
-            
-            if (sampleData.getDataFile().toUpperCase().endsWith(outfileExtension.toUpperCase())==true)
-            {
-                logger.warn("AdapterTrimming: input file has output file extension (.trim.fastq)");
-                logger.warn("this file has already been trimmed");
-            }
-            */
-            
+        String isomiRDispFile = inFolder + FILESEPARATOR + stepInputData.getProjectID() + INFILE_EXTENSION;
+        String gffFileMirBase = stepInputData.getDataLocations().getMirbaseFolder() + FILESEPARATOR + this.getMiRBaseRelease() + this.getReferenceGenome() + ".gff3";
+        String faFileMirBase = gffFileMirBase.replace("gff3", "fasta");
+
+        if(new File(isomiRDispFile).exists() == false){
+            throw new IOException(STEP_ID_STRING + ": isomiR dispersion not found at location < " + isomiRDispFile +">");
         }
-            // does input file have correct extension?
-        // does input file have the same extension as expected for the output file?
+        
+        if(new File(gffFileMirBase).exists() == false){
+            throw new IOException(STEP_ID_STRING + ": miRBase GFF file not found at location < " + gffFileMirBase +">");
+        }
+        
+        if(new File(faFileMirBase).exists() == false){
+            throw new IOException(STEP_ID_STRING + ": miRBase Fasta file not found at location < " + faFileMirBase +">");
+        }
+        
         
       }
     
@@ -367,12 +367,11 @@ public class StepAnalyzeIsomiRDispersion extends NGSStep{
         logger.info(STEP_ID_STRING + ": generate example configuration data");
 
         HashMap configData = new HashMap();
-        HashMap paramData = new HashMap();
 
-        paramData.put(ID_REF_GENOME, "hsa");
-        paramData.put(ID_PVALUE, 2);
+        configData.put(ID_REF_GENOME, "hsa");
+        configData.put(ID_PVALUE, 2);
+        configData.put(ID_MIRBASE_VERSION, 20);
 
-        configData.put(STEP_ID_STRING, paramData);
 
         return configData;
     }

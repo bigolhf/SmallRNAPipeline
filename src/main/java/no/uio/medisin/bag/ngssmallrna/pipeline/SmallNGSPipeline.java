@@ -11,28 +11,29 @@ import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 import static no.uio.medisin.bag.ngssmallrna.pipeline.SmallNGSCmd.logger;
+import no.uio.medisin.bag.ngssmallrna.steps.NGSBase;
 import no.uio.medisin.bag.ngssmallrna.steps.StepAnalyzeIsomiRDispersion;
 import no.uio.medisin.bag.ngssmallrna.steps.StepBowtieMapSingleReads;
 import no.uio.medisin.bag.ngssmallrna.steps.StepCollapseReads;
-import no.uio.medisin.bag.ngssmallrna.steps.NGSStep;
 import no.uio.medisin.bag.ngssmallrna.steps.NGSRunStepData;
 import no.uio.medisin.bag.ngssmallrna.steps.StepParseSAMForMiRNAs;
 import no.uio.medisin.bag.ngssmallrna.steps.StepDEwithEdgeR;
-import no.uio.medisin.bag.ngssmallrna.steps.StepAnalyzeMappedReads;
+import no.uio.medisin.bag.ngssmallrna.steps.StepAnalyzeSAMforStartPositions;
 import no.uio.medisin.bag.ngssmallrna.steps.StepBowtieMapPairedReads;
 import no.uio.medisin.bag.ngssmallrna.steps.StepCleanUp;
 import no.uio.medisin.bag.ngssmallrna.steps.StepInputData;
 import no.uio.medisin.bag.ngssmallrna.steps.StepUnzipInputFiles;
 import no.uio.medisin.bag.ngssmallrna.steps.StepSingleTrimAdapters;
 import org.yaml.snakeyaml.Yaml;
-import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.annotate.JsonAutoDetect;
 import org.codehaus.jackson.annotate.JsonMethod;
-import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.yaml.snakeyaml.DumperOptions;
 
 /**
  *
@@ -40,30 +41,25 @@ import org.codehaus.jackson.map.ObjectMapper;
  */
 public class SmallNGSPipeline {
     
-    static  Yaml                        yaml = new Yaml();
-    static  String                      FileSeparator = System.getProperty("file.separator");
-    
-    private Boolean                     generateSampleFiles = false;
+    static  final String                FILE_SEPARATOR = System.getProperty("file.separator");
     
     private String                      configurationFile = "";
     private String                      pipelineFile = "";
     private String                      dataFile = "";
+    static  Yaml                        yaml;
+    
+    private Boolean                     generateExampleConfigurationFile;
     
     private HashMap                     pipelineConfigurationDataHash;    
     private ReferenceDataLocations      refDataLocations;
     
     
     
-    private double                      diffExpressionPVal = 0.05;
-    
-    private ArrayList<String>           cleanupFiles = new ArrayList<>();
-    private int                         cleanupNoOfThreads = 4;
-    
-    private PipelineData                pipelineData = new PipelineData();
-    private ArrayList<SampleDataEntry>  SampleData = new ArrayList<>();
-    private ArrayList<NGSStep>          NGSSteps = new ArrayList<>();
+    private ArrayList<String>           cleanupFiles    = new ArrayList<>();
+    private PipelineData                pipelineData    = new PipelineData();
+    private ArrayList<SampleDataEntry>  SampleData      = new ArrayList<>();
 
-    
+    private ArrayList<NGSBase>          ngsSteps        = new ArrayList<>();
     
     /**
      * here we load the information from the three specified files
@@ -71,7 +67,7 @@ public class SmallNGSPipeline {
      * 
      * @throws IOException 
      */
-    public void prepare_pipeline() throws IOException {      
+    public void prepare_pipeline() throws IOException, Exception {      
         
         
         
@@ -100,53 +96,53 @@ public class SmallNGSPipeline {
     
     /**
      * 
-     * build each step and execute
+     * This preprocesses the steps to ensure as far as possible that the 
+     * pipeline is runnable. 
      * @throws IOException, Exception
      */
-    public void runPipeline() throws IOException, Exception{
+    public void prepareSteps() throws IOException, Exception{
         
         for (NGSRunStepData stepData: this.getPipelineData().getStepsData()){
             
             switch (stepData.getStepType()){
                 
                 case StepUnzipInputFiles.STEP_ID_STRING:
-                    this.executeStepUnzipInputFiles(stepData);                    
+                    this.addStepUnzipInputFiles(stepData);                    
                     break;
                     
                 case StepSingleTrimAdapters.STEP_ID_STRING:
-                    this.executeStepSingleTrimAdapters(stepData);
+                    this.addStepSingleTrimAdapters(stepData);
                     break;
                     
-                case "CollapseReads":                
-                    this.executeStepCollapseReads(stepData);
+                case StepCollapseReads.STEP_ID_STRING:                
+                    this.addStepCollapseReads(stepData);
                     break;
                     
-                case "BowtieMapSingleReads":
-                    this.executeStepBowtieMapSingleReads(stepData);
+                case StepBowtieMapSingleReads.STEP_ID_STRING:
+                    this.addStepBowtieMapSingleReads(stepData);
                     break;
                     
                 case "BowtieMapPairedReads":
-                    this.executeStepBowtieMapPairedReads(stepData);
                     break;
                     
-                case "ParseSAMForMiRNAs":
-                    this.executeStepParseSAMForMiRNAs(stepData);
+                case StepParseSAMForMiRNAs.STEP_ID_STRING:
+                    this.addStepParseSAMForMiRNAs(stepData);
                     break;
                     
-                case "AnalyzeStartPositions":
-                    this.executeStepAnalyzeStartPositions(stepData);
+                case StepAnalyzeSAMforStartPositions.STEP_ID_STRING:
+                    this.addStepAnalyzeStartPositions(stepData);
                     break;
                     
-                case "AnalyzeIsomiRDispersion":
-                    this.executeStepAnalyzeIsomiRDispersion(stepData);
+                case StepAnalyzeIsomiRDispersion.STEP_ID_STRING:
+                    this.addStepAnalyzeIsomiRDispersion(stepData);
                     break;
 
-                case "DifferentialExpression":
-                    this.executeStepDifferentialExpression(stepData);
+                case StepDEwithEdgeR.STEP_ID_STRING:
+                    this.addStepDifferentialExpression(stepData);
                     break;
                     
-                case "Cleanup":
-                    this.executeStepCleanup(stepData);
+                case StepCleanUp.STEP_ID_STRING:
+                    this.addStepCleanup(stepData);
                     break;
                     
                 case "exit":
@@ -160,18 +156,27 @@ public class SmallNGSPipeline {
 
     
     
+    public void executePipeline() throws IOException, Exception{
+        for (NGSBase ngsStep: ngsSteps){
+            ngsStep.execute();
+        }
+        
+    }
+    
+    
     /**
-     * build and execute step to unzip input (Fastq) files
+     * verify and add step to unzip input files for pipeline
      * 
      * @param stepData 
      */
-    private void executeStepUnzipInputFiles(NGSRunStepData stepData) throws IOException, Exception{
+    private void addStepUnzipInputFiles(NGSRunStepData stepData) throws IOException, Exception{
         
         StepInputData sidUnzip = new StepInputData(this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), 
                  refDataLocations, stepData.getInputFileList(), stepData.getOutputFileList(), this.getSampleData());
         StepUnzipInputFiles ngsUnzipFastqStep = new StepUnzipInputFiles(sidUnzip);        
-        ngsUnzipFastqStep.parseConfigurationData((HashMap) pipelineConfigurationDataHash.get(StepUnzipInputFiles.STEP_ID_STRING));        
-        ngsUnzipFastqStep.execute();
+        ngsUnzipFastqStep.parseConfigurationData((HashMap) pipelineConfigurationDataHash.get(StepUnzipInputFiles.STEP_ID_STRING));   
+        ngsUnzipFastqStep.verifyInputData();
+        ngsSteps.add(ngsUnzipFastqStep);
         
     }
 
@@ -181,14 +186,14 @@ public class SmallNGSPipeline {
      * build and execute step to trim adapter sequences from single end FASTQ files
      * @param stepData 
      */
-    private void executeStepSingleTrimAdapters(NGSRunStepData stepData) throws IOException, Exception{
+    private void addStepSingleTrimAdapters(NGSRunStepData stepData) throws IOException, Exception{
 
         StepInputData sidTrim = new StepInputData(this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), 
                  refDataLocations, stepData.getInputFileList(), stepData.getOutputFileList(), this.getSampleData());
         StepSingleTrimAdapters ngsSingleTrimStep = new StepSingleTrimAdapters(sidTrim);
         ngsSingleTrimStep.parseConfigurationData((HashMap) pipelineConfigurationDataHash.get(StepSingleTrimAdapters.STEP_ID_STRING));        
+        ngsSingleTrimStep.verifyInputData();
 
-        ngsSingleTrimStep.execute();
         
     }
     
@@ -200,14 +205,14 @@ public class SmallNGSPipeline {
      * 
      * @param stepData 
      */
-    private void executeStepCollapseReads(NGSRunStepData stepData) throws IOException, Exception{
+    private void addStepCollapseReads(NGSRunStepData stepData) throws IOException, Exception{
 
         StepInputData sidCollapse = new StepInputData(this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), 
                  refDataLocations, stepData.getInputFileList(), stepData.getOutputFileList(), this.getSampleData());
         StepCollapseReads ngsCollapseStep = new StepCollapseReads(sidCollapse);
         ngsCollapseStep.parseConfigurationData((HashMap) pipelineConfigurationDataHash.get(StepCollapseReads.STEP_ID_STRING));
+        ngsCollapseStep.verifyInputData();
 
-        ngsCollapseStep.execute();
         
     }
     
@@ -217,13 +222,13 @@ public class SmallNGSPipeline {
      * 
      * @param stepData 
      */
-    private void executeStepBowtieMapSingleReads(NGSRunStepData stepData) throws IOException, Exception{
+    private void addStepBowtieMapSingleReads(NGSRunStepData stepData) throws IOException, Exception{
 
         StepInputData sidMapSR = new StepInputData(this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), 
                  refDataLocations, stepData.getInputFileList(), stepData.getOutputFileList(), this.getSampleData());
         StepBowtieMapSingleReads ngsBowtieMapReads = new StepBowtieMapSingleReads(sidMapSR);
         ngsBowtieMapReads.parseConfigurationData((HashMap)pipelineConfigurationDataHash.get(StepBowtieMapSingleReads.STEP_ID_STRING));
-        ngsBowtieMapReads.execute();
+        ngsBowtieMapReads.verifyInputData();
         
     }
     
@@ -233,14 +238,13 @@ public class SmallNGSPipeline {
      * 
      * @param stepData 
      */
-    private void executeStepBowtieMapPairedReads(NGSRunStepData stepData) throws IOException, Exception{
+    private void addStepBowtieMapPairedReads(NGSRunStepData stepData) throws IOException, Exception{
 
 
         StepInputData sidMapPR = new StepInputData(this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), 
                  refDataLocations, stepData.getInputFileList(), stepData.getOutputFileList(), this.getSampleData());
         StepBowtieMapPairedReads ngsBowtieMapPairedReads = new StepBowtieMapPairedReads(sidMapPR);
-
-        ngsBowtieMapPairedReads.execute();
+        ngsBowtieMapPairedReads.verifyInputData();
         
     }
     
@@ -250,15 +254,14 @@ public class SmallNGSPipeline {
      * 
      * @param stepData 
      */
-    private void executeStepParseSAMForMiRNAs(NGSRunStepData stepData) throws IOException, Exception{
+    private void addStepParseSAMForMiRNAs(NGSRunStepData stepData) throws IOException, Exception{
         
 
        StepInputData sidSAM = new StepInputData(this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), 
                 refDataLocations, stepData.getInputFileList(), stepData.getOutputFileList(), this.getSampleData());
        StepParseSAMForMiRNAs ngsParseSAMForMiRNAs = new StepParseSAMForMiRNAs(sidSAM);
        ngsParseSAMForMiRNAs.parseConfigurationData((HashMap)pipelineConfigurationDataHash.get(StepParseSAMForMiRNAs.STEP_ID_STRING));
-
-       ngsParseSAMForMiRNAs.execute();
+       ngsParseSAMForMiRNAs.verifyInputData();
        
     }
     
@@ -269,13 +272,13 @@ public class SmallNGSPipeline {
      * 
      * @param stepData 
      */
-    private void executeStepAnalyzeStartPositions(NGSRunStepData stepData) throws IOException, Exception{
+    private void addStepAnalyzeStartPositions(NGSRunStepData stepData) throws IOException, Exception{
 
         StepInputData sidStart = new StepInputData(this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), 
                  refDataLocations, stepData.getInputFileList(), stepData.getOutputFileList(), this.getSampleData());
-        StepAnalyzeMappedReads ngsAnalyzeSAMStartPos = new StepAnalyzeMappedReads(sidStart);
-        ngsAnalyzeSAMStartPos.parseConfigurationData((HashMap)pipelineConfigurationDataHash.get(StepAnalyzeMappedReads.STEP_ID_STRING));
-        ngsAnalyzeSAMStartPos.execute();
+        StepAnalyzeSAMforStartPositions ngsAnalyzeSAMStartPos = new StepAnalyzeSAMforStartPositions(sidStart);
+        ngsAnalyzeSAMStartPos.parseConfigurationData((HashMap)pipelineConfigurationDataHash.get(StepAnalyzeSAMforStartPositions.STEP_ID_STRING));
+        ngsAnalyzeSAMStartPos.verifyInputData();
         
     }
     
@@ -285,14 +288,14 @@ public class SmallNGSPipeline {
      * 
      * @param stepData 
      */
-    private void executeStepAnalyzeIsomiRDispersion(NGSRunStepData stepData) throws IOException, Exception{
+    private void addStepAnalyzeIsomiRDispersion(NGSRunStepData stepData) throws IOException, Exception{
         
 
         StepInputData sidIsoDisp = new StepInputData(this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), 
                  refDataLocations, stepData.getInputFileList(), stepData.getOutputFileList(), this.getSampleData());
         StepAnalyzeIsomiRDispersion analyzeIsomiRDispersions = new StepAnalyzeIsomiRDispersion(sidIsoDisp);
         analyzeIsomiRDispersions.parseConfigurationData((HashMap)pipelineConfigurationDataHash.get(StepAnalyzeIsomiRDispersion.STEP_ID_STRING));
-        analyzeIsomiRDispersions.execute();
+        analyzeIsomiRDispersions.verifyInputData();
         
     }
     
@@ -303,14 +306,14 @@ public class SmallNGSPipeline {
      * 
      * @param stepData 
      */
-    private void executeStepDifferentialExpression(NGSRunStepData stepData) throws IOException, Exception{
+    private void addStepDifferentialExpression(NGSRunStepData stepData) throws IOException, Exception{
 
         StepInputData siodDiffExpr = new StepInputData(this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), 
                  refDataLocations, stepData.getInputFileList(), stepData.getOutputFileList(), this.getSampleData());
         StepDEwithEdgeR edgeRDE = new StepDEwithEdgeR(siodDiffExpr);
 
         edgeRDE.parseConfigurationData((HashMap)pipelineConfigurationDataHash.get(StepDEwithEdgeR.STEP_ID_STRING));
-        edgeRDE.execute();
+        edgeRDE.verifyInputData();
         
     }
     
@@ -320,14 +323,14 @@ public class SmallNGSPipeline {
      * 
      * @param stepData 
      */
-    private void executeStepCleanup(NGSRunStepData stepData) throws IOException, Exception{
+    private void addStepCleanup(NGSRunStepData stepData) throws IOException, Exception{
 
 
         StepInputData sidCleanUp = new StepInputData(this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), 
                  refDataLocations, stepData.getInputFileList(), stepData.getOutputFileList(), this.getSampleData());
         StepCleanUp cleanUp = new StepCleanUp(sidCleanUp);
-
-        cleanUp.execute();
+        cleanUp.parseConfigurationData((HashMap)pipelineConfigurationDataHash.get(StepCleanUp.STEP_ID_STRING));
+        cleanUp.verifyInputData();
         
     }
     
@@ -402,66 +405,74 @@ public class SmallNGSPipeline {
     }
     
     
-/*
-    Map<String, Object> data = new HashMap<String, Object>();
-    data.put("name", "Silenthand Olleander");
-    data.put("race", "Human");
-    data.put("traits", new String[] { "ONE_HAND", "ONE_EYE" });
-    Yaml yaml = new Yaml();
-    String output = yaml.dump(data);
-    System.out.println(output);        
-
-
-        */        
-    
-    public void writeSampleConfigurationFile() throws IOException{
-        logger.info("write example pipeline configuration file");
-        HashMap pipelineConfiguration = new HashMap();
-        
-    
-        FileWriter sampleFileWriter = new FileWriter(new File("pipelineConfiguration.sample.yaml"));
-        
-        
-        
-        
-        yaml.dump(pipelineConfiguration, sampleFileWriter);
-        
-    }
     /**
-     * 
+     * generate a sample configuration file. this is primarily to inform
+     * users what can be specified for each step
+     * @throws IOException 
      */
-    public void readPipelineFile(){
+    public void generateSampleConfigurationFile() throws IOException{
+        
+        logger.info("write example pipeline configuration file");
+        DumperOptions options = new DumperOptions();
+        options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
+        yaml = new Yaml(options);   
+
+        
+        StepInputData emptySID = new StepInputData("", "", new ReferenceDataLocations(), "", "", new ArrayList<SampleDataEntry>());
+        Map <String, Object> pipelineExampleConfiguration = new HashMap();
+        StepUnzipInputFiles stepUnzip = new StepUnzipInputFiles(emptySID);
+        pipelineExampleConfiguration.put(StepUnzipInputFiles.STEP_ID_STRING, stepUnzip.generateExampleConfigurationData());
+        
+        StepSingleTrimAdapters stepSingleAdapterTrim = new StepSingleTrimAdapters(emptySID);
+        pipelineExampleConfiguration.put(StepSingleTrimAdapters.STEP_ID_STRING, stepSingleAdapterTrim.generateExampleConfigurationData());
+        
+        StepCollapseReads stepcollapseReads = new StepCollapseReads(emptySID);
+        pipelineExampleConfiguration.put(StepCollapseReads.STEP_ID_STRING, stepcollapseReads.generateExampleConfigurationData());
+        
+        StepBowtieMapSingleReads stepBowtieSingleMap = new StepBowtieMapSingleReads(emptySID);
+        pipelineExampleConfiguration.put(StepBowtieMapSingleReads.STEP_ID_STRING, stepBowtieSingleMap.generateExampleConfigurationData());
+        
+        StepAnalyzeSAMforStartPositions stepAnalyzeStartPos = new StepAnalyzeSAMforStartPositions(emptySID);
+        pipelineExampleConfiguration.put(StepAnalyzeSAMforStartPositions.STEP_ID_STRING, stepAnalyzeStartPos.generateExampleConfigurationData());
+        
+        StepParseSAMForMiRNAs stepParseSAMforMirs = new StepParseSAMForMiRNAs(emptySID);
+        pipelineExampleConfiguration.put(StepParseSAMForMiRNAs.STEP_ID_STRING, stepParseSAMforMirs.generateExampleConfigurationData());
+        
+        StepDEwithEdgeR stepDEwithEdgeR = new StepDEwithEdgeR(emptySID);
+        pipelineExampleConfiguration.put(StepDEwithEdgeR.STEP_ID_STRING, stepDEwithEdgeR.generateExampleConfigurationData());
+        
+        StepCleanUp stepCleanUp = new StepCleanUp(emptySID);
+        pipelineExampleConfiguration.put(StepCleanUp.STEP_ID_STRING, stepCleanUp.generateExampleConfigurationData());
+        
+        
+
+        String dumpFilename = System.getProperty("user.dir") + FILE_SEPARATOR + "pipelineConfiguration.sample.yaml";
+        StringWriter writer = new StringWriter();
+        yaml.dump(pipelineExampleConfiguration, writer);
+        logger.info(writer);
+        try (FileWriter sampleFileWriter = new FileWriter(new File(dumpFilename))) {
+            yaml.dump(pipelineExampleConfiguration, sampleFileWriter);    
+        }
+    }
+    
+    
+    
+    /**
+     * read pipeline file
+     * 
+     * @throws Exception 
+     */
+    public void readPipelineFile() throws Exception{
         
 	ObjectMapper mapper = new ObjectMapper();
         mapper.setVisibility(JsonMethod.FIELD, JsonAutoDetect.Visibility.ANY);
-        
-	try { 
-            
-            
-                logger.info("read pipeline file <" + this.getPipelineFile() + ">");
-                pipelineData = mapper.readValue(new File(this.getPipelineFile()), PipelineData.class); 
-                logger.info("done");
-                logger.info(getPipelineData().toString());
-                
- 
-	} catch (JsonGenerationException e) {
- 
-		e.printStackTrace();
- 
-	} catch (JsonMappingException e) {
- 
-		e.printStackTrace();
- 
-	} catch (IOException e) {
- 
-		e.printStackTrace();
- 
-	}
-        
-        
+
+        logger.info("read pipeline file <" + this.getPipelineFile() + ">");
+        pipelineData = mapper.readValue(new File(this.getPipelineFile()), PipelineData.class); 
+        logger.info("done");
+        logger.info(getPipelineData().toString());
+                        
     }
-    
-    
     
     
     
@@ -516,14 +527,6 @@ public class SmallNGSPipeline {
 
 
     /**
-     * @return the NGSSteps
-     */
-    public ArrayList<NGSStep> getNGSSteps() {
-        return NGSSteps;
-    }
-
-
-    /**
      * @return the SampleData
      */
     public ArrayList<SampleDataEntry> getSampleData() {
@@ -532,20 +535,6 @@ public class SmallNGSPipeline {
 
 
 
-
-    /**
-     * @return the diffExpressionPVal
-     */
-    public double getDiffExpressionPVal() {
-        return diffExpressionPVal;
-    }
-
-    /**
-     * @param diffExpressionPVal the diffExpressionPVal to set
-     */
-    public void setDiffExpressionPVal(double diffExpressionPVal) {
-        this.diffExpressionPVal = diffExpressionPVal;
-    }
 
     /**
      * @return the cleanupFiles
@@ -562,34 +551,6 @@ public class SmallNGSPipeline {
     }
 
     /**
-     * @return the cleanupNoOfThreads
-     */
-    public int getCleanupNoOfThreads() {
-        return cleanupNoOfThreads;
-    }
-
-    /**
-     * @param cleanupNoOfThreads the cleanupNoOfThreads to set
-     */
-    public void setCleanupNoOfThreads(int cleanupNoOfThreads) {
-        this.cleanupNoOfThreads = cleanupNoOfThreads;
-    }
-
-    /**
-     * @return the generateSampleFiles
-     */
-    public Boolean getGenerateSampleFiles() {
-        return generateSampleFiles;
-    }
-
-    /**
-     * @param generateSampleFiles the generateSampleFiles to set
-     */
-    public void setGenerateSampleFiles(Boolean generateSampleFiles) {
-        this.generateSampleFiles = generateSampleFiles;
-    }
-
-    /**
      * @return the dataLocations
      */
     public ReferenceDataLocations getDataLocations() {
@@ -601,6 +562,20 @@ public class SmallNGSPipeline {
      */
     public void setDataLocations(ReferenceDataLocations dataLocations) {
         this.refDataLocations = dataLocations;
+    }
+
+    /**
+     * @return the generateExampleConfigurationFile
+     */
+    public Boolean getGenerateExampleConfigurationFile() {
+        return generateExampleConfigurationFile;
+    }
+
+    /**
+     * @param generateExampleConfigurationFile the generateExampleConfigurationFile to set
+     */
+    public void setGenerateExampleConfigurationFile(Boolean generateExampleConfigurationFile) {
+        this.generateExampleConfigurationFile = generateExampleConfigurationFile;
     }
 
     
