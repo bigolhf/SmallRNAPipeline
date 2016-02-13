@@ -96,6 +96,7 @@ public class StepDEwithEdgeR extends NGSStep implements NGSBase{
      */
     @Override
     public void parseConfigurationData(HashMap configData) throws Exception{
+        
         logger.info(STEP_ID_STRING + ": verify configuration data");
         
         if(configData.get(ID_PVALUE)==null) {
@@ -104,15 +105,15 @@ public class StepDEwithEdgeR extends NGSStep implements NGSBase{
 
         
         try{
-            Double.parseDouble((String) configData.get(ID_PVALUE));
+            this.setpValue((Double) configData.get(ID_PVALUE));
         }
         catch(NumberFormatException exNm){
             throw new NumberFormatException(ID_PVALUE + " <" + configData.get(ID_PVALUE) + "> is not an integer");
         }        
         if (Double.parseDouble((String) configData.get(ID_PVALUE)) <= 0 || Double.parseDouble((String) configData.get(ID_PVALUE)) > 1.0){
-            throw new IllegalArgumentException(ID_PVALUE + " <" + (String) configData.get(ID_PVALUE) + "> must be an float between 0.0 and 1.0");
+            throw new IllegalArgumentException(ID_PVALUE + " <" + configData.get(ID_PVALUE) + "> must be an float between 0.0 and 1.0");
         }
-        this.setpValue(Double.parseDouble((String) configData.get(ID_PVALUE)));
+        
 
         logger.info("passed");
     }
@@ -407,6 +408,9 @@ public class StepDEwithEdgeR extends NGSStep implements NGSBase{
      */        
     @Override
     public void verifyInputData() throws IOException{
+        
+        logger.info("verify input data");        
+        this.setPaths();
         
         Iterator itSD = this.stepInputData.getSampleData().iterator();
         while (itSD.hasNext()){

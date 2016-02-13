@@ -84,6 +84,7 @@ public class StepAnalyzeIsomiRDispersion extends NGSStep implements NGSBase{
      */
     @Override
     public void parseConfigurationData(HashMap configData) throws Exception{
+        
         logger.info(STEP_ID_STRING + ": verify configuration data");
         
         if(configData.get(ID_PVALUE)==null) {
@@ -99,31 +100,31 @@ public class StepAnalyzeIsomiRDispersion extends NGSStep implements NGSBase{
 
       
         try{
-            Integer.parseInt((String) configData.get(ID_MIRBASE_VERSION));
+            this.setMiRBaseRelease((Integer) configData.get(ID_MIRBASE_VERSION));
         }
         catch(NumberFormatException exNm){
             throw new NumberFormatException(ID_MIRBASE_VERSION + " <" + configData.get(ID_MIRBASE_VERSION) + "> is not an integer");
         }        
         if (Integer.parseInt((String) configData.get(ID_MIRBASE_VERSION)) <= 0){
-            throw new IllegalArgumentException(ID_MIRBASE_VERSION + " <" + (String) configData.get(ID_MIRBASE_VERSION) + "> must be positive integer");
+            throw new IllegalArgumentException(ID_MIRBASE_VERSION + " <" + configData.get(ID_MIRBASE_VERSION) + "> must be positive integer");
         }
-        this.setMiRBaseRelease(Integer.parseInt((String) configData.get(ID_MIRBASE_VERSION)));
+        
 
         
         try{
-            Double.parseDouble((String) configData.get(ID_PVALUE));
+            this.setpValue((Double) configData.get(ID_PVALUE));
         }
         catch(NumberFormatException exNm){
             throw new NumberFormatException(ID_PVALUE + " <" + configData.get(ID_PVALUE) + "> is not an integer");
         }        
         if (Double.parseDouble((String) configData.get(ID_PVALUE)) <= 0 || Double.parseDouble((String) configData.get(ID_PVALUE)) > 1.0){
-            throw new IllegalArgumentException(ID_PVALUE + " <" + (String) configData.get(ID_PVALUE) + "> must be an float between 0.0 and 1.0");
+            throw new IllegalArgumentException(ID_PVALUE + " <" + configData.get(ID_PVALUE) + "> must be an float between 0.0 and 1.0");
         }
-        this.setpValue(Double.parseDouble((String) configData.get(ID_PVALUE)));
+        
 
         this.setReferenceGenome((String) configData.get(ID_REF_GENOME));
         if(this.getReferenceGenome().length() !=3 ){
-            throw new IllegalArgumentException(ID_REF_GENOME + " <" + (String) configData.get(ID_REF_GENOME) + "> must be a 3 letter string");            
+            throw new IllegalArgumentException(ID_REF_GENOME + " <" + configData.get(ID_REF_GENOME) + "> must be a 3 letter string");            
         }
         
 
@@ -331,7 +332,9 @@ public class StepAnalyzeIsomiRDispersion extends NGSStep implements NGSBase{
     @Override
     public void verifyInputData() throws IOException{
         
-        
+        logger.info("verify input data");        
+        this.setPaths();
+                
         String isomiRDispFile = inFolder + FILESEPARATOR + stepInputData.getProjectID() + INFILE_EXTENSION;
         String gffFileMirBase = stepInputData.getDataLocations().getMirbaseFolder() + FILESEPARATOR + this.getMiRBaseRelease() + this.getReferenceGenome() + ".gff3";
         String faFileMirBase = gffFileMirBase.replace("gff3", "fasta");

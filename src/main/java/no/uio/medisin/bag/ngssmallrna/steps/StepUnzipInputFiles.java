@@ -50,13 +50,6 @@ public class StepUnzipInputFiles extends NGSStep implements NGSBase{
 
     
 
-    
-    
-    
-    //private StepInputData               stepInputData;
-    //private StepResultData              stepResultData;
-    
-
     /**
      * 
      * @param sid StepInputData
@@ -78,6 +71,7 @@ public class StepUnzipInputFiles extends NGSStep implements NGSBase{
     public void parseConfigurationData(HashMap configData) throws Exception{
 
         logger.info(STEP_ID_STRING + ": verify configuration data");
+        
         if(configData.get(ID_SOFTWARE)==null) {
             throw new NullPointerException("<" + configData.get(ID_SOFTWARE) + "> : Missing Definition in Configuration File");
         }
@@ -87,17 +81,18 @@ public class StepUnzipInputFiles extends NGSStep implements NGSBase{
         
         
         try{
-            Integer.parseInt((String) configData.get(ID_THREADS));
+            this.setNoOfThreads((Integer)configData.get(ID_THREADS));
         }
         catch(NumberFormatException exNm){
             throw new NumberFormatException(ID_THREADS + " <" + configData.get(ID_THREADS) + "> is not an integer");
         }
         
-        if (Integer.parseInt((String) configData.get(ID_THREADS)) <= 0){
-            throw new IllegalArgumentException(ID_THREADS + " <" + (String) configData.get(ID_THREADS) + "> must be positive");
+        if (this.getNoOfThreads() <= 0){
+            throw new IllegalArgumentException(ID_THREADS + " <" + configData.get(ID_THREADS) + "> must be positive");
         }
-        setNoOfThreads(Integer.parseInt((String) configData.get(ID_THREADS)));
-
+        
+        this.setUnzipSoftware((String) configData.get(ID_SOFTWARE));
+ 
         logger.info("passed");
     }
     
@@ -114,7 +109,8 @@ public class StepUnzipInputFiles extends NGSStep implements NGSBase{
             sample unzip command       
             pigz -p 4 -d /data/ngsdata/project1/sra_data.fastq.gz     
         */
-        
+        String fastqFile1 = "";
+        String fastqFile2 = "";
         Iterator itSD = this.stepInputData.getSampleData().iterator();
         while (itSD.hasNext()){
             try{
@@ -123,80 +119,88 @@ public class StepUnzipInputFiles extends NGSStep implements NGSBase{
                 String outputFolder = pathToData + FileSeparator + outFolder;
                 
                 
-                String fastqFile1 = outputFolder + FileSeparator + sampleData.getFastqFile1().replace(INFILE_EXTENSION, OUTFILE_EXTENSION);
-                if(new File(fastqFile1).exists()){
-                    logger.info("fastq file 1 <" + fastqFile1 + "> exists. Skipping");
-                    continue;
-                }
+                fastqFile1 = outputFolder + FileSeparator + sampleData.getFastqFile1().replace(OUTFILE_EXTENSION, INFILE_EXTENSION);
+                if(new File(this.cleanPath(fastqFile1)).exists()){
                                 
-                ArrayList<String> cmd1 = new ArrayList<>();
-                cmd1.add(this.getUnzipSoftware());
-                cmd1.add("-d");
-                cmd1.add(fastqFile1);
-                cmd1.add("-p " + this.getNoOfThreads());
+                    ArrayList<String> cmd1 = new ArrayList<>();
+                    cmd1.add(this.getUnzipSoftware());
+                    cmd1.add("-d");
+                    cmd1.add(fastqFile1);
+                    cmd1.add("-p " + this.getNoOfThreads());
 
-                String cmdUnzip = StringUtils.join(cmd1, " ");
-                cmdUnzip = cmdUnzip.replace(FileSeparator + FileSeparator, FileSeparator);
-                logger.info(STEP_ID_STRING + " command:\t" + cmdUnzip);
+                    String cmdUnzip = StringUtils.join(cmd1, " ");
+                    cmdUnzip = cmdUnzip.replace(FileSeparator + FileSeparator, FileSeparator);
+                    logger.info(STEP_ID_STRING + " fastq1 unzip command:\t" + cmdUnzip);
 
-                Runtime rt1 = Runtime.getRuntime();
-                Process proc1 = rt1.exec(cmdUnzip);
-                BufferedReader brStdin1  = new BufferedReader(new InputStreamReader(proc1.getInputStream()));
-                BufferedReader brStdErr1 = new BufferedReader(new InputStreamReader(proc1.getErrorStream()));
-                
-                    String line1 = null;
-                    logger.info("<OUTPUT>");
-                    while ( (line1 = brStdin1.readLine()) != null)
-                        logger.info(line1);
-                    logger.info("</OUTPUT>");
+                    Runtime rt1 = Runtime.getRuntime();
+                    Process proc1 = rt1.exec(cmdUnzip);
+                    BufferedReader brStdin1  = new BufferedReader(new InputStreamReader(proc1.getInputStream()));
+                    BufferedReader brStdErr1 = new BufferedReader(new InputStreamReader(proc1.getErrorStream()));
 
-                    logger.info("<ERROR>");
-                    while ( (line1 = brStdErr1.readLine()) != null)
-                        logger.info(line1);
-                    logger.info("</ERROR>");                
-                
-                int exitVal = proc1.waitFor();            
-                logger.info("Process1 exitValue: " + exitVal);   
-                
-                brStdin1.close();
-                brStdErr1.close();
-                
-                String fastqFile2 = outputFolder + FileSeparator + sampleData.getFastqFile2().replace(INFILE_EXTENSION, OUTFILE_EXTENSION);
-                ArrayList<String> cmd2 = new ArrayList<>();
-                cmd2.add(this.getUnzipSoftware());
-                cmd2.add("-d");
-                cmd2.add(fastqFile2);
-                cmd2.add("-p " + this.getNoOfThreads());
+                        String line1 = null;
+                        logger.info("<OUTPUT>");
+                        while ( (line1 = brStdin1.readLine()) != null)
+                            logger.info(line1);
+                        logger.info("</OUTPUT>");
 
-                String cmdUnzip2 = StringUtils.join(cmd1, " ");
-                cmdUnzip2 = cmdUnzip2.replace(FileSeparator + FileSeparator, FileSeparator);
-                logger.info(STEP_ID_STRING + " command:\t" + cmdUnzip);
+                        logger.info("<ERROR>");
+                        while ( (line1 = brStdErr1.readLine()) != null)
+                            logger.info(line1);
+                        logger.info("</ERROR>");                
 
-                Runtime rt2 = Runtime.getRuntime();
-                Process proc2 = rt2.exec(cmdUnzip);
-                BufferedReader brStdin2  = new BufferedReader(new InputStreamReader(proc2.getInputStream()));
-                BufferedReader brStdErr2 = new BufferedReader(new InputStreamReader(proc2.getErrorStream()));
-                
-                    String line2 = null;
-                    logger.info("<OUTPUT>");
-                    while ( (line2 = brStdin2.readLine()) != null)
-                        logger.info(line2);
-                    logger.info("</OUTPUT>");
+                    int exitVal = proc1.waitFor();            
+                    logger.info("Process1 exitValue: " + exitVal);   
 
-                    logger.info("<ERROR>");
-                    while ( (line2 = brStdErr2.readLine()) != null)
-                        logger.info(line2);
-                    logger.info("</ERROR>");                
-                
-                int exitVal2 = proc2.waitFor();            
-                logger.info("Process2 exitValue: " + exitVal2);   
-                
-                brStdin2.close();
-                brStdErr2.close();
+                    brStdin1.close();
+                    brStdErr1.close();
+                }
+                else{               
+                    logger.info("fastq file 1 <" + fastqFile1 + "> exists. Skipping");
+                }
+
+                fastqFile2 = outputFolder + FileSeparator + sampleData.getFastqFile2().replace(INFILE_EXTENSION, OUTFILE_EXTENSION);
+                if(new File(this.cleanPath(fastqFile2)).exists()){
+            
+                    ArrayList<String> cmd2 = new ArrayList<>();
+                    cmd2.add(this.getUnzipSoftware());
+                    cmd2.add("-d");
+                    cmd2.add(fastqFile2);
+                    cmd2.add("-p " + this.getNoOfThreads());
+
+                    String cmdUnzip2 = StringUtils.join(cmd2, " ");
+                    cmdUnzip2 = cmdUnzip2.replace(FileSeparator + FileSeparator, FileSeparator);
+                    logger.info(STEP_ID_STRING + " fastq2 unzip command:\t" + cmdUnzip2);
+
+                    Runtime rt2 = Runtime.getRuntime();
+                    Process proc2 = rt2.exec(cmdUnzip2);
+                    BufferedReader brStdin2  = new BufferedReader(new InputStreamReader(proc2.getInputStream()));
+                    BufferedReader brStdErr2 = new BufferedReader(new InputStreamReader(proc2.getErrorStream()));
+
+                        String line2 = null;
+                        logger.info("<OUTPUT>");
+                        while ( (line2 = brStdin2.readLine()) != null)
+                            logger.info(line2);
+                        logger.info("</OUTPUT>");
+
+                        logger.info("<ERROR>");
+                        while ( (line2 = brStdErr2.readLine()) != null)
+                            logger.info(line2);
+                        logger.info("</ERROR>");                
+
+                    int exitVal2 = proc2.waitFor();            
+                    logger.info("Process2 exitValue: " + exitVal2);   
+
+                    brStdin2.close();
+                    brStdErr2.close();
+                }
+                else{               
+                    logger.info("fastq file 2 <" + fastqFile2 + "> exists. Skipping");
+                }
                                 
             }
             catch(InterruptedException ex){
-                logger.error("error executing pigz unzip command\n" + ex.toString());
+                logger.error("error executing pigz unzip command");
+                throw new IOException("error executing pigz unzip command");
             }
         }
         
@@ -213,29 +217,26 @@ public class StepUnzipInputFiles extends NGSStep implements NGSBase{
     @Override
     public void verifyInputData() throws IOException{
         
-        logger.info("verify input data");
+        logger.info("verify input data");        
+        this.setPaths();
         
         if(new File(this.getUnzipSoftware()).exists() == false){
             throw new IOException("unzip software not found at location < " + this.getUnzipSoftware() +">");
         }
-        
-        if (this.getNoOfThreads() <= 0)
-        {
-            logger.error("number of threads <" + this.getNoOfThreads() + "> must be positive");    
-            return;            
-        }
-                    
+        String pathToData = stepInputData.getProjectRoot() + FileSeparator + stepInputData.getProjectID() + FileSeparator + outFolder;;               
+                
+                
+                            
         // check the data files
         Iterator itSD = this.stepInputData.getSampleData().iterator();
         while (itSD.hasNext()){
             SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
-            String fastqFile1 = (String)sampleData.getFastqFile1();
-            String fastqFile2 = (String)sampleData.getFastqFile2();
+            String fastqFile1 = inFolder + FileSeparator + sampleData.getFastqFile1().replace(OUTFILE_EXTENSION, INFILE_EXTENSION);
             
             //Fastq 1
             if (fastqFile1==null) throw new IOException("no Fastq1 file specified");
             
-            if ((new File(fastqFile1)).exists()==false){
+            if (new File(this.cleanPath(fastqFile1)).exists()==false){
                 throw new IOException(STEP_ID_STRING + ": fastq File1 <" 
                   + fastqFile1 + "> does not exist");
             }
@@ -248,7 +249,8 @@ public class StepUnzipInputFiles extends NGSStep implements NGSBase{
             
             
             //Fastq 2
-            if (fastqFile2==null) continue;
+            if (sampleData.getFastqFile2()==null) continue;
+            String fastqFile2 = pathToData + FileSeparator + sampleData.getFastqFile2().replace(OUTFILE_EXTENSION, INFILE_EXTENSION);
             
             if ((new File(fastqFile2)).exists()==false){
                 throw new IOException(STEP_ID_STRING + ": fastq File2 <" 

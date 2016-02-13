@@ -110,32 +110,32 @@ public class StepBowtieMapSingleReads extends NGSStep implements NGSBase{
         
         
         try{
-            Integer.parseInt((String) configData.get(ID_THREADS));
+            this.setNoOfThreads((Integer) configData.get(ID_THREADS));
         }
         catch(NumberFormatException exNm){
             throw new NumberFormatException(ID_THREADS + " <" + configData.get(ID_THREADS) + "> is not an integer");
         }        
-        if (Integer.parseInt((String) configData.get(ID_THREADS)) <= 0){
-            throw new IllegalArgumentException(ID_THREADS + " <" + (String) configData.get(ID_THREADS) + "> must be positive integer");
+        if (this.getNoOfThreads() <= 0){
+            throw new IllegalArgumentException(ID_THREADS + " <" + configData.get(ID_THREADS) + "> must be positive integer");
         }
-        this.setNoOfThreads(Integer.parseInt((String) configData.get(ID_THREADS)));
+        
 
         
         try{
-            Integer.parseInt((String) configData.get(ID_MISMATCHES));
+            this.setNoOfMismatches((Integer) configData.get(ID_MISMATCHES));
         }
         catch(NumberFormatException exNm){
             throw new NumberFormatException(ID_MISMATCHES + " <" + ID_MISMATCHES + "> is not an integer");
         }        
-        if (Integer.parseInt((String) configData.get(ID_MISMATCHES)) <= 0){
-            throw new IllegalArgumentException(ID_MISMATCHES + " <" + (String) configData.get(ID_MISMATCHES) + "> must be positive integer");
+        if (this.getNoOfMismatches() <= 0){
+            throw new IllegalArgumentException(ID_MISMATCHES + " <" + configData.get(ID_MISMATCHES) + "> must be positive integer");
         }
-        this.setNoOfMismatches(Integer.parseInt((String) configData.get(ID_MISMATCHES)));
+        
         
 
         this.setReferenceGenome((String) configData.get(ID_REF_GENOME));
         if(this.getReferenceGenome().length() !=3 ){
-            throw new IllegalArgumentException(ID_REF_GENOME + " <" + (String) configData.get(ID_REF_GENOME) + "> must be a 3 letter string");            
+            throw new IllegalArgumentException(ID_REF_GENOME + " <" + configData.get(ID_REF_GENOME) + "> must be a 3 letter string");            
         }
         this.setAlignMode((String) configData.get(ID_ALIGN_MODE));
         this.setMappingSoftware((String) configData.get(ID_SOFTWARE));
@@ -428,8 +428,10 @@ public class StepBowtieMapSingleReads extends NGSStep implements NGSBase{
      */
     @Override
     public void verifyInputData()  throws IOException, NullPointerException{
-        logger.info("verify input data");
-        
+
+        logger.info("verify input data");        
+        this.setPaths();
+                
         if(new File(this.getMappingSoftware()).exists() == false){
             throw new IOException("mapping software not found at location < " + this.getMappingSoftware() +">");
         }

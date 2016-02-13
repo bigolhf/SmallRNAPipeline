@@ -129,88 +129,85 @@ public class StepAnalyzeSAMforStartPositions extends NGSStep implements NGSBase{
       
         
         try{
-            Integer.parseInt((String) configData.get(ID_BASELINE));
+            this.setBaselinePercent(Integer.parseInt((String) configData.get(ID_BASELINE)));
         }
         catch(NumberFormatException exNm){
             throw new NumberFormatException(ID_BASELINE + " <" + configData.get(ID_BASELINE) + "> is not an integer");
         }        
-        if (Integer.parseInt((String) configData.get(ID_BASELINE)) <= 0){
-            throw new IllegalArgumentException(ID_BASELINE + " <" + (String) configData.get(ID_BASELINE) + "> must be an integer between 0 and 100");
+        if (this.getBaselinePercent() <= 0){
+            throw new IllegalArgumentException(ID_BASELINE + " <" + configData.get(ID_BASELINE) + "> must be an integer between 0 and 100");
         }
-        this.setBaselinePercent(Integer.parseInt((String) configData.get(ID_BASELINE)));
 
         
         try{
-            Integer.parseInt((String) configData.get(ID_SHORTEST_FEATURE));
+            this.setShortestRead(Integer.parseInt((String) configData.get(ID_SHORTEST_FEATURE)));
         }
         catch(NumberFormatException exNm){
             throw new NumberFormatException(ID_SHORTEST_FEATURE + " <" + ID_SHORTEST_FEATURE + "> is not an integer");
         }        
-        if (Integer.parseInt((String) configData.get(ID_SHORTEST_FEATURE)) <= 0 ){
-            throw new IllegalArgumentException(ID_SHORTEST_FEATURE + " <" + (String) configData.get(ID_SHORTEST_FEATURE) + "> must be > 0 ");
+        if (this.getShortestRead() <= 0 ){
+            throw new IllegalArgumentException(ID_SHORTEST_FEATURE + " <" + configData.get(ID_SHORTEST_FEATURE) + "> must be > 0 ");
         }
-        this.setShortestRead(Integer.parseInt((String) configData.get(ID_SHORTEST_FEATURE)));
+        
         
 
         try{
-            Integer.parseInt((String) configData.get(ID_LONGEST_FEATURE));
+            this.setLongestRead(Integer.parseInt((String) configData.get(ID_BLEED)));
         }
         catch(NumberFormatException exNm){
             throw new NumberFormatException(ID_LONGEST_FEATURE + " <" + ID_LONGEST_FEATURE + "> is not an integer");
         }        
-        if (Integer.parseInt((String) configData.get(ID_LONGEST_FEATURE)) <= 0 ){
-            throw new IllegalArgumentException(ID_LONGEST_FEATURE + " <" + (String) configData.get(ID_LONGEST_FEATURE) + "> must be > 0 ");
+        if (this.getLongestRead() <= 0 ){
+            throw new IllegalArgumentException(ID_LONGEST_FEATURE + " <" + configData.get(ID_LONGEST_FEATURE) + "> must be > 0 ");
         }
-        this.setLongestRead(Integer.parseInt((String) configData.get(ID_BLEED)));
         
 
         try{
-            Integer.parseInt((String) configData.get(ID_MIN_COUNTS));
+            this.setMinCounts(Integer.parseInt((String) configData.get(ID_MIN_COUNTS)));
         }
         catch(NumberFormatException exNm){
             throw new NumberFormatException(ID_MIN_COUNTS + " <" + ID_MIN_COUNTS + "> is not an integer");
         }        
-        if (Integer.parseInt((String) configData.get(ID_MIN_COUNTS)) <= 0 ){
-            throw new IllegalArgumentException(ID_MIN_COUNTS + " <" + (String) configData.get(ID_MIN_COUNTS) + "> must be > 0 ");
+        if (this.getMinCounts() <= 0 ){
+            throw new IllegalArgumentException(ID_MIN_COUNTS + " <" + configData.get(ID_MIN_COUNTS) + "> must be > 0 ");
         }
-        this.setMinCounts(Integer.parseInt((String) configData.get(ID_MIN_COUNTS)));
         
 
         try{
-            Integer.parseInt((String) configData.get(ID_BLEED));
+            this.setLocationBleed(Integer.parseInt((String) configData.get(ID_BLEED)));
         }
         catch(NumberFormatException exNm){
             throw new NumberFormatException(ID_BLEED + " <" + ID_BLEED + "> is not an integer");
         }        
-        if (Integer.parseInt((String) configData.get(ID_BLEED)) <= 0 ){
-            throw new IllegalArgumentException(ID_BLEED + " <" + (String) configData.get(ID_BLEED) + "> must be > 0 ");
+        if (this.getLocationBleed() <= 0 ){
+            throw new IllegalArgumentException(ID_BLEED + " <" + configData.get(ID_BLEED) + "> must be > 0 ");
         }
-        this.setLocationBleed(Integer.parseInt((String) configData.get(ID_BLEED)));
+        
         
 
         try{
-            Integer.parseInt((String) configData.get(ID_SEPARATION));
+            this.setSeparation(Integer.parseInt((String) configData.get(ID_SEPARATION)));
         }
         catch(NumberFormatException exNm){
             throw new NumberFormatException(ID_SEPARATION + " <" + ID_SEPARATION + "> is not an integer");
         }        
-        if (Integer.parseInt((String) configData.get(ID_SEPARATION)) <= 0 ){
-            throw new IllegalArgumentException(ID_SEPARATION + " <" + (String) configData.get(ID_SEPARATION) + "> must be > 0 ");
+        if (this.getSeparation() <= 0 ){
+            throw new IllegalArgumentException(ID_SEPARATION + " <" + configData.get(ID_SEPARATION) + "> must be > 0 ");
         }
-        this.setLocationBleed(Integer.parseInt((String) configData.get(ID_BLEED)));
+        
         
 
         this.setReferenceGenome((String) configData.get(ID_REF_GENOME));
         if(this.getReferenceGenome().length() !=3 ){
-            throw new IllegalArgumentException(ID_REF_GENOME + " <" + (String) configData.get(ID_REF_GENOME) + "> must be a 3 letter string");            
+            throw new IllegalArgumentException(ID_REF_GENOME + " <" + configData.get(ID_REF_GENOME) + "> must be a 3 letter string");            
         }
         try{
-            Boolean.parseBoolean((String) configData.get(ID_ISOMIRS));
+            this.setAnalyzeIsomirs(Boolean.parseBoolean((String) configData.get(ID_ISOMIRS)));
         }
         catch(NumberFormatException exNm){
-            throw new NumberFormatException(ID_BLEED + " <" + (String) configData.get(ID_BLEED) + "> cannot be cast as Boolean");
+            throw new NumberFormatException(ID_BLEED + " <" + configData.get(ID_BLEED) + "> cannot be cast as Boolean");
         }        
-        this.setAnalyzeIsomirs(Boolean.parseBoolean((String) configData.get(ID_ISOMIRS)));
+        
         
 
         logger.info("passed");
@@ -762,9 +759,11 @@ public class StepAnalyzeSAMforStartPositions extends NGSStep implements NGSBase{
      */    
     @Override
     public void verifyInputData()  throws IOException, NullPointerException{
-        logger.info("verify input data");
-        
 
+        logger.info("verify input data");        
+        this.setPaths();
+        
+        
         String pathToFasta = stepInputData.getDataLocations().getGenomeRootFolder()
                 + FILESEPARATOR + this.getReferenceGenome() + FILESEPARATOR + ReferenceDataLocations.ID_REL_WHOLE_GENSEQ_PATH;
         String genomeFastaFile = pathToFasta + FILESEPARATOR + "genome.fa";

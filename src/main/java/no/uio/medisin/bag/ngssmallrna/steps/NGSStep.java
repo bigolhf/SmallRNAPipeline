@@ -45,4 +45,14 @@ abstract public class NGSStep {
         
     }
     
+    /**
+     * strip out duplicate folder delimiter from a file path
+     * 
+     * @param path
+     * @return 
+     */
+    final String cleanPath(String path){
+        return path.replace(FILESEPARATOR + FILESEPARATOR, FILESEPARATOR);
+    }
+    
 }

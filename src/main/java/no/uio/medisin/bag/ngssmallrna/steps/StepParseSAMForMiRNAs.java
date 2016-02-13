@@ -405,8 +405,9 @@ public class StepParseSAMForMiRNAs extends NGSStep implements NGSBase{
     @Override
     public void verifyInputData() throws IOException{
         
+        logger.info("verify input data");        
         this.setPaths();
-        
+                
         // check the SAM files exist
         Iterator itSD = this.stepInputData.getSampleData().iterator();
         while (itSD.hasNext()){

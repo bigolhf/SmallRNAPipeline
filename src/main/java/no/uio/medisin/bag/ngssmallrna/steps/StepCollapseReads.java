@@ -80,6 +80,9 @@ public class StepCollapseReads extends NGSStep implements NGSBase {
             throw new NullPointerException("<" + configData.get(ID_COLLAPSE_SOFTWARE) + "> : Missing Definition in Configuration File");
         }
         
+        this.setFastq2fasta_software((String) configData.get(ID_Q2A_SOFTWARE));
+        this.setCollapseFastaSoftware((String) configData.get(ID_COLLAPSE_SOFTWARE));
+        
         logger.info("passed");
     }
     
@@ -220,8 +223,9 @@ public class StepCollapseReads extends NGSStep implements NGSBase {
     @Override
     public void verifyInputData() throws IOException, NullPointerException{
         
-        logger.info("verify input data");
-        
+        logger.info("verify input data");        
+        this.setPaths();
+                
         // does software exist?
         if(new File(this.getFastq2fasta_software()).exists() == false){
             throw new IOException(STEP_ID_STRING + ": fastq2fasta software not found at location < " + this.getFastq2fasta_software() +">");

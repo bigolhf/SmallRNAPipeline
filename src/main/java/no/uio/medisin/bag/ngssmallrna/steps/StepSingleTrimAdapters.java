@@ -69,8 +69,7 @@ public class StepSingleTrimAdapters extends NGSStep implements NGSBase{
     public void parseConfigurationData(HashMap configData) throws Exception{
 
         logger.info(STEP_ID_STRING + ": verify configuration data");
-        
-        
+                
         if(configData.get(ID_SOFTWARE)==null) {
             throw new NullPointerException("<" + configData.get(ID_SOFTWARE) + "> : Missing Definition in Configuration File");
         }
@@ -92,51 +91,50 @@ public class StepSingleTrimAdapters extends NGSStep implements NGSBase{
         
         
         try{
-            Integer.parseInt((String) configData.get(ID_MISMATCHES));
+            this.setNoOfMismatches((Integer) configData.get(ID_MISMATCHES));
         }
         catch(NumberFormatException exNm){
             throw new NumberFormatException(ID_MISMATCHES + " <" + configData.get(ID_MISMATCHES) + "> is not an integer");
         }        
-        if (Integer.parseInt((String) configData.get(ID_MISMATCHES)) <= 0){
-            throw new IllegalArgumentException(ID_MISMATCHES + " <" + (String) configData.get(ID_MISMATCHES) + "> must be positive");
-        }
-        this.setNoOfMismatches(Integer.parseInt((String) configData.get(ID_MISMATCHES)));
+        if (this.getNoOfMismatches() <= 0){
+            throw new IllegalArgumentException(ID_MISMATCHES + " <" + configData.get(ID_MISMATCHES) + "> must be positive");
+        }        this.setNoOfMismatches(Integer.parseInt((String) configData.get(ID_MISMATCHES)));
         
         
         try{
-            Integer.parseInt((String) configData.get(ID_MIN_ALIGN_SCORE));
+            this.setMinAlignScore((Integer) configData.get(ID_MIN_ALIGN_SCORE));
         }
         catch(NumberFormatException exNm){
             throw new NumberFormatException(ID_MIN_ALIGN_SCORE + " <" + configData.get(ID_MIN_ALIGN_SCORE) + "> is not an integer");
         }        
-        if (Integer.parseInt((String) configData.get(ID_MIN_ALIGN_SCORE)) <= 0){
-            throw new IllegalArgumentException(ID_MIN_ALIGN_SCORE + " <" + (String) configData.get(ID_MIN_ALIGN_SCORE) + "> must be positive");
+        if (this.getMinAlignScore() <= 0){
+            throw new IllegalArgumentException(ID_MIN_ALIGN_SCORE + " <" + configData.get(ID_MIN_ALIGN_SCORE) + "> must be positive");
         }
-        this.setMinAlignScore(Integer.parseInt((String) configData.get(ID_MIN_ALIGN_SCORE)));
+        
         
         
         try{
-            Integer.parseInt((String) configData.get(ID_MIN_AVGREAD_QUAL));
+            this.setMinAvgReadQuality((Integer) configData.get(ID_MIN_AVGREAD_QUAL));
         }
         catch(NumberFormatException exNm){
             throw new NumberFormatException(ID_MIN_AVGREAD_QUAL + " <" + configData.get(ID_MIN_AVGREAD_QUAL) + "> is not an integer");
         }        
-        if (Integer.parseInt((String) configData.get(ID_MIN_AVGREAD_QUAL)) <= 0){
-            throw new IllegalArgumentException(ID_MIN_AVGREAD_QUAL + " <" + (String) configData.get(ID_MIN_AVGREAD_QUAL) + "> must be positive");
+        if (this.getMinAvgReadQuality() <= 0){
+            throw new IllegalArgumentException(ID_MIN_AVGREAD_QUAL + " <" + configData.get(ID_MIN_AVGREAD_QUAL) + "> must be positive");
         }
-        this.setMinAvgReadQuality(Integer.parseInt((String) configData.get(ID_MIN_AVGREAD_QUAL)));
+        
         
         
         try{
-            Integer.parseInt((String) configData.get(ID_THREADS));
+            this.setNoOfThreads((Integer) configData.get(ID_THREADS));
         }
         catch(NumberFormatException exNm){
             throw new NumberFormatException(ID_THREADS + " <" + configData.get(ID_THREADS) + "> is not an integer");
         }        
-        if (Integer.parseInt((String) configData.get(ID_THREADS)) <= 0){
-            throw new IllegalArgumentException(ID_THREADS + " <" + (String) configData.get(ID_THREADS) + "> must be positive");
+        if (this.getNoOfThreads() <= 0){
+            throw new IllegalArgumentException(ID_THREADS + " <" + configData.get(ID_THREADS) + "> must be positive");
         }
-        this.setNoOfThreads(Integer.parseInt((String) configData.get(ID_THREADS)));
+        
 
         logger.info("passed");
     }
@@ -230,6 +228,9 @@ public class StepSingleTrimAdapters extends NGSStep implements NGSBase{
     @Override
     public void verifyInputData() throws IOException{
 
+        logger.info("verify input data");        
+        this.setPaths();
+        
         if(new File(this.getTrimSoftware()).exists() == false){
             throw new IOException(STEP_ID_STRING + ": Adapter Trimming software not found at location < " + this.getTrimSoftware() +">");
         }

@@ -182,6 +182,10 @@ public class StepCleanUp extends NGSStep implements NGSBase{
             
     @Override
     public void verifyInputData(){
+        
+        logger.info("verify input data");        
+        this.setPaths();
+        
             // does input file have correct extension?
         // does input file have the same extension as expected for the output file?
     }

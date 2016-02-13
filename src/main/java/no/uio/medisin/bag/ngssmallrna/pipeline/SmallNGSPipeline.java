@@ -107,7 +107,7 @@ public class SmallNGSPipeline {
         
         logger.info("preparing steps");
         for (NGSRunStepData stepData: this.getPipelineData().getStepsData()){
-            
+            logger.info(" - Found step " + stepData.getStepType());
             switch (stepData.getStepType()){
                 
                 case StepUnzipInputFiles.STEP_ID_STRING:
