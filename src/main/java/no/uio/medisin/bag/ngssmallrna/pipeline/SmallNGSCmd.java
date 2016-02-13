@@ -40,6 +40,7 @@ public class SmallNGSCmd {
         try{
             smallPipeline.prepare_pipeline();
             smallPipeline.prepareSteps();
+            smallPipeline.executePipeline();
         }
         catch(IOException exIO){
             logger.info("error while executing pipeline");

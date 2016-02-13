@@ -107,52 +107,47 @@ public class StepParseSAMForMiRNAs extends NGSStep implements NGSBase{
 
       
         try{
-            Integer.parseInt((String) configData.get(ID_MIRBASE_VERSION));
+            this.setMiRBaseRelease((Integer) configData.get(ID_MIRBASE_VERSION));
         }
-        catch(NumberFormatException exNm){
+        catch(Exception exNm){
             throw new NumberFormatException(ID_MIRBASE_VERSION + " <" + configData.get(ID_MIRBASE_VERSION) + "> is not an integer");
         }        
-        if (Integer.parseInt((String) configData.get(ID_MIRBASE_VERSION)) <= 0){
-            throw new IllegalArgumentException(ID_MIRBASE_VERSION + " <" + (String) configData.get(ID_MIRBASE_VERSION) + "> must be positive integer");
+        if (this.getMiRBaseRelease() <= 0){
+            throw new IllegalArgumentException(ID_MIRBASE_VERSION + " <" + configData.get(ID_MIRBASE_VERSION) + "> must be positive integer");
         }
-        this.setBaselinePercent(Integer.parseInt((String) configData.get(ID_MIRBASE_VERSION)));
 
         
         try{
-            Integer.parseInt((String) configData.get(ID_BASELINE));
+            this.setBaselinePercent((Integer) configData.get(ID_BASELINE));
         }
-        catch(NumberFormatException exNm){
+        catch(Exception exNm){
             throw new NumberFormatException(ID_BASELINE + " <" + configData.get(ID_BASELINE) + "> is not an integer");
         }        
-        if (Integer.parseInt((String) configData.get(ID_BASELINE)) <= 0){
-            throw new IllegalArgumentException(ID_BASELINE + " <" + (String) configData.get(ID_BASELINE) + "> must be an integer between 0 and 100");
+        if (this.getBaselinePercent() <= 0){
+            throw new IllegalArgumentException(ID_BASELINE + " <" + configData.get(ID_BASELINE) + "> must be an integer between 0 and 100");
         }
-        this.setBaselinePercent(Integer.parseInt((String) configData.get(ID_BASELINE)));
 
         try{
-            Integer.parseInt((String) configData.get(ID_BLEED));
+            this.setLocationBleed((Integer) configData.get(ID_BLEED));
         }
-        catch(NumberFormatException exNm){
+        catch(Exception exNm){
             throw new NumberFormatException(ID_BLEED + " <" + ID_BLEED + "> is not an integer");
         }        
-        if (Integer.parseInt((String) configData.get(ID_BLEED)) <= 0 ){
-            throw new IllegalArgumentException(ID_BLEED + " <" + (String) configData.get(ID_BLEED) + "> must be > 0 ");
-        }
-        this.setLocationBleed(Integer.parseInt((String) configData.get(ID_BLEED)));
-        
+        if (this.getLocationBleed() <= 0 ){
+            throw new IllegalArgumentException(ID_BLEED + " <" + configData.get(ID_BLEED) + "> must be > 0 ");
+        }        
 
         this.setReferenceGenome((String) configData.get(ID_REF_GENOME));
         if(this.getReferenceGenome().length() !=3 ){
-            throw new IllegalArgumentException(ID_REF_GENOME + " <" + (String) configData.get(ID_REF_GENOME) + "> must be a 3 letter string");            
+            throw new IllegalArgumentException(ID_REF_GENOME + " <" + configData.get(ID_REF_GENOME) + "> must be a 3 letter string");            
         }
 
         try{
-            Boolean.parseBoolean((String) configData.get(ID_ISOMIRS));
+            this.setAnalyzeIsomirs((Boolean) configData.get(ID_ISOMIRS));
         }
         catch(NumberFormatException exNm){
-            throw new NumberFormatException(ID_BLEED + " <" + (String) configData.get(ID_BLEED) + "> cannot be cast as Boolean");
+            throw new NumberFormatException(ID_BLEED + " <" + configData.get(ID_BLEED) + "> cannot be cast as Boolean");
         }        
-        this.setAnalyzeIsomirs(Boolean.parseBoolean((String) configData.get(ID_ISOMIRS)));
         
 
         logger.info("passed");
@@ -172,9 +167,9 @@ public class StepParseSAMForMiRNAs extends NGSStep implements NGSBase{
         this.setPaths();
         stepInputData.verifyInputData();            
     
-        String gffFileMirBase = stepInputData.getDataLocations().getMirbaseFolder() + FILESEPARATOR + this.getMiRBaseRelease() + this.getReferenceGenome() + ".gff3";
-        String faFileMirBase = gffFileMirBase.replace("gff3", "fasta");
-        mirBaseSet.loadMiRBaseData(gffFileMirBase, faFileMirBase, this.getReferenceGenome());
+        String gffFileMirBase = stepInputData.getDataLocations().getMirbaseFolder() + FILESEPARATOR + this.getMiRBaseRelease() + FILESEPARATOR + this.getReferenceGenome() + ".gff3";
+        String faFileMirBase = gffFileMirBase.replace("gff3", "mature.fa");
+        mirBaseSet.loadMiRBaseData(this.getReferenceGenome(),gffFileMirBase, faFileMirBase);
         
         Boolean fA = new File(outFolder).mkdir();       
         if (fA) logger.info("created output folder <" + outFolder + "> for results" );
@@ -410,6 +405,8 @@ public class StepParseSAMForMiRNAs extends NGSStep implements NGSBase{
     @Override
     public void verifyInputData() throws IOException{
         
+        this.setPaths();
+        
         // check the SAM files exist
         Iterator itSD = this.stepInputData.getSampleData().iterator();
         while (itSD.hasNext()){
@@ -451,7 +448,7 @@ public class StepParseSAMForMiRNAs extends NGSStep implements NGSBase{
         configData.put(ID_BLEED, 2);
         configData.put(ID_BASELINE, 5);
         configData.put(ID_MIRBASE_VERSION, 20);
-        configData.put(ID_ISOMIRS, "true");
+        configData.put(ID_ISOMIRS, true);
 
         return configData;
         

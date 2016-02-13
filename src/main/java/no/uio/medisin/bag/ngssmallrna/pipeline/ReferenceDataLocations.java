@@ -17,18 +17,32 @@ import static no.uio.medisin.bag.ngssmallrna.pipeline.MiRNAFeature.logger;
  */
 public class ReferenceDataLocations {
     
+    public final static     String ID_CONFIG_ID             = "ReferenceData";
+    public final static     String ID_GENOME_FOLDER         = "genomeRootFolder";
+    public final static     String ID_MIRBASE_FOLDER        = "mirbaseFolder";
+    
     public final static     String ID_REL_BOWTIE_PATH       = "Sequence/BowtieIndex/genome";
     public final static     String ID_REL_ABUN_DATA_PATH    = "/Sequence/AbundantSequences/abundant";
     public final static     String ID_REL_WHOLE_GENSEQ_PATH = "Sequence/WholeGenomeFasta";
     public final static     String ID_GENE_ANNOTATION       = "/Annotation/Genes";
     
-    public final static     String ID_GENOME_FOLDER = "genome_root_folder:";
-    public final static     String ID_MIRBASE_FOLDER = "mirbase_folder:";
     
     
-    private       String genomeRootFolder;
-    private       String mirbaseFolder;
+    private                 String genomeRootFolder;
+    private                 String mirbaseFolder;
 
+    
+    public ReferenceDataLocations(){
+    
+    }
+    
+    
+    public ReferenceDataLocations(HashMap options){
+        
+        genomeRootFolder    = (String) options.get(ReferenceDataLocations.ID_GENOME_FOLDER);
+        mirbaseFolder       = (String)options.get(ReferenceDataLocations.ID_MIRBASE_FOLDER);
+        
+    }
     /**
      * in this method we are simply checking that the configuration file 
      * has all the entries we need. We dont check if the values are acceptable
@@ -65,6 +79,23 @@ public class ReferenceDataLocations {
             throw new IOException("root mirbase folder <" + ID_MIRBASE_FOLDER + "> not found");
         }
     }
+    
+
+    
+    /**
+     * generate sample configuration data
+     * 
+     * @return 
+     */
+    public HashMap generateExampleConfigurationData() {
+
+        HashMap configData = new HashMap();
+        configData.put(ID_GENOME_FOLDER, "/data/genomes");
+        configData.put(ID_MIRBASE_FOLDER, "/data/mirbase");
+    
+        return configData;
+    }
+    
     
     
     
