@@ -33,7 +33,7 @@ public class StepBowtieMapSingleReads extends NGSStep implements NGSBase{
 
     static Logger logger = LogManager.getLogger();
 
-    public  static final String STEP_ID_STRING                  = "BowtieSingleReadMap";
+    public  static final String STEP_ID_STRING                  = "BowtieMapSingleReads";
 
     private static final String ID_SOFTWARE                     = "mappingSoftware";
     private static final String ID_REF_GENOME                   = "host";
@@ -92,18 +92,27 @@ public class StepBowtieMapSingleReads extends NGSStep implements NGSBase{
         logger.info(STEP_ID_STRING + ": verify configuration data");
         
         if(configData.get(ID_SOFTWARE)==null) {
+            logger.error("<" + configData.get(ID_SOFTWARE) + "> : Missing Definition in Configuration File");
             throw new NullPointerException("<" + configData.get(ID_SOFTWARE) + "> : Missing Definition in Configuration File");
         }
         if(configData.get(ID_REF_GENOME)==null) {
+            logger.error("<" + ID_REF_GENOME + "> : Missing Definition in Configuration File");
             throw new NullPointerException("<" + ID_REF_GENOME + "> : Missing Definition in Configuration File");
         }
         if(configData.get(ID_MISMATCHES)==null) {
+            logger.error("<" + ID_MISMATCHES + "> : Missing Definition in Configuration File");
             throw new NullPointerException("<" + ID_MISMATCHES + "> : Missing Definition in Configuration File");
         }
         if(configData.get(ID_ALIGN_MODE)==null) {
+            logger.error("<" + configData.get(ID_ALIGN_MODE) + "> : Missing Definition in Configuration File");
             throw new NullPointerException("<" + configData.get(ID_ALIGN_MODE) + "> : Missing Definition in Configuration File");
         }
+        if(configData.get(ID_THREADS)==null) {
+            logger.error("<" + ID_THREADS + "> : Missing Definition in Configuration File");
+            throw new NullPointerException("<" + ID_THREADS + "> : Missing Definition in Configuration File");
+        }
         if(configData.get(ID_REF_GENOME)==null) {
+            logger.error("<" + ID_REF_GENOME + "> : Missing Definition in Configuration File");
             throw new NullPointerException("<" + ID_REF_GENOME + "> : Missing Definition in Configuration File");
         }
         
@@ -113,9 +122,11 @@ public class StepBowtieMapSingleReads extends NGSStep implements NGSBase{
             this.setNoOfThreads((Integer) configData.get(ID_THREADS));
         }
         catch(NumberFormatException exNm){
+            logger.error(ID_THREADS + " <" + configData.get(ID_THREADS) + "> is not an integer");
             throw new NumberFormatException(ID_THREADS + " <" + configData.get(ID_THREADS) + "> is not an integer");
         }        
         if (this.getNoOfThreads() <= 0){
+            logger.error(ID_THREADS + " <" + configData.get(ID_THREADS) + "> must be positive integer");
             throw new IllegalArgumentException(ID_THREADS + " <" + configData.get(ID_THREADS) + "> must be positive integer");
         }
         
@@ -125,9 +136,11 @@ public class StepBowtieMapSingleReads extends NGSStep implements NGSBase{
             this.setNoOfMismatches((Integer) configData.get(ID_MISMATCHES));
         }
         catch(NumberFormatException exNm){
+            logger.error(ID_MISMATCHES + " <" + ID_MISMATCHES + "> is not an integer");
             throw new NumberFormatException(ID_MISMATCHES + " <" + ID_MISMATCHES + "> is not an integer");
         }        
         if (this.getNoOfMismatches() <= 0){
+            logger.error(ID_MISMATCHES + " <" + configData.get(ID_MISMATCHES) + "> must be positive integer");
             throw new IllegalArgumentException(ID_MISMATCHES + " <" + configData.get(ID_MISMATCHES) + "> must be positive integer");
         }
         
@@ -135,6 +148,7 @@ public class StepBowtieMapSingleReads extends NGSStep implements NGSBase{
 
         this.setReferenceGenome((String) configData.get(ID_REF_GENOME));
         if(this.getReferenceGenome().length() !=3 ){
+            logger.error(ID_REF_GENOME + " <" + configData.get(ID_REF_GENOME) + "> must be a 3 letter string");            
             throw new IllegalArgumentException(ID_REF_GENOME + " <" + configData.get(ID_REF_GENOME) + "> must be a 3 letter string");            
         }
         this.setAlignMode((String) configData.get(ID_ALIGN_MODE));
@@ -433,6 +447,7 @@ public class StepBowtieMapSingleReads extends NGSStep implements NGSBase{
         this.setPaths();
                 
         if(new File(this.getMappingSoftware()).exists() == false){
+            logger.error("mapping software not found at location < " + this.getMappingSoftware() +">");
             throw new IOException("mapping software not found at location < " + this.getMappingSoftware() +">");
         }
         
@@ -448,18 +463,23 @@ public class StepBowtieMapSingleReads extends NGSStep implements NGSBase{
             if (fastqFile1==null) throw new IOException("no Fastq1 file specified");
             
             if ((new File(fastqFile1)).exists()==false){
+                logger.error("unzipFastqFiles: fastq File1 <" 
+                  + fastqFile1 + "> does not exist");
                 throw new IOException("unzipFastqFiles: fastq File1 <" 
                   + fastqFile1 + "> does not exist");
             }
             if (fastqFile1.toUpperCase().endsWith(INFILE_EXTENSION.toUpperCase())==false)
             {
+                logger.error("unzipFastqFiles: incorrect file extension for input file <" 
+                  + fastqFile1 + ">.  \n" 
+                  + "should have <" + INFILE_EXTENSION + "> as extension");
                 throw new IOException("unzipFastqFiles: incorrect file extension for input file <" 
                   + fastqFile1 + ">.  \n" 
                   + "should have <" + INFILE_EXTENSION + "> as extension");
             }
             
             
-            // dont check for Fastq 2 as this is single mapping
+            // we dont check for Fastq 2 as this is single mapping
                         
             
         }

@@ -89,18 +89,23 @@ public class StepParseSAMForMiRNAs extends NGSStep implements NGSBase{
         logger.info(STEP_ID_STRING + ": verify configuration data");
         
         if(configData.get(ID_BLEED)==null) {
+            logger.error("<" + ID_BLEED + "> : Missing Definition in Configuration File");
             throw new NullPointerException("<" + ID_BLEED + "> : Missing Definition in Configuration File");
         }
         if(configData.get(ID_ISOMIRS)==null) {
+            logger.error("<" + ID_ISOMIRS + "> : Missing Definition in Configuration File");
             throw new NullPointerException("<" + ID_ISOMIRS + "> : Missing Definition in Configuration File");
         }
         if(configData.get(ID_MIRBASE_VERSION)==null) {
+            logger.error("<" + ID_MIRBASE_VERSION + "> : Missing Definition in Configuration File");
             throw new NullPointerException("<" + ID_MIRBASE_VERSION + "> : Missing Definition in Configuration File");
         }
         if(configData.get(ID_REF_GENOME)==null) {
+            logger.error("<" + ID_REF_GENOME + "> : Missing Definition in Configuration File");
             throw new NullPointerException("<" + ID_REF_GENOME + "> : Missing Definition in Configuration File");
         }
         if(configData.get(ID_BASELINE)==null) {
+            logger.error("<" + ID_BASELINE + "> : Missing Definition in Configuration File");
             throw new NullPointerException("<" + ID_BASELINE + "> : Missing Definition in Configuration File");
         }
         
@@ -110,9 +115,11 @@ public class StepParseSAMForMiRNAs extends NGSStep implements NGSBase{
             this.setMiRBaseRelease((Integer) configData.get(ID_MIRBASE_VERSION));
         }
         catch(Exception exNm){
+            logger.error(ID_MIRBASE_VERSION + " <" + configData.get(ID_MIRBASE_VERSION) + "> is not an integer");
             throw new NumberFormatException(ID_MIRBASE_VERSION + " <" + configData.get(ID_MIRBASE_VERSION) + "> is not an integer");
         }        
         if (this.getMiRBaseRelease() <= 0){
+            logger.error(ID_MIRBASE_VERSION + " <" + configData.get(ID_MIRBASE_VERSION) + "> must be positive integer");
             throw new IllegalArgumentException(ID_MIRBASE_VERSION + " <" + configData.get(ID_MIRBASE_VERSION) + "> must be positive integer");
         }
 
@@ -121,9 +128,11 @@ public class StepParseSAMForMiRNAs extends NGSStep implements NGSBase{
             this.setBaselinePercent((Integer) configData.get(ID_BASELINE));
         }
         catch(Exception exNm){
+            logger.error(ID_BASELINE + " <" + configData.get(ID_BASELINE) + "> is not an integer");
             throw new NumberFormatException(ID_BASELINE + " <" + configData.get(ID_BASELINE) + "> is not an integer");
         }        
         if (this.getBaselinePercent() <= 0){
+            logger.error(ID_BASELINE + " <" + configData.get(ID_BASELINE) + "> must be an integer between 0 and 100");
             throw new IllegalArgumentException(ID_BASELINE + " <" + configData.get(ID_BASELINE) + "> must be an integer between 0 and 100");
         }
 
@@ -131,14 +140,17 @@ public class StepParseSAMForMiRNAs extends NGSStep implements NGSBase{
             this.setLocationBleed((Integer) configData.get(ID_BLEED));
         }
         catch(Exception exNm){
+            logger.error(ID_BLEED + " <" + ID_BLEED + "> is not an integer");
             throw new NumberFormatException(ID_BLEED + " <" + ID_BLEED + "> is not an integer");
         }        
         if (this.getLocationBleed() <= 0 ){
+            logger.error(ID_BLEED + " <" + configData.get(ID_BLEED) + "> must be > 0 ");
             throw new IllegalArgumentException(ID_BLEED + " <" + configData.get(ID_BLEED) + "> must be > 0 ");
         }        
 
         this.setReferenceGenome((String) configData.get(ID_REF_GENOME));
         if(this.getReferenceGenome().length() !=3 ){
+            logger.error(ID_REF_GENOME + " <" + configData.get(ID_REF_GENOME) + "> must be a 3 letter string");            
             throw new IllegalArgumentException(ID_REF_GENOME + " <" + configData.get(ID_REF_GENOME) + "> must be a 3 letter string");            
         }
 
@@ -146,6 +158,7 @@ public class StepParseSAMForMiRNAs extends NGSStep implements NGSBase{
             this.setAnalyzeIsomirs((Boolean) configData.get(ID_ISOMIRS));
         }
         catch(NumberFormatException exNm){
+            logger.error(ID_BLEED + " <" + configData.get(ID_BLEED) + "> cannot be cast as Boolean");
             throw new NumberFormatException(ID_BLEED + " <" + configData.get(ID_BLEED) + "> cannot be cast as Boolean");
         }        
         

@@ -80,12 +80,15 @@ public class StepCleanUp extends NGSStep implements NGSBase{
 
         logger.info(STEP_ID_STRING + ": verify configuration data");
         if(configData.get(ID_SOFTWARE)==null) {
+            logger.error("<" + configData.get(ID_SOFTWARE) + "> : Missing Definition in Configuration File");
             throw new NullPointerException("<" + configData.get(ID_SOFTWARE) + "> : Missing Definition in Configuration File");
         }
         if(configData.get(ID_THREADS)==null) {
+            logger.error("<" + configData.get(ID_THREADS) + "> : Missing Definition in Configuration File");
             throw new NullPointerException("<" + configData.get(ID_THREADS) + "> : Missing Definition in Configuration File");
         }
         if(configData.get(ID_FILE_TYPES)==null) {
+            logger.error("<" + configData.get(ID_FILE_TYPES) + "> : Missing Definition in Configuration File");
             throw new NullPointerException("<" + configData.get(ID_FILE_TYPES) + "> : Missing Definition in Configuration File");
         }
         
@@ -94,10 +97,12 @@ public class StepCleanUp extends NGSStep implements NGSBase{
             Integer.parseInt((String) configData.get(ID_THREADS));
         }
         catch(NumberFormatException exNm){
+            logger.error(ID_THREADS + " <" + configData.get(ID_THREADS) + "> is not an integer");
             throw new NumberFormatException(ID_THREADS + " <" + configData.get(ID_THREADS) + "> is not an integer");
         }
         
         if (Integer.parseInt((String) configData.get(ID_THREADS)) <= 0){
+            logger.error(ID_THREADS + " <" + (String) configData.get(ID_THREADS) + "> must be positive");
             throw new IllegalArgumentException(ID_THREADS + " <" + (String) configData.get(ID_THREADS) + "> must be positive");
         }
         setNoOfThreads(Integer.parseInt((String) configData.get(ID_THREADS)));
@@ -106,6 +111,7 @@ public class StepCleanUp extends NGSStep implements NGSBase{
             this.setFileTypes((ArrayList<String> )configData.get(ID_FILE_TYPES));
         }
         catch(Exception ex){
+            logger.error("couldn't cast " + configData.get(ID_FILE_TYPES) + "value to ArrayList");
             throw new IOException("couldn't cast " + configData.get(ID_FILE_TYPES) + "value to ArrayList");
         }
 

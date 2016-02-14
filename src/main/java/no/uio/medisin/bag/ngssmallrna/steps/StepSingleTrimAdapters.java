@@ -71,21 +71,27 @@ public class StepSingleTrimAdapters extends NGSStep implements NGSBase{
         logger.info(STEP_ID_STRING + ": verify configuration data");
                 
         if(configData.get(ID_SOFTWARE)==null) {
+            logger.error("<" + configData.get(ID_SOFTWARE) + "> : Missing Definition in Configuration File");
             throw new NullPointerException("<" + configData.get(ID_SOFTWARE) + "> : Missing Definition in Configuration File");
         }
         if(configData.get(ID_ADAPTOR_FILE)==null) {
+            logger.error("<" + configData.get(ID_ADAPTOR_FILE) + "> : Missing Definition in Configuration File");
             throw new NullPointerException("<" + configData.get(ID_ADAPTOR_FILE) + "> : Missing Definition in Configuration File");
         }
         if(configData.get(ID_MISMATCHES)==null) {
+            logger.error("<" + configData.get(ID_MISMATCHES) + "> : Missing Definition in Configuration File");
             throw new NullPointerException("<" + configData.get(ID_MISMATCHES) + "> : Missing Definition in Configuration File");
         }
         if(configData.get(ID_MIN_ALIGN_SCORE)==null) {
+            logger.error("<" + configData.get(ID_MIN_ALIGN_SCORE) + "> : Missing Definition in Configuration File");
             throw new NullPointerException("<" + configData.get(ID_MIN_ALIGN_SCORE) + "> : Missing Definition in Configuration File");
         }
         if(configData.get(ID_MIN_AVGREAD_QUAL)==null) {
+            logger.error("<" + configData.get(ID_MIN_AVGREAD_QUAL) + "> : Missing Definition in Configuration File");
             throw new NullPointerException("<" + configData.get(ID_MIN_AVGREAD_QUAL) + "> : Missing Definition in Configuration File");
         }
         if(configData.get(ID_THREADS)==null) {
+            logger.error("<" + configData.get(ID_THREADS) + "> : Missing Definition in Configuration File");
             throw new NullPointerException("<" + configData.get(ID_THREADS) + "> : Missing Definition in Configuration File");
         }
         
@@ -94,20 +100,24 @@ public class StepSingleTrimAdapters extends NGSStep implements NGSBase{
             this.setNoOfMismatches((Integer) configData.get(ID_MISMATCHES));
         }
         catch(NumberFormatException exNm){
+            logger.error(ID_MISMATCHES + " <" + configData.get(ID_MISMATCHES) + "> is not an integer");
             throw new NumberFormatException(ID_MISMATCHES + " <" + configData.get(ID_MISMATCHES) + "> is not an integer");
         }        
         if (this.getNoOfMismatches() <= 0){
+            logger.error(ID_MISMATCHES + " <" + configData.get(ID_MISMATCHES) + "> must be positive");
             throw new IllegalArgumentException(ID_MISMATCHES + " <" + configData.get(ID_MISMATCHES) + "> must be positive");
-        }        this.setNoOfMismatches(Integer.parseInt((String) configData.get(ID_MISMATCHES)));
+        }        
         
         
         try{
             this.setMinAlignScore((Integer) configData.get(ID_MIN_ALIGN_SCORE));
         }
         catch(NumberFormatException exNm){
+            logger.error(ID_MIN_ALIGN_SCORE + " <" + configData.get(ID_MIN_ALIGN_SCORE) + "> is not an integer");
             throw new NumberFormatException(ID_MIN_ALIGN_SCORE + " <" + configData.get(ID_MIN_ALIGN_SCORE) + "> is not an integer");
         }        
         if (this.getMinAlignScore() <= 0){
+            logger.error(ID_MIN_ALIGN_SCORE + " <" + configData.get(ID_MIN_ALIGN_SCORE) + "> must be positive");
             throw new IllegalArgumentException(ID_MIN_ALIGN_SCORE + " <" + configData.get(ID_MIN_ALIGN_SCORE) + "> must be positive");
         }
         
@@ -117,9 +127,11 @@ public class StepSingleTrimAdapters extends NGSStep implements NGSBase{
             this.setMinAvgReadQuality((Integer) configData.get(ID_MIN_AVGREAD_QUAL));
         }
         catch(NumberFormatException exNm){
+            logger.error(ID_MIN_AVGREAD_QUAL + " <" + configData.get(ID_MIN_AVGREAD_QUAL) + "> is not an integer");
             throw new NumberFormatException(ID_MIN_AVGREAD_QUAL + " <" + configData.get(ID_MIN_AVGREAD_QUAL) + "> is not an integer");
         }        
         if (this.getMinAvgReadQuality() <= 0){
+            logger.error(ID_MIN_AVGREAD_QUAL + " <" + configData.get(ID_MIN_AVGREAD_QUAL) + "> must be positive");
             throw new IllegalArgumentException(ID_MIN_AVGREAD_QUAL + " <" + configData.get(ID_MIN_AVGREAD_QUAL) + "> must be positive");
         }
         
@@ -129,13 +141,16 @@ public class StepSingleTrimAdapters extends NGSStep implements NGSBase{
             this.setNoOfThreads((Integer) configData.get(ID_THREADS));
         }
         catch(NumberFormatException exNm){
+            logger.error(ID_THREADS + " <" + configData.get(ID_THREADS) + "> is not an integer");
             throw new NumberFormatException(ID_THREADS + " <" + configData.get(ID_THREADS) + "> is not an integer");
         }        
         if (this.getNoOfThreads() <= 0){
+            logger.error(ID_THREADS + " <" + configData.get(ID_THREADS) + "> must be positive");
             throw new IllegalArgumentException(ID_THREADS + " <" + configData.get(ID_THREADS) + "> must be positive");
         }
         
 
+        this.setTrimSoftware((String) configData.get(ID_SOFTWARE));
         logger.info("passed");
     }
     
@@ -224,7 +239,12 @@ public class StepSingleTrimAdapters extends NGSStep implements NGSBase{
     
     
     
-            
+    /**
+     * this should be called prior to executing the step.
+     * check trimming software exists and input files are available
+     * 
+     * @throws IOException 
+     */        
     @Override
     public void verifyInputData() throws IOException{
 
@@ -232,22 +252,31 @@ public class StepSingleTrimAdapters extends NGSStep implements NGSBase{
         this.setPaths();
         
         if(new File(this.getTrimSoftware()).exists() == false){
+            logger.error(STEP_ID_STRING + ": Adapter Trimming software not found at location < " + this.getTrimSoftware() +">");
             throw new IOException(STEP_ID_STRING + ": Adapter Trimming software not found at location < " + this.getTrimSoftware() +">");
         }
         
         Iterator itSD = this.stepInputData.getSampleData().iterator();
         while (itSD.hasNext()){
             SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
-            String fastqFile1 = (String)sampleData.getFastqFile1();
-            String fastqFile2 = (String)sampleData.getFastqFile2(); // single end reads, no need to check fastq2
+            String fastqFile1 = inFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(OUTFILE_EXTENSION, INFILE_EXTENSION);
+            // single end reads, no need to check fastq2
             
-            if (fastqFile1==null) throw new IOException(STEP_ID_STRING+ " :no Fastq1 file specified");
+            if (fastqFile1==null) {
+                logger.error(STEP_ID_STRING + " :no Fastq1 file specified");
+                throw new IOException(STEP_ID_STRING + " :no Fastq1 file specified");
+            }
             
             if ((new File(fastqFile1)).exists()==false){
+                logger.error("AdapterTrimming: fastq File1 <" 
+                  + fastqFile1 + "> does not exist");
                 throw new IOException("AdapterTrimming: fastq File1 <" 
                   + fastqFile1 + "> does not exist");
             }
             if (fastqFile1.toUpperCase().endsWith(INFILE_EXTENSION.toUpperCase())==false){
+                logger.error(STEP_ID_STRING + " : incorrect file extension for input file <" 
+                  + fastqFile1 + ">. " 
+                  + "should have <" + INFILE_EXTENSION + "> as extension");
                 throw new IOException(STEP_ID_STRING + " : incorrect file extension for input file <" 
                   + fastqFile1 + ">. " 
                   + "should have <" + INFILE_EXTENSION + "> as extension");

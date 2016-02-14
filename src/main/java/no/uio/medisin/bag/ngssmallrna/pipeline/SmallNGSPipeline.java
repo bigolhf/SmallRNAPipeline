@@ -169,6 +169,7 @@ public class SmallNGSPipeline {
     public void executePipeline() throws IOException, Exception{
         logger.info("executing pipeline");
         for (NGSBase ngsStep: ngsSteps){
+            ngsStep.verifyInputData();
             ngsStep.execute();
         }
         
@@ -187,7 +188,6 @@ public class SmallNGSPipeline {
                  refDataLocations, stepData.getInputFileList(), stepData.getOutputFileList(), this.getSampleData());
         StepUnzipInputFiles ngsUnzipFastqStep = new StepUnzipInputFiles(sidUnzip);        
         ngsUnzipFastqStep.parseConfigurationData((HashMap) pipelineConfigurationDataHash.get(StepUnzipInputFiles.STEP_ID_STRING));   
-        ngsUnzipFastqStep.verifyInputData();
         ngsSteps.add(ngsUnzipFastqStep);
         
     }
@@ -205,7 +205,6 @@ public class SmallNGSPipeline {
                  refDataLocations, stepData.getInputFileList(), stepData.getOutputFileList(), this.getSampleData());
         StepSingleTrimAdapters ngsSingleTrimStep = new StepSingleTrimAdapters(sidTrim);
         ngsSingleTrimStep.parseConfigurationData((HashMap) pipelineConfigurationDataHash.get(StepSingleTrimAdapters.STEP_ID_STRING));        
-        ngsSingleTrimStep.verifyInputData();
         ngsSteps.add(ngsSingleTrimStep);
         
     }
@@ -225,7 +224,6 @@ public class SmallNGSPipeline {
                  refDataLocations, stepData.getInputFileList(), stepData.getOutputFileList(), this.getSampleData());
         StepCollapseReads ngsCollapseStep = new StepCollapseReads(sidCollapse);
         ngsCollapseStep.parseConfigurationData((HashMap) pipelineConfigurationDataHash.get(StepCollapseReads.STEP_ID_STRING));
-        ngsCollapseStep.verifyInputData();
         ngsSteps.add(ngsCollapseStep);
         
     }
@@ -243,7 +241,6 @@ public class SmallNGSPipeline {
                  refDataLocations, stepData.getInputFileList(), stepData.getOutputFileList(), this.getSampleData());
         StepBowtieMapSingleReads ngsBowtieMapReads = new StepBowtieMapSingleReads(sidMapSR);
         ngsBowtieMapReads.parseConfigurationData((HashMap)pipelineConfigurationDataHash.get(StepBowtieMapSingleReads.STEP_ID_STRING));
-        ngsBowtieMapReads.verifyInputData();
         ngsSteps.add(ngsBowtieMapReads);
         
     }
@@ -260,7 +257,6 @@ public class SmallNGSPipeline {
         StepInputData sidMapPR = new StepInputData(this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), 
                  refDataLocations, stepData.getInputFileList(), stepData.getOutputFileList(), this.getSampleData());
         StepBowtieMapPairedReads ngsBowtieMapPairedReads = new StepBowtieMapPairedReads(sidMapPR);
-        ngsBowtieMapPairedReads.verifyInputData();
         ngsSteps.add(ngsBowtieMapPairedReads);
         
     }
@@ -278,7 +274,6 @@ public class SmallNGSPipeline {
                  refDataLocations, stepData.getInputFileList(), stepData.getOutputFileList(), this.getSampleData());
         StepParseSAMForMiRNAs ngsParseSAMForMiRNAs = new StepParseSAMForMiRNAs(sidSAM);
         ngsParseSAMForMiRNAs.parseConfigurationData((HashMap)pipelineConfigurationDataHash.get(StepParseSAMForMiRNAs.STEP_ID_STRING));
-        ngsParseSAMForMiRNAs.verifyInputData();
         ngsSteps.add(ngsParseSAMForMiRNAs);
        
     }
@@ -297,7 +292,6 @@ public class SmallNGSPipeline {
                  refDataLocations, stepData.getInputFileList(), stepData.getOutputFileList(), this.getSampleData());
         StepAnalyzeSAMforStartPositions ngsAnalyzeSAMStartPos = new StepAnalyzeSAMforStartPositions(sidStart);
         ngsAnalyzeSAMStartPos.parseConfigurationData((HashMap)pipelineConfigurationDataHash.get(StepAnalyzeSAMforStartPositions.STEP_ID_STRING));
-        ngsAnalyzeSAMStartPos.verifyInputData();
         ngsSteps.add(ngsAnalyzeSAMStartPos);
         
     }
@@ -315,7 +309,6 @@ public class SmallNGSPipeline {
                  refDataLocations, stepData.getInputFileList(), stepData.getOutputFileList(), this.getSampleData());
         StepAnalyzeIsomiRDispersion analyzeIsomiRDispersions = new StepAnalyzeIsomiRDispersion(sidIsoDisp);
         analyzeIsomiRDispersions.parseConfigurationData((HashMap)pipelineConfigurationDataHash.get(StepAnalyzeIsomiRDispersion.STEP_ID_STRING));
-        analyzeIsomiRDispersions.verifyInputData();
         ngsSteps.add(analyzeIsomiRDispersions);
         
     }
@@ -335,7 +328,6 @@ public class SmallNGSPipeline {
         StepDEwithEdgeR edgeRDE = new StepDEwithEdgeR(siodDiffExpr);
 
         edgeRDE.parseConfigurationData((HashMap)pipelineConfigurationDataHash.get(StepDEwithEdgeR.STEP_ID_STRING));
-        edgeRDE.verifyInputData();
         ngsSteps.add(edgeRDE);
         
     }
@@ -353,7 +345,6 @@ public class SmallNGSPipeline {
                  refDataLocations, stepData.getInputFileList(), stepData.getOutputFileList(), this.getSampleData());
         StepCleanUp cleanUp = new StepCleanUp(sidCleanUp);
         cleanUp.parseConfigurationData((HashMap)pipelineConfigurationDataHash.get(StepCleanUp.STEP_ID_STRING));
-        cleanUp.verifyInputData();
         ngsSteps.add(cleanUp);
         
     }

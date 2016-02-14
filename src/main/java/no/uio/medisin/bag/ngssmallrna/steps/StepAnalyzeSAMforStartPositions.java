@@ -98,30 +98,39 @@ public class StepAnalyzeSAMforStartPositions extends NGSStep implements NGSBase{
         logger.info(STEP_ID_STRING + ": verify configuration data");
         
         if(configData.get(ID_BLEED)==null) {
+            logger.error("<" + ID_BLEED + "> : Missing Definition in Configuration File");
             throw new NullPointerException("<" + ID_BLEED + "> : Missing Definition in Configuration File");
         }
         if(configData.get(ID_SHORTEST_FEATURE)==null) {
+            logger.error("<" + ID_SHORTEST_FEATURE + "> : Missing Definition in Configuration File");
             throw new NullPointerException("<" + ID_SHORTEST_FEATURE + "> : Missing Definition in Configuration File");
         }
         if(configData.get(ID_LONGEST_FEATURE)==null) {
+            logger.error("<" + ID_LONGEST_FEATURE + "> : Missing Definition in Configuration File");
             throw new NullPointerException("<" + ID_LONGEST_FEATURE + "> : Missing Definition in Configuration File");
         }
         if(configData.get(ID_MIN_COUNTS)==null) {
+            logger.error("<" + ID_MIN_COUNTS + "> : Missing Definition in Configuration File");
             throw new NullPointerException("<" + ID_MIN_COUNTS + "> : Missing Definition in Configuration File");
         }
         if(configData.get(ID_REF_GENOME)==null) {
+            logger.error("<" + ID_REF_GENOME + "> : Missing Definition in Configuration File");
             throw new NullPointerException("<" + ID_REF_GENOME + "> : Missing Definition in Configuration File");
         }
         if(configData.get(ID_BASELINE)==null) {
+            logger.error("<" + ID_BASELINE + "> : Missing Definition in Configuration File");
             throw new NullPointerException("<" + ID_BASELINE + "> : Missing Definition in Configuration File");
         }
         if(configData.get(ID_MIRBASE_VERSION)==null) {
+            logger.error("<" + ID_MIRBASE_VERSION + "> : Missing Definition in Configuration File");
             throw new NullPointerException("<" + ID_MIRBASE_VERSION + "> : Missing Definition in Configuration File");
         }
         if(configData.get(ID_REF_GENOME)==null) {
+            logger.error("<" + ID_REF_GENOME + "> : Missing Definition in Configuration File");
             throw new NullPointerException("<" + ID_REF_GENOME + "> : Missing Definition in Configuration File");
         }
         if(configData.get(ID_SEPARATION)==null) {
+            logger.error("<" + ID_SEPARATION + "> : Missing Definition in Configuration File");
             throw new NullPointerException("<" + ID_SEPARATION + "> : Missing Definition in Configuration File");
         }
         
@@ -129,69 +138,81 @@ public class StepAnalyzeSAMforStartPositions extends NGSStep implements NGSBase{
       
         
         try{
-            this.setBaselinePercent(Integer.parseInt((String) configData.get(ID_BASELINE)));
+            this.setBaselinePercent((Integer) configData.get(ID_BASELINE));
         }
         catch(NumberFormatException exNm){
+            logger.error(ID_BASELINE + " <" + configData.get(ID_BASELINE) + "> is not an integer");
             throw new NumberFormatException(ID_BASELINE + " <" + configData.get(ID_BASELINE) + "> is not an integer");
         }        
         if (this.getBaselinePercent() <= 0){
+            logger.error(ID_BASELINE + " <" + configData.get(ID_BASELINE) + "> must be an integer between 0 and 100");
             throw new IllegalArgumentException(ID_BASELINE + " <" + configData.get(ID_BASELINE) + "> must be an integer between 0 and 100");
         }
 
         
         try{
-            this.setShortestRead(Integer.parseInt((String) configData.get(ID_SHORTEST_FEATURE)));
+            this.setShortestRead((Integer) configData.get(ID_SHORTEST_FEATURE));
         }
         catch(NumberFormatException exNm){
+            logger.error(ID_SHORTEST_FEATURE + " <" + ID_SHORTEST_FEATURE + "> is not an integer");
             throw new NumberFormatException(ID_SHORTEST_FEATURE + " <" + ID_SHORTEST_FEATURE + "> is not an integer");
         }        
         if (this.getShortestRead() <= 0 ){
+            logger.error(ID_SHORTEST_FEATURE + " <" + configData.get(ID_SHORTEST_FEATURE) + "> must be > 0 ");
             throw new IllegalArgumentException(ID_SHORTEST_FEATURE + " <" + configData.get(ID_SHORTEST_FEATURE) + "> must be > 0 ");
         }
         
         
 
         try{
-            this.setLongestRead(Integer.parseInt((String) configData.get(ID_BLEED)));
+            this.setLongestRead((Integer) configData.get(ID_BLEED));
         }
         catch(NumberFormatException exNm){
+            logger.error(ID_LONGEST_FEATURE + " <" + ID_LONGEST_FEATURE + "> is not an integer");
             throw new NumberFormatException(ID_LONGEST_FEATURE + " <" + ID_LONGEST_FEATURE + "> is not an integer");
         }        
         if (this.getLongestRead() <= 0 ){
+            logger.error(ID_LONGEST_FEATURE + " <" + configData.get(ID_LONGEST_FEATURE) + "> must be > 0 ");
             throw new IllegalArgumentException(ID_LONGEST_FEATURE + " <" + configData.get(ID_LONGEST_FEATURE) + "> must be > 0 ");
         }
         
 
         try{
-            this.setMinCounts(Integer.parseInt((String) configData.get(ID_MIN_COUNTS)));
+            this.setMinCounts((Integer) configData.get(ID_MIN_COUNTS));
         }
         catch(NumberFormatException exNm){
+            logger.error(ID_MIN_COUNTS + " <" + ID_MIN_COUNTS + "> is not an integer");
             throw new NumberFormatException(ID_MIN_COUNTS + " <" + ID_MIN_COUNTS + "> is not an integer");
         }        
         if (this.getMinCounts() <= 0 ){
+            logger.error(ID_MIN_COUNTS + " <" + configData.get(ID_MIN_COUNTS) + "> must be > 0 ");
             throw new IllegalArgumentException(ID_MIN_COUNTS + " <" + configData.get(ID_MIN_COUNTS) + "> must be > 0 ");
         }
         
 
         try{
-            this.setLocationBleed(Integer.parseInt((String) configData.get(ID_BLEED)));
+            this.setLocationBleed((Integer) configData.get(ID_BLEED));
         }
         catch(NumberFormatException exNm){
+            logger.error(ID_BLEED + " <" + ID_BLEED + "> is not an integer");
             throw new NumberFormatException(ID_BLEED + " <" + ID_BLEED + "> is not an integer");
         }        
         if (this.getLocationBleed() <= 0 ){
+            logger.error(ID_BLEED + " <" + configData.get(ID_BLEED) + "> must be > 0 ");
             throw new IllegalArgumentException(ID_BLEED + " <" + configData.get(ID_BLEED) + "> must be > 0 ");
         }
         
         
 
         try{
-            this.setSeparation(Integer.parseInt((String) configData.get(ID_SEPARATION)));
+            this.setSeparation((Integer) configData.get(ID_SEPARATION));
         }
         catch(NumberFormatException exNm){
+            logger.error(ID_SEPARATION + " <" + ID_SEPARATION + "> is not an integer");
             throw new NumberFormatException(ID_SEPARATION + " <" + ID_SEPARATION + "> is not an integer");
         }        
         if (this.getSeparation() <= 0 ){
+            logger.error(ID_SEPARATION + " <" + configData.get(ID_SEPARATION) + "> must be > 0 ");
             throw new IllegalArgumentException(ID_SEPARATION + " <" + configData.get(ID_SEPARATION) + "> must be > 0 ");
         }
         
@@ -199,16 +220,16 @@ public class StepAnalyzeSAMforStartPositions extends NGSStep implements NGSBase{
 
         this.setReferenceGenome((String) configData.get(ID_REF_GENOME));
         if(this.getReferenceGenome().length() !=3 ){
+            logger.error(ID_REF_GENOME + " <" + configData.get(ID_REF_GENOME) + "> must be a 3 letter string");            
             throw new IllegalArgumentException(ID_REF_GENOME + " <" + configData.get(ID_REF_GENOME) + "> must be a 3 letter string");            
         }
         try{
-            this.setAnalyzeIsomirs(Boolean.parseBoolean((String) configData.get(ID_ISOMIRS)));
+            this.setAnalyzeIsomirs((Boolean) configData.get(ID_ISOMIRS));
         }
         catch(NumberFormatException exNm){
+            logger.error(ID_BLEED + " <" + configData.get(ID_BLEED) + "> cannot be cast as Boolean");
             throw new NumberFormatException(ID_BLEED + " <" + configData.get(ID_BLEED) + "> cannot be cast as Boolean");
-        }        
-        
-        
+        }                
 
         logger.info("passed");
     }
@@ -826,17 +847,16 @@ public class StepAnalyzeSAMforStartPositions extends NGSStep implements NGSBase{
         logger.info(STEP_ID_STRING + ": generate example configuration data");
 
         HashMap configData = new HashMap();
-        HashMap paramData = new HashMap();
 
-        paramData.put(ID_REF_GENOME, "hsa");
-        paramData.put(ID_BLEED, 2);
-        paramData.put(ID_BASELINE, 5);
-        paramData.put(ID_SHORTEST_FEATURE, 2);
-        paramData.put(ID_LONGEST_FEATURE, 2);
-        paramData.put(ID_MIN_COUNTS, 10);
+        configData.put(ID_REF_GENOME, "hsa");
+        configData.put(ID_MIRBASE_VERSION, 20);
+        configData.put(ID_BLEED, 2);
+        configData.put(ID_BASELINE, 5);
+        configData.put(ID_SHORTEST_FEATURE, 2);
+        configData.put(ID_LONGEST_FEATURE, 2);
+        configData.put(ID_MIN_COUNTS, 1000);
+        configData.put(ID_SEPARATION, 10);
         
-        configData.put(STEP_ID_STRING, paramData);
-
         return configData;
     }
 

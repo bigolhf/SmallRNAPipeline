@@ -36,7 +36,6 @@ import org.apache.logging.log4j.Logger;
 public class StepUnzipInputFiles extends NGSStep implements NGSBase{
     
     static Logger                       logger = LogManager.getLogger();
-    static  String                      FileSeparator = System.getProperty("file.separator");
     
     public static final String          STEP_ID_STRING          = "UnzipInputFiles";
     private static final String         ID_SOFTWARE             = "unzipSoftware";    
@@ -73,9 +72,11 @@ public class StepUnzipInputFiles extends NGSStep implements NGSBase{
         logger.info(STEP_ID_STRING + ": verify configuration data");
         
         if(configData.get(ID_SOFTWARE)==null) {
+            logger.error("<" + configData.get(ID_SOFTWARE) + "> : Missing Definition in Configuration File");
             throw new NullPointerException("<" + configData.get(ID_SOFTWARE) + "> : Missing Definition in Configuration File");
         }
         if(configData.get(ID_THREADS)==null) {
+            logger.error("<" + configData.get(ID_THREADS) + "> : Missing Definition in Configuration File");
             throw new NullPointerException("<" + configData.get(ID_THREADS) + "> : Missing Definition in Configuration File");
         }
         
@@ -84,10 +85,12 @@ public class StepUnzipInputFiles extends NGSStep implements NGSBase{
             this.setNoOfThreads((Integer)configData.get(ID_THREADS));
         }
         catch(NumberFormatException exNm){
+            logger.error(ID_THREADS + " <" + configData.get(ID_THREADS) + "> is not an integer");
             throw new NumberFormatException(ID_THREADS + " <" + configData.get(ID_THREADS) + "> is not an integer");
         }
         
         if (this.getNoOfThreads() <= 0){
+            logger.error(ID_THREADS + " <" + configData.get(ID_THREADS) + "> must be positive");
             throw new IllegalArgumentException(ID_THREADS + " <" + configData.get(ID_THREADS) + "> must be positive");
         }
         
@@ -115,11 +118,11 @@ public class StepUnzipInputFiles extends NGSStep implements NGSBase{
         while (itSD.hasNext()){
             try{
                 SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
-                String pathToData = stepInputData.getProjectRoot() + FileSeparator + stepInputData.getProjectID();                
-                String outputFolder = pathToData + FileSeparator + outFolder;
+                String pathToData = stepInputData.getProjectRoot() + FILESEPARATOR + stepInputData.getProjectID();                
+                String outputFolder = pathToData + FILESEPARATOR + outFolder;
                 
                 
-                fastqFile1 = outputFolder + FileSeparator + sampleData.getFastqFile1().replace(OUTFILE_EXTENSION, INFILE_EXTENSION);
+                fastqFile1 = outputFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", INFILE_EXTENSION);
                 if(new File(this.cleanPath(fastqFile1)).exists()){
                                 
                     ArrayList<String> cmd1 = new ArrayList<>();
@@ -129,7 +132,7 @@ public class StepUnzipInputFiles extends NGSStep implements NGSBase{
                     cmd1.add("-p " + this.getNoOfThreads());
 
                     String cmdUnzip = StringUtils.join(cmd1, " ");
-                    cmdUnzip = cmdUnzip.replace(FileSeparator + FileSeparator, FileSeparator);
+                    cmdUnzip = cmdUnzip.replace(FILESEPARATOR + FILESEPARATOR, FILESEPARATOR);
                     logger.info(STEP_ID_STRING + " fastq1 unzip command:\t" + cmdUnzip);
 
                     Runtime rt1 = Runtime.getRuntime();
@@ -158,7 +161,7 @@ public class StepUnzipInputFiles extends NGSStep implements NGSBase{
                     logger.info("fastq file 1 <" + fastqFile1 + "> exists. Skipping");
                 }
 
-                fastqFile2 = outputFolder + FileSeparator + sampleData.getFastqFile2().replace(INFILE_EXTENSION, OUTFILE_EXTENSION);
+                fastqFile2 = outputFolder + FILESEPARATOR + sampleData.getFastqFile2().replace(".fastq", INFILE_EXTENSION);
                 if(new File(this.cleanPath(fastqFile2)).exists()){
             
                     ArrayList<String> cmd2 = new ArrayList<>();
@@ -168,7 +171,7 @@ public class StepUnzipInputFiles extends NGSStep implements NGSBase{
                     cmd2.add("-p " + this.getNoOfThreads());
 
                     String cmdUnzip2 = StringUtils.join(cmd2, " ");
-                    cmdUnzip2 = cmdUnzip2.replace(FileSeparator + FileSeparator, FileSeparator);
+                    cmdUnzip2 = cmdUnzip2.replace(FILESEPARATOR + FILESEPARATOR, FILESEPARATOR);
                     logger.info(STEP_ID_STRING + " fastq2 unzip command:\t" + cmdUnzip2);
 
                     Runtime rt2 = Runtime.getRuntime();
@@ -211,7 +214,9 @@ public class StepUnzipInputFiles extends NGSStep implements NGSBase{
     
             
     /**
-     * check the input data and parameters before we begin
+     * this should be called prior to executing the step.
+     * check unzip software exists and input files are available
+     * 
      * @throws IOException
      */
     @Override
@@ -221,9 +226,9 @@ public class StepUnzipInputFiles extends NGSStep implements NGSBase{
         this.setPaths();
         
         if(new File(this.getUnzipSoftware()).exists() == false){
+            logger.error("unzip software not found at location < " + this.getUnzipSoftware() +">");
             throw new IOException("unzip software not found at location < " + this.getUnzipSoftware() +">");
         }
-        String pathToData = stepInputData.getProjectRoot() + FileSeparator + stepInputData.getProjectID() + FileSeparator + outFolder;;               
                 
                 
                             
@@ -231,17 +236,19 @@ public class StepUnzipInputFiles extends NGSStep implements NGSBase{
         Iterator itSD = this.stepInputData.getSampleData().iterator();
         while (itSD.hasNext()){
             SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
-            String fastqFile1 = inFolder + FileSeparator + sampleData.getFastqFile1().replace(OUTFILE_EXTENSION, INFILE_EXTENSION);
+            String fastqFile1 = inFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", INFILE_EXTENSION);
             
             //Fastq 1
             if (fastqFile1==null) throw new IOException("no Fastq1 file specified");
             
             if (new File(this.cleanPath(fastqFile1)).exists()==false){
-                throw new IOException(STEP_ID_STRING + ": fastq File1 <" 
-                  + fastqFile1 + "> does not exist");
+                logger.info(STEP_ID_STRING + ": fastq File1 <" + fastqFile1 + "> does not exist");
+                throw new IOException(STEP_ID_STRING + ": fastq File1 <" + fastqFile1 + "> does not exist");
             }
             if (fastqFile1.toUpperCase().endsWith(INFILE_EXTENSION.toUpperCase())==false)
             {
+                logger.info(STEP_ID_STRING + ": incorrect file extension for input file <" 
+                  + fastqFile1 + ">. should have <" + INFILE_EXTENSION + "> as extension");
                 throw new IOException(STEP_ID_STRING + ": incorrect file extension for input file <" 
                   + fastqFile1 + ">.  \n" 
                   + "should have <" + INFILE_EXTENSION + "> as extension");
@@ -250,14 +257,18 @@ public class StepUnzipInputFiles extends NGSStep implements NGSBase{
             
             //Fastq 2
             if (sampleData.getFastqFile2()==null) continue;
-            String fastqFile2 = pathToData + FileSeparator + sampleData.getFastqFile2().replace(OUTFILE_EXTENSION, INFILE_EXTENSION);
+            String fastqFile2 = inFolder + FILESEPARATOR + sampleData.getFastqFile2().replace(".fastq", INFILE_EXTENSION);
+
             
             if ((new File(fastqFile2)).exists()==false){
+                logger.error(STEP_ID_STRING + ": fastq File2 <" + fastqFile2 + "> does not exist");
                 throw new IOException(STEP_ID_STRING + ": fastq File2 <" 
                   + fastqFile2 + "> does not exist");
             }
             if (fastqFile2.toUpperCase().endsWith(INFILE_EXTENSION.toUpperCase())==false)
             {
+                logger.error(STEP_ID_STRING + ": incorrect file extension for fastq file 2 <" 
+                  + fastqFile2 + ">. should have <" + INFILE_EXTENSION + "> as extension");
                 throw new IOException(STEP_ID_STRING + ": incorrect file extension for fastq file 2 <" 
                   + fastqFile2 + ">. \n" 
                   + "should have <" + INFILE_EXTENSION + "> as extension");

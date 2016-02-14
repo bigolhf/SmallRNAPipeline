@@ -100,6 +100,7 @@ public class StepDEwithEdgeR extends NGSStep implements NGSBase{
         logger.info(STEP_ID_STRING + ": verify configuration data");
         
         if(configData.get(ID_PVALUE)==null) {
+            logger.info("<" + ID_PVALUE + "> : Missing Definition in Configuration File");
             throw new NullPointerException("<" + ID_PVALUE + "> : Missing Definition in Configuration File");
         }
 
@@ -108,9 +109,11 @@ public class StepDEwithEdgeR extends NGSStep implements NGSBase{
             this.setpValue((Double) configData.get(ID_PVALUE));
         }
         catch(NumberFormatException exNm){
+            logger.info(ID_PVALUE + " <" + configData.get(ID_PVALUE) + "> is not an integer");
             throw new NumberFormatException(ID_PVALUE + " <" + configData.get(ID_PVALUE) + "> is not an integer");
         }        
         if (Double.parseDouble((String) configData.get(ID_PVALUE)) <= 0 || Double.parseDouble((String) configData.get(ID_PVALUE)) > 1.0){
+            logger.info(ID_PVALUE + " <" + configData.get(ID_PVALUE) + "> must be an float between 0.0 and 1.0");
             throw new IllegalArgumentException(ID_PVALUE + " <" + configData.get(ID_PVALUE) + "> must be an float between 0.0 and 1.0");
         }
         

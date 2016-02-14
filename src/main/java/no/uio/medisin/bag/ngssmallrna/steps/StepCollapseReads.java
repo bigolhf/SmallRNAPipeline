@@ -74,9 +74,11 @@ public class StepCollapseReads extends NGSStep implements NGSBase {
         logger.info(STEP_ID_STRING + ": verify configuration data");
     
         if(configData.get(ID_Q2A_SOFTWARE)==null) {
+            logger.error("<" + configData.get(ID_Q2A_SOFTWARE) + "> : Missing Definition in Configuration File");
             throw new NullPointerException("<" + configData.get(ID_Q2A_SOFTWARE) + "> : Missing Definition in Configuration File");
         }
         if(configData.get(ID_COLLAPSE_SOFTWARE)==null) {
+            logger.error("<" + configData.get(ID_COLLAPSE_SOFTWARE) + "> : Missing Definition in Configuration File");
             throw new NullPointerException("<" + configData.get(ID_COLLAPSE_SOFTWARE) + "> : Missing Definition in Configuration File");
         }
         
@@ -228,9 +230,11 @@ public class StepCollapseReads extends NGSStep implements NGSBase {
                 
         // does software exist?
         if(new File(this.getFastq2fasta_software()).exists() == false){
+            logger.error(STEP_ID_STRING + ": fastq2fasta software not found at location < " + this.getFastq2fasta_software() +">");
             throw new IOException(STEP_ID_STRING + ": fastq2fasta software not found at location < " + this.getFastq2fasta_software() +">");
         }
         if(new File(this.getCollapseFastaSoftware()).exists() == false){
+            logger.error(STEP_ID_STRING + ": fastq2fasta software not found at location < " + this.getCollapseFastaSoftware() +">");
             throw new IOException(STEP_ID_STRING + ": fastq2fasta software not found at location < " + this.getCollapseFastaSoftware() +">");
         }
         
@@ -238,18 +242,23 @@ public class StepCollapseReads extends NGSStep implements NGSBase {
         Iterator itSD = this.stepInputData.getSampleData().iterator();
         while (itSD.hasNext()){
             SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
-            String fastqFile1 = (String)sampleData.getFastqFile1();
-            String fastqFile2 = (String)sampleData.getFastqFile2();
+            String fastqFile1 = inFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", INFILE_EXTENSION);
+            String fastqFile2 = inFolder + FILESEPARATOR + sampleData.getFastqFile2().replace(".fastq", INFILE_EXTENSION);
             
             //Fastq 1
             if (fastqFile1==null) throw new IOException(STEP_ID_STRING + ": no Fastq1 file specified");
             
             if ((new File(fastqFile1)).exists()==false){
+                logger.error("unzipFastqFiles: fastq File1 <" 
+                  + fastqFile1 + "> does not exist");
                 throw new IOException("unzipFastqFiles: fastq File1 <" 
                   + fastqFile1 + "> does not exist");
             }
             if (fastqFile1.toUpperCase().endsWith(INFILE_EXTENSION.toUpperCase())==false)
             {
+                logger.error(STEP_ID_STRING + ": incorrect file extension for input file <" 
+                  + fastqFile1 + ">.  \n" 
+                  + "should have <" + INFILE_EXTENSION + "> as extension");
                 throw new IOException(STEP_ID_STRING + ": incorrect file extension for input file <" 
                   + fastqFile1 + ">.  \n" 
                   + "should have <" + INFILE_EXTENSION + "> as extension");
@@ -260,11 +269,16 @@ public class StepCollapseReads extends NGSStep implements NGSBase {
             if (fastqFile2==null) continue;
             
             if ((new File(fastqFile2)).exists()==false){
+                logger.error(STEP_ID_STRING + " : fastq File2 <" 
+                  + fastqFile2 + "> does not exist");
                 throw new IOException(STEP_ID_STRING + " : fastq File2 <" 
                   + fastqFile2 + "> does not exist");
             }
             if (fastqFile2.toUpperCase().endsWith(INFILE_EXTENSION.toUpperCase())==false)
             {
+                logger.error(STEP_ID_STRING + " : incorrect file extension for fastq file 2 <" 
+                  + fastqFile2 + ">. \n" 
+                  + "should have <" + INFILE_EXTENSION + "> as extension");
                 throw new IOException(STEP_ID_STRING + " : incorrect file extension for fastq file 2 <" 
                   + fastqFile2 + ">. \n" 
                   + "should have <" + INFILE_EXTENSION + "> as extension");
