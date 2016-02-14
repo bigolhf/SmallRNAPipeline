@@ -14,7 +14,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import no.uio.medisin.bag.ngssmallrna.pipeline.SampleDataEntry;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.Validate;
 import org.apache.logging.log4j.LogManager;
 
 import org.apache.logging.log4j.Logger;
@@ -112,23 +111,25 @@ public class StepUnzipInputFiles extends NGSStep implements NGSBase{
             sample unzip command       
             pigz -p 4 -d /data/ngsdata/project1/sra_data.fastq.gz     
         */
-        String fastqFile1 = "";
-        String fastqFile2 = "";
+        logger.info(STEP_ID_STRING + ": execute step");        
+        
+        String fastqFile1in = "";
+        String fastqFile1out = "";
+        String fastqFile2in = "";
+        String fastqFile2out = "";
         Iterator itSD = this.stepInputData.getSampleData().iterator();
         while (itSD.hasNext()){
             try{
-                SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
-                String pathToData = stepInputData.getProjectRoot() + FILESEPARATOR + stepInputData.getProjectID();                
-                String outputFolder = pathToData + FILESEPARATOR + outFolder;
+                SampleDataEntry sampleData = (SampleDataEntry)itSD.next();                
                 
-                
-                fastqFile1 = outputFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", INFILE_EXTENSION);
-                if(new File(this.cleanPath(fastqFile1)).exists()){
+                fastqFile1out = this.cleanPath(inFolder + FILESEPARATOR + sampleData.getFastqFile1());
+                fastqFile1in = this.cleanPath(inFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", INFILE_EXTENSION));
+                if(new File(fastqFile1out).exists()==false){
                                 
                     ArrayList<String> cmd1 = new ArrayList<>();
                     cmd1.add(this.getUnzipSoftware());
                     cmd1.add("-d");
-                    cmd1.add(fastqFile1);
+                    cmd1.add(fastqFile1in);
                     cmd1.add("-p " + this.getNoOfThreads());
 
                     String cmdUnzip = StringUtils.join(cmd1, " ");
@@ -158,16 +159,18 @@ public class StepUnzipInputFiles extends NGSStep implements NGSBase{
                     brStdErr1.close();
                 }
                 else{               
-                    logger.info("fastq file 1 <" + fastqFile1 + "> exists. Skipping");
+                    logger.info("fastq file 1 <" + this.cleanPath(fastqFile1out) + "> exists. Skipping");
                 }
-
-                fastqFile2 = outputFolder + FILESEPARATOR + sampleData.getFastqFile2().replace(".fastq", INFILE_EXTENSION);
-                if(new File(this.cleanPath(fastqFile2)).exists()){
+                
+                if (sampleData.getFastqFile2() == null) continue;
+                fastqFile2in = this.cleanPath(inFolder + FILESEPARATOR + sampleData.getFastqFile2().replace(".fastq", INFILE_EXTENSION));
+                fastqFile2out = this.cleanPath(inFolder + FILESEPARATOR + sampleData.getFastqFile2());
+                if(new File(fastqFile2out).exists()==false){
             
                     ArrayList<String> cmd2 = new ArrayList<>();
                     cmd2.add(this.getUnzipSoftware());
                     cmd2.add("-d");
-                    cmd2.add(fastqFile2);
+                    cmd2.add(fastqFile2in);
                     cmd2.add("-p " + this.getNoOfThreads());
 
                     String cmdUnzip2 = StringUtils.join(cmd2, " ");
@@ -197,7 +200,7 @@ public class StepUnzipInputFiles extends NGSStep implements NGSBase{
                     brStdErr2.close();
                 }
                 else{               
-                    logger.info("fastq file 2 <" + fastqFile2 + "> exists. Skipping");
+                    logger.info("fastq file 2 <" + this.cleanPath(fastqFile2out) + "> exists. Skipping");
                 }
                                 
             }
@@ -207,7 +210,7 @@ public class StepUnzipInputFiles extends NGSStep implements NGSBase{
             }
         }
         
-        
+        logger.info(STEP_ID_STRING + ": completed");
     }
     
     
@@ -233,17 +236,24 @@ public class StepUnzipInputFiles extends NGSStep implements NGSBase{
                 
                             
         // check the data files
+        String fastqFile1in = "";
+        String fastqFile1out = "";
         Iterator itSD = this.stepInputData.getSampleData().iterator();
         while (itSD.hasNext()){
             SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
-            String fastqFile1 = inFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", INFILE_EXTENSION);
             
             //Fastq 1
-            if (fastqFile1==null) throw new IOException("no Fastq1 file specified");
+            if (sampleData.getFastqFile1()==null) {
+                logger.error("no Fastq1 file specified");
+                throw new IOException("no Fastq1 file specified");
+            }
             
-            if (new File(this.cleanPath(fastqFile1)).exists()==false){
-                logger.info(STEP_ID_STRING + ": fastq File1 <" + fastqFile1 + "> does not exist");
-                throw new IOException(STEP_ID_STRING + ": fastq File1 <" + fastqFile1 + "> does not exist");
+            fastqFile1out = this.cleanPath(inFolder + FILESEPARATOR + sampleData.getFastqFile1());
+            fastqFile1in = this.cleanPath(inFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", INFILE_EXTENSION));
+            String fastqFile1 = inFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", INFILE_EXTENSION);
+            if (new File(fastqFile1in).exists()==false && new File(fastqFile1out).exists()==false){
+                logger.error(STEP_ID_STRING + ": fastq 1 Files <" + fastqFile1in + "> & <" + fastqFile1out + "> do not exist");
+                throw new IOException(STEP_ID_STRING + ": fastq 2 Files <" + fastqFile1in + "> & <" + fastqFile1out + "> do not exist");
             }
             if (fastqFile1.toUpperCase().endsWith(INFILE_EXTENSION.toUpperCase())==false)
             {
@@ -257,20 +267,22 @@ public class StepUnzipInputFiles extends NGSStep implements NGSBase{
             
             //Fastq 2
             if (sampleData.getFastqFile2()==null) continue;
-            String fastqFile2 = inFolder + FILESEPARATOR + sampleData.getFastqFile2().replace(".fastq", INFILE_EXTENSION);
+            String fastqFile2in = "";
+            String fastqFile2out = "";
+            fastqFile2in = this.cleanPath(inFolder + FILESEPARATOR + sampleData.getFastqFile2().replace(".fastq", INFILE_EXTENSION));
+            fastqFile2out = this.cleanPath(inFolder + FILESEPARATOR + sampleData.getFastqFile2());
 
             
-            if ((new File(fastqFile2)).exists()==false){
-                logger.error(STEP_ID_STRING + ": fastq File2 <" + fastqFile2 + "> does not exist");
-                throw new IOException(STEP_ID_STRING + ": fastq File2 <" 
-                  + fastqFile2 + "> does not exist");
+            if ((new File(fastqFile2in)).exists()==false && (new File(fastqFile2in)).exists()==false){
+                logger.error(STEP_ID_STRING + ": fastq 2 Files <" + fastqFile2in + "> & <" + fastqFile2out + "> do not exist");
+                throw new IOException(STEP_ID_STRING + ": fastq 2 Files <" + fastqFile2in + "> & <" + fastqFile2out + "> do not exist");
             }
-            if (fastqFile2.toUpperCase().endsWith(INFILE_EXTENSION.toUpperCase())==false)
+            if (fastqFile2in.toUpperCase().endsWith(INFILE_EXTENSION.toUpperCase())==false)
             {
                 logger.error(STEP_ID_STRING + ": incorrect file extension for fastq file 2 <" 
-                  + fastqFile2 + ">. should have <" + INFILE_EXTENSION + "> as extension");
+                  + fastqFile2in + ">. should have <" + INFILE_EXTENSION + "> as extension");
                 throw new IOException(STEP_ID_STRING + ": incorrect file extension for fastq file 2 <" 
-                  + fastqFile2 + ">. \n" 
+                  + fastqFile2in + ">. \n" 
                   + "should have <" + INFILE_EXTENSION + "> as extension");
             }
                         

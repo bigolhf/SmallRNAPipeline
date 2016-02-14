@@ -178,10 +178,6 @@ public class StepBowtieMapSingleReads extends NGSStep implements NGSBase{
         }
         String mappingCmd = this.getMappingSoftware();
         logger.info("Mapping software is " + mappingCmd);
-        String pathToBowtieGenomeIndex = stepInputData.getDataLocations().getGenomeRootFolder()
-                + FILESEPARATOR + this.getReferenceGenome() + ReferenceDataLocations.ID_REL_BOWTIE_PATH;
-        
-        
         
         Iterator itSD = this.stepInputData.getSampleData().iterator();
         while (itSD.hasNext()) {
@@ -290,20 +286,21 @@ public class StepBowtieMapSingleReads extends NGSStep implements NGSBase{
      * @throws InterruptedException 
      */
     private void mapAbundantReads(SampleDataEntry sampleData) throws IOException, InterruptedException{
-        ArrayList<String> cmd = new ArrayList<>();
-
-        String mappingCmd = this.getMappingSoftware();
-
-        String pathToBowtieGenomeIndex = stepInputData.getDataLocations().getGenomeRootFolder()
-                + FILESEPARATOR + this.getReferenceGenome() + ReferenceDataLocations.ID_REL_BOWTIE_PATH;
         
+        logger.info(STEP_ID_STRING + ": mapping abundant reads");
+        String cmdBowtieMapAbunReads = "";        
+        try{
+            ArrayList<String> cmd = new ArrayList<>();
+
+            String mappingCmd = this.getMappingSoftware();
+
+
             cmd.add(mappingCmd);
-            String pathToBowtieIndex = this.getRootDataFolder()
-                    + FILESEPARATOR + this.getReferenceGenome() + ReferenceDataLocations.ID_REL_ABUN_DATA_PATH;
+            String pathToBowtieIndex = this.cleanPath(this.getRootDataFolder()
+                    + FILESEPARATOR + this.getReferenceGenome() + ReferenceDataLocations.ID_REL_ABUN_DATA_PATH);
             cmd.add(pathToBowtieIndex);
 
-            String fastqTrimmedInputFile = inFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", INFILE_EXTENSION);
-            fastqTrimmedInputFile = fastqTrimmedInputFile.replace(FILESEPARATOR + FILESEPARATOR, FILESEPARATOR).trim();
+            fastqTrimmedInputFile = this.cleanPath(inFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", INFILE_EXTENSION));
             cmd.add("-f");
             cmd.add(fastqTrimmedInputFile);
 
@@ -311,17 +308,16 @@ public class StepBowtieMapSingleReads extends NGSStep implements NGSBase{
             cmd.add("--best");
             cmd.add("-m 2");
 
-            String fastqAbundantAln = outFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", FASTQ_ABUNALN_EXTENSION);
-            String fastqAbundantUnAln = outFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", FASTQ_ABUNUNALN_EXTENSION);
-            String samAbundantAln = outFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", SAM_ABUNALN_EXTENSION);
+            fastqAbundantAln = this.cleanPath(outFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", FASTQ_ABUNALN_EXTENSION));
+            fastqAbundantUnAln = this.cleanPath(outFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", FASTQ_ABUNUNALN_EXTENSION));
+            String samAbundantAln = this.cleanPath(outFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", SAM_ABUNALN_EXTENSION));
             cmd.add("--al " + fastqAbundantAln);
             cmd.add("--un " + fastqAbundantUnAln);
             cmd.add("--sam " + samAbundantAln);
             cmd.add("-p " + this.getNoOfThreads());
             cmd.add("");
 
-            String cmdBowtieMapAbunReads = StringUtils.join(cmd, " ");
-            cmdBowtieMapAbunReads = cmdBowtieMapAbunReads.replace(FILESEPARATOR + FILESEPARATOR, FILESEPARATOR);
+            cmdBowtieMapAbunReads = this.cleanPath(StringUtils.join(cmd, " "));
             logger.info("Bowtie Map Abundant Reads command:\t" + cmdBowtieMapAbunReads);
 
             Runtime rt = Runtime.getRuntime();
@@ -347,7 +343,7 @@ public class StepBowtieMapSingleReads extends NGSStep implements NGSBase{
                     mapAbunStdErr.add(line);
                 }
             }
-            
+
             // need to parse the output from Bowtie to get the mapping summary
             logger.info(skipCount + " lines were skipped because the read was too short");
             logger.info("</ERROR>");
@@ -357,6 +353,13 @@ public class StepBowtieMapSingleReads extends NGSStep implements NGSBase{
 
             brAStdin.close();
             brAStdErr.close();
+            logger.info(STEP_ID_STRING + ": done");
+        } catch (IOException | InterruptedException ex) {
+            logger.error("error Bowtie Mapping abundant reads\n");
+            logger.error(cmdBowtieMapAbunReads);
+            logger.error(ex.toString());
+            throw new IOException(STEP_ID_STRING + ": \"error Bowtie Mapping abundant reads " + cmdBowtieMapAbunReads);
+        }
         
     }
     
@@ -370,8 +373,11 @@ public class StepBowtieMapSingleReads extends NGSStep implements NGSBase{
      */
     private void mapReadsToGenome(SampleDataEntry sampleData) throws IOException, InterruptedException{
                  
-        String pathToBowtieGenomeIndex = stepInputData.getDataLocations().getGenomeRootFolder()
-                + FILESEPARATOR + this.getReferenceGenome() + ReferenceDataLocations.ID_REL_BOWTIE_PATH;
+        logger.info(STEP_ID_STRING + ": mapping reads to genome");
+        String cmdBowtieMapGenomeReads = "";
+        try{
+        String pathToBowtieGenomeIndex = this.cleanPath(stepInputData.getDataLocations().getGenomeRootFolder()
+                + FILESEPARATOR + this.getReferenceGenome() + ReferenceDataLocations.ID_REL_BOWTIE_PATH);
                 
         ArrayList cmd = new ArrayList<>();
         cmd.add(this.getMappingSoftware());
@@ -384,16 +390,15 @@ public class StepBowtieMapSingleReads extends NGSStep implements NGSBase{
         cmd.add("--best");
         cmd.add("-m 2");
 
-        fastqGenomeAln = outFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", FASTQ_GENALN_EXTENSION);
-        String fastqGenomeUnAln = outFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", FASTQ_UNALN_EXTENSION);
-        String samGenomeAln = outFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", SAM_GENALN_EXTENSION);
+        fastqGenomeAln = this.cleanPath(outFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", FASTQ_GENALN_EXTENSION));
+        fastqGenomeUnAln = this.cleanPath(outFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", FASTQ_UNALN_EXTENSION));
+        String samGenomeAln = this.cleanPath(outFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", SAM_GENALN_EXTENSION));
         cmd.add("--al " + fastqGenomeAln);
         cmd.add("--un " + fastqGenomeUnAln);
         cmd.add("--sam " + samGenomeAln);
         cmd.add("-p " + this.getNoOfThreads());
 
-        String cmdBowtieMapGenomeReads = StringUtils.join(cmd, " ");
-        cmdBowtieMapGenomeReads = cmdBowtieMapGenomeReads.replace(FILESEPARATOR + FILESEPARATOR, FILESEPARATOR);
+        cmdBowtieMapGenomeReads = this.cleanPath(StringUtils.join(cmd, " "));
         logger.info("Bowtie Map Genome Reads command:\t" + cmdBowtieMapGenomeReads);
 
         Runtime rtGenMap = Runtime.getRuntime();
@@ -429,6 +434,12 @@ public class StepBowtieMapSingleReads extends NGSStep implements NGSBase{
 
         brGStdin.close();
         brGStdErr.close();
+        } catch (IOException | InterruptedException ex) {
+            logger.error("error Bowtie Mapping genome reads\n");
+            logger.error(cmdBowtieMapGenomeReads);
+            logger.error(ex.toString());
+            throw new IOException(STEP_ID_STRING + ": \"error Bowtie Mapping genome reads " + cmdBowtieMapGenomeReads);
+        }
 
         
     }
@@ -453,16 +464,20 @@ public class StepBowtieMapSingleReads extends NGSStep implements NGSBase{
         
                     
         // check the data files
+        String fastqFile1;
         Iterator itSD = this.stepInputData.getSampleData().iterator();
         while (itSD.hasNext()){
             SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
-            String fastqFile1 = (String)sampleData.getFastqFile1();
-            String fastqFile2 = (String)sampleData.getFastqFile2();
             
             //Fastq 1
-            if (fastqFile1==null) throw new IOException("no Fastq1 file specified");
+            if (sampleData.getFastqFile1()==null) {
+                logger.error("no Fastq1 file specified");
+                throw new IOException("no Fastq1 file specified");
+            }
+            fastqFile1 = this.cleanPath(inFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", INFILE_EXTENSION));
+                        
             
-            if ((new File(fastqFile1)).exists()==false){
+            if (new File(this.cleanPath(fastqFile1)).exists()==false){
                 logger.error("unzipFastqFiles: fastq File1 <" 
                   + fastqFile1 + "> does not exist");
                 throw new IOException("unzipFastqFiles: fastq File1 <" 

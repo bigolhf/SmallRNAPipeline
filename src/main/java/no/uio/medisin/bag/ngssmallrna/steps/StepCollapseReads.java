@@ -31,7 +31,6 @@ import org.apache.logging.log4j.Logger;
 public class StepCollapseReads extends NGSStep implements NGSBase {
     
     static  Logger                      logger = LogManager.getLogger();
-    static  String                      FileSeparator = System.getProperty("file.separator");
 
     public static final String          STEP_ID_STRING          = "CollapseReads";
     private static final String         ID_Q2A_SOFTWARE         = "fastq2fastaLocation";   
@@ -103,8 +102,8 @@ public class StepCollapseReads extends NGSStep implements NGSBase {
         String clpOutputFile = ""; 
         Iterator itSD = this.stepInputData.getSampleData().iterator();
         while (itSD.hasNext()){
+            SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
             try{
-                SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
                 Boolean f = new File(outFolder).mkdir(); 
                 if (f) logger.info("created output folder <" + outFolder + "> for results" );
  
@@ -114,21 +113,19 @@ public class StepCollapseReads extends NGSStep implements NGSBase {
                 ArrayList<String> cmdQ2A = new ArrayList<>();
                 cmdQ2A.add(this.getFastq2fasta_software());
 
-                fastqInputFile = inFolder + FileSeparator + sampleData.getFastqFile1().replace(".fastq", INFILE_EXTENSION);
-                fastqInputFile = fastqInputFile.replace(FileSeparator + FileSeparator, FileSeparator).trim();                
+                fastqInputFile = this.cleanPath(inFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", INFILE_EXTENSION));
                 cmdQ2A.add("-i");
                 cmdQ2A.add(fastqInputFile);
 
                 cmdQ2A.add("-o");
 
-                fastaOutputFile = outFolder + FileSeparator + sampleData.getFastqFile1().replace(".fastq", FASTA_OUTFILE_EXTENSION);
+                fastaOutputFile = outFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", FASTA_OUTFILE_EXTENSION);
                 cmdQ2A.add(fastaOutputFile);
                 
                 cmdQ2A.add("-Q33");
 
 
-                cmdFQ2FA = StringUtils.join(cmdQ2A, " ");
-                cmdFQ2FA = cmdFQ2FA.replace(FileSeparator + FileSeparator, FileSeparator);
+                cmdFQ2FA = this.cleanPath(StringUtils.join(cmdQ2A, " "));
                 logger.info("Fastq2Fasta command:\t" + cmdFQ2FA);
                 Runtime rt = Runtime.getRuntime();
                 Process proc = rt.exec(cmdFQ2FA);
@@ -165,7 +162,6 @@ public class StepCollapseReads extends NGSStep implements NGSBase {
                     fastx_collapse -i 1000.fastq -o 1000.fasta -Q33
                 */                      
             try{
-                SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
                 ArrayList<String> cmd2 = new ArrayList<>();
                 cmd2.add(this.getCollapseFastaSoftware());
 
@@ -175,13 +171,12 @@ public class StepCollapseReads extends NGSStep implements NGSBase {
 
                 cmd2.add("-o");
 
-                clpOutputFile = outFolder + FileSeparator + sampleData.getFastqFile1().replace(".fastq", CLP_OUTFILE_EXTENSION);
+                clpOutputFile = outFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", CLP_OUTFILE_EXTENSION);
                 cmd2.add(clpOutputFile);
                 
 
-                cmdClp = StringUtils.join(cmd2, " ");
-                cmdClp = cmdClp.replace(FileSeparator + FileSeparator, FileSeparator);
-                logger.info("Fastq to Fasta command:\t" + cmdClp);
+                cmdClp = this.cleanPath(StringUtils.join(cmd2, " "));
+                logger.info("Collapse fasta command:\t" + cmdClp);
 
                 Runtime rtClp = Runtime.getRuntime();
                 Process procClp = rtClp.exec(cmdClp);
@@ -208,12 +203,13 @@ public class StepCollapseReads extends NGSStep implements NGSBase {
             
             }
             catch(IOException|InterruptedException exIE){
-                logger.error("error executing CollapseReads command\n");
+                logger.error("error executing Collapse Fasta command\n");
                 logger.error("CMD is " + cmdClp);
-                throw new IOException(STEP_ID_STRING + ": error executing CollapseReads command " + cmdClp);
+                throw new IOException(STEP_ID_STRING + ": error executing Collapse Fasta command " + cmdClp);
              }
         }
         
+        logger.info(STEP_ID_STRING + ": completed");
         
     }
     
@@ -225,7 +221,7 @@ public class StepCollapseReads extends NGSStep implements NGSBase {
     @Override
     public void verifyInputData() throws IOException, NullPointerException{
         
-        logger.info("verify input data");        
+        logger.info(STEP_ID_STRING + ": verify input data");        
         this.setPaths();
                 
         // does software exist?
@@ -242,16 +238,18 @@ public class StepCollapseReads extends NGSStep implements NGSBase {
         Iterator itSD = this.stepInputData.getSampleData().iterator();
         while (itSD.hasNext()){
             SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
-            String fastqFile1 = inFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", INFILE_EXTENSION);
-            String fastqFile2 = inFolder + FILESEPARATOR + sampleData.getFastqFile2().replace(".fastq", INFILE_EXTENSION);
             
             //Fastq 1
-            if (fastqFile1==null) throw new IOException(STEP_ID_STRING + ": no Fastq1 file specified");
+            if (sampleData.getFastqFile1()==null) {
+                logger.error(STEP_ID_STRING + ": no Fastq1 file specified");
+                throw new IOException(STEP_ID_STRING + ": no Fastq1 file specified");
+            }
+            String fastqFile1 = inFolder + NGSStep.FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", INFILE_EXTENSION);
             
             if ((new File(fastqFile1)).exists()==false){
-                logger.error("unzipFastqFiles: fastq File1 <" 
+                logger.error(STEP_ID_STRING + ": fastq File1 <" 
                   + fastqFile1 + "> does not exist");
-                throw new IOException("unzipFastqFiles: fastq File1 <" 
+                throw new IOException(STEP_ID_STRING + " : fastq File1 <" 
                   + fastqFile1 + "> does not exist");
             }
             if (fastqFile1.toUpperCase().endsWith(INFILE_EXTENSION.toUpperCase())==false)
@@ -266,7 +264,8 @@ public class StepCollapseReads extends NGSStep implements NGSBase {
             
             
             //Fastq 2
-            if (fastqFile2==null) continue;
+            if (sampleData.getFastqFile2()==null) continue;
+            String fastqFile2 = inFolder + NGSStep.FILESEPARATOR + sampleData.getFastqFile2().replace(".fastq", INFILE_EXTENSION);
             
             if ((new File(fastqFile2)).exists()==false){
                 logger.error(STEP_ID_STRING + " : fastq File2 <" 

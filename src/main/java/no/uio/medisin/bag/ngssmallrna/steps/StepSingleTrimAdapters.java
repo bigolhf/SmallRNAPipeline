@@ -151,6 +151,7 @@ public class StepSingleTrimAdapters extends NGSStep implements NGSBase{
         
 
         this.setTrimSoftware((String) configData.get(ID_SOFTWARE));
+        this.setAdapterFile((String) configData.get(ID_ADAPTOR_FILE));
         logger.info("passed");
     }
     
@@ -163,7 +164,8 @@ public class StepSingleTrimAdapters extends NGSStep implements NGSBase{
     public void execute() throws IOException{
         
         this.setPaths();
-        this.verifyInputData();
+
+        logger.info(STEP_ID_STRING + ": execute step");        
         String cmdTrimAdapters = "";
         
         Iterator itSD = this.stepInputData.getSampleData().iterator();
@@ -187,7 +189,7 @@ public class StepSingleTrimAdapters extends NGSStep implements NGSBase{
                     + ":30"
                     + ":" + this.getMinAlignScore()
                 );
-                cmd.add("AVGQUAL:" + this.getMinAvgReadQuality());
+                //cmd.add("AVGQUAL:" + this.getMinAvgReadQuality());
 
                 /*
                 java -jar Trimmomatic-0.33/trimmomatic-0.33.jar 
@@ -201,8 +203,7 @@ public class StepSingleTrimAdapters extends NGSStep implements NGSBase{
                 -threads
                 */      
 
-                cmdTrimAdapters = StringUtils.join(cmd, " ");
-                cmdTrimAdapters = cmdTrimAdapters.replace(FILESEPARATOR + FILESEPARATOR, FILESEPARATOR);
+                cmdTrimAdapters = this.cleanPath(StringUtils.join(cmd, " "));
                 logger.info("Adapter Trim command:\t" + cmdTrimAdapters);
 
                 Runtime rt = Runtime.getRuntime();
@@ -233,6 +234,7 @@ public class StepSingleTrimAdapters extends NGSStep implements NGSBase{
                 throw new IOException(STEP_ID_STRING + "error executing AdapterTrimming command " + cmdTrimAdapters);
             }
         }
+        logger.info(STEP_ID_STRING + ": completed");
         
         
     }
@@ -248,12 +250,17 @@ public class StepSingleTrimAdapters extends NGSStep implements NGSBase{
     @Override
     public void verifyInputData() throws IOException{
 
-        logger.info("verify input data");        
+        logger.info(STEP_ID_STRING + ": verify input data");        
         this.setPaths();
         
         if(new File(this.getTrimSoftware()).exists() == false){
             logger.error(STEP_ID_STRING + ": Adapter Trimming software not found at location < " + this.getTrimSoftware() +">");
             throw new IOException(STEP_ID_STRING + ": Adapter Trimming software not found at location < " + this.getTrimSoftware() +">");
+        }
+        
+        if(new File(this.getAdapterFile()).exists() == false){
+            logger.error(STEP_ID_STRING + ": Adapter sequence file not found at location < " + this.getAdapterFile() +">");
+            throw new IOException(STEP_ID_STRING + ": Adapter sequence file not found at location < " + this.getAdapterFile() +">");
         }
         
         Iterator itSD = this.stepInputData.getSampleData().iterator();
@@ -267,7 +274,7 @@ public class StepSingleTrimAdapters extends NGSStep implements NGSBase{
                 throw new IOException(STEP_ID_STRING + " :no Fastq1 file specified");
             }
             
-            if ((new File(fastqFile1)).exists()==false){
+            if ((new File(this.cleanPath(fastqFile1))).exists()==false){
                 logger.error("AdapterTrimming: fastq File1 <" 
                   + fastqFile1 + "> does not exist");
                 throw new IOException("AdapterTrimming: fastq File1 <" 
