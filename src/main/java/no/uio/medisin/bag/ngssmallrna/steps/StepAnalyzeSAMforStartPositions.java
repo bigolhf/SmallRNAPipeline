@@ -43,7 +43,6 @@ public class StepAnalyzeSAMforStartPositions extends NGSStep implements NGSBase{
     public  static final String     STEP_ID_STRING      = "AnalyzeStartPositions";
     private static final String     ID_BLEED            = "bleed";
     private static final String     ID_BASELINE         = "baselinePercent";
-    private static final String     ID_ISOMIRS          = "analyzeIsomirs";
     private static final String     ID_MIRBASE_VERSION  = "mirbaseVersion";
     private static final String     ID_REF_GENOME       = "host";
     private static final String     ID_SHORTEST_FEATURE = "shortestFeature";
@@ -62,7 +61,6 @@ public class StepAnalyzeSAMforStartPositions extends NGSStep implements NGSBase{
     
     private int                     locationBleed       = 2;
     private int                     baselinePercent     = 5;
-    private Boolean                 analyzeIsomirs      = false;
     private int                     miRBaseRelease      = 20;
     private String                  ReferenceGenome     = "";
     private int                     shortestRead        = 0;
@@ -113,10 +111,6 @@ public class StepAnalyzeSAMforStartPositions extends NGSStep implements NGSBase{
             logger.error("<" + ID_MIN_COUNTS + "> : Missing Definition in Configuration File");
             throw new NullPointerException("<" + ID_MIN_COUNTS + "> : Missing Definition in Configuration File");
         }
-        if(configData.get(ID_REF_GENOME)==null) {
-            logger.error("<" + ID_REF_GENOME + "> : Missing Definition in Configuration File");
-            throw new NullPointerException("<" + ID_REF_GENOME + "> : Missing Definition in Configuration File");
-        }
         if(configData.get(ID_BASELINE)==null) {
             logger.error("<" + ID_BASELINE + "> : Missing Definition in Configuration File");
             throw new NullPointerException("<" + ID_BASELINE + "> : Missing Definition in Configuration File");
@@ -165,7 +159,7 @@ public class StepAnalyzeSAMforStartPositions extends NGSStep implements NGSBase{
         
 
         try{
-            this.setLongestRead((Integer) configData.get(ID_BLEED));
+            this.setLongestRead((Integer) configData.get(ID_LONGEST_FEATURE));
         }
         catch(NumberFormatException exNm){
             logger.error(ID_LONGEST_FEATURE + " <" + ID_LONGEST_FEATURE + "> is not an integer");
@@ -216,6 +210,17 @@ public class StepAnalyzeSAMforStartPositions extends NGSStep implements NGSBase{
             throw new IllegalArgumentException(ID_SEPARATION + " <" + configData.get(ID_SEPARATION) + "> must be > 0 ");
         }
         
+        try{
+            this.setMiRBaseRelease((Integer) configData.get(ID_MIRBASE_VERSION));
+        }
+        catch(Exception exNm){
+            logger.error(ID_MIRBASE_VERSION + " <" + configData.get(ID_MIRBASE_VERSION) + "> is not an integer");
+            throw new NumberFormatException(ID_MIRBASE_VERSION + " <" + configData.get(ID_MIRBASE_VERSION) + "> is not an integer");
+        }        
+        if (this.getMiRBaseRelease() <= 0){
+            logger.error(ID_MIRBASE_VERSION + " <" + configData.get(ID_MIRBASE_VERSION) + "> must be positive integer");
+            throw new IllegalArgumentException(ID_MIRBASE_VERSION + " <" + configData.get(ID_MIRBASE_VERSION) + "> must be positive integer");
+        }
         
 
         this.setReferenceGenome((String) configData.get(ID_REF_GENOME));
@@ -223,13 +228,6 @@ public class StepAnalyzeSAMforStartPositions extends NGSStep implements NGSBase{
             logger.error(ID_REF_GENOME + " <" + configData.get(ID_REF_GENOME) + "> must be a 3 letter string");            
             throw new IllegalArgumentException(ID_REF_GENOME + " <" + configData.get(ID_REF_GENOME) + "> must be a 3 letter string");            
         }
-        try{
-            this.setAnalyzeIsomirs((Boolean) configData.get(ID_ISOMIRS));
-        }
-        catch(NumberFormatException exNm){
-            logger.error(ID_BLEED + " <" + configData.get(ID_BLEED) + "> cannot be cast as Boolean");
-            throw new NumberFormatException(ID_BLEED + " <" + configData.get(ID_BLEED) + "> cannot be cast as Boolean");
-        }                
 
         logger.info("passed");
     }
@@ -249,7 +247,7 @@ public class StepAnalyzeSAMforStartPositions extends NGSStep implements NGSBase{
     @Override
     public void execute() throws IOException{
         
-        stepInputData.verifyInputData();            
+        logger.info(STEP_ID_STRING + ": execute");                
         this.setPaths();
     
         
@@ -260,10 +258,9 @@ public class StepAnalyzeSAMforStartPositions extends NGSStep implements NGSBase{
         genomeFasta = new GenomeSeq(hostCode);
         String pathToFasta = stepInputData.getDataLocations().getGenomeRootFolder()
                 + FILESEPARATOR + hostCode + FILESEPARATOR + ReferenceDataLocations.ID_REL_WHOLE_GENSEQ_PATH;
-        String genomeFastaFile = pathToFasta + FILESEPARATOR + "genome.fa";
-        genomeFastaFile = genomeFastaFile.replace(FILESEPARATOR + FILESEPARATOR, FILESEPARATOR).trim();
+        String genomeFastaFile = this.cleanPath(pathToFasta + FILESEPARATOR + "genome.fa");
         try{
-            logger.info("reading genome file + <" + genomeFastaFile + ">");
+            logger.info("reading genome file <" + genomeFastaFile + ">");
             this.genomeFasta.readFastaGenome(genomeFastaFile);
             logger.info("finished ");
             logger.info("read " + genomeFasta.getNoOfBases() + " bases");
@@ -288,15 +285,11 @@ public class StepAnalyzeSAMforStartPositions extends NGSStep implements NGSBase{
         }
         
         try {
-            if (annotationFile == null) {
-                throw new IOException("no annotation file was found for reference genome "
-                        + hostCode);
-            }
             gffSet.readGFF(annotationFile);
         } catch (IOException exIO) {
             logger.error("Exception trying to read Annotation file ");
             logger.error(exIO);
-            throw new IOException(STEP_ID_STRING + ": exception reading Genome reference file + <" + genomeFastaFile + ">");
+            throw new IOException(STEP_ID_STRING + ": exception reading Genome reference file  <" + genomeFastaFile + ">");
         }
 
         /**
@@ -322,11 +315,10 @@ public class StepAnalyzeSAMforStartPositions extends NGSStep implements NGSBase{
         while (itSD.hasNext()) {
             SampleDataEntry sampleData = (SampleDataEntry) itSD.next();
             
-            String positionFile = outFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", POS_FILE_EXT);
-            String featureOutFile = outFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", FEAT_FILE_EXT);
-            featureOutFile = featureOutFile.replace(FILESEPARATOR + FILESEPARATOR, FILESEPARATOR).trim();
+            String positionFile = this.cleanPath(outFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", POS_FILE_EXT));
+            String featureOutFile = this.cleanPath(outFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", FEAT_FILE_EXT));
 
-            String samInputFile = inFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", INFILE_EXTENSION);
+            String samInputFile = this.cleanPath(inFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", INFILE_EXTENSION));
             
             logger.info("sam input file is " + samInputFile);
             logger.info("results will be written to " + positionFile);
@@ -476,6 +468,7 @@ public class StepAnalyzeSAMforStartPositions extends NGSStep implements NGSBase{
                                         //logger.debug(printCoverage5(currentStart5 - coverage5Start, mappedRead.getEndPos() - coverage5Start, "|"));
                                     } catch (ArrayIndexOutOfBoundsException exAB) {
                                         logger.error("5' Array out of bounds");
+                                        throw new IOException("5' Array out of bounds");
                                     }
                                 }
                                 break;
@@ -507,6 +500,7 @@ public class StepAnalyzeSAMforStartPositions extends NGSStep implements NGSBase{
                                         logger.error("3' Array out of bounds");
                                         logger.error(mappedRead.toString());
                                         logger.error(exAB);
+                                        throw new IOException("3' Array out of bounds" + "\n" + mappedRead.toString());
                                     }
                                 }
                                 break;
@@ -634,6 +628,9 @@ public class StepAnalyzeSAMforStartPositions extends NGSStep implements NGSBase{
             logger.error(exIO);
             throw new IOException(STEP_ID_STRING + ": error writing fasta feature file <" + fastaFile + ">");
         }
+        
+        logger.info(STEP_ID_STRING + ": completed");
+        
     }
 
     /**
@@ -776,24 +773,36 @@ public class StepAnalyzeSAMforStartPositions extends NGSStep implements NGSBase{
 
     /**
      * Verify Input Data for parsing SAM file for miRNAs
-     *
+     * @throws IOException
      */    
     @Override
-    public void verifyInputData()  throws IOException, NullPointerException{
+    public void verifyInputData()  throws IOException{
 
-        logger.info("verify input data");        
+        logger.info(STEP_ID_STRING + " :verify input data");        
         this.setPaths();
         
         
+        String gffFileMirBase = this.cleanPath(stepInputData.getDataLocations().getMirbaseFolder() 
+                + FILESEPARATOR + this.getMiRBaseRelease() + FILESEPARATOR + this.getReferenceGenome() + ".gff3");
+        if (new File(gffFileMirBase).exists()==false){
+            logger.error("no annotation file was found for mirBase HOST:<" 
+                    + this.getReferenceGenome() + "> VERSION: <"+ this.getMiRBaseRelease() + "> at location <" 
+                    + gffFileMirBase + ">");
+            throw new IOException("no annotation file was found for mirBase HOST:<" 
+                    + this.getReferenceGenome() + "> VERSION: <"+ this.getMiRBaseRelease() + "> at location <" 
+                    + gffFileMirBase + ">");
+        }
+                
         String pathToFasta = stepInputData.getDataLocations().getGenomeRootFolder()
                 + FILESEPARATOR + this.getReferenceGenome() + FILESEPARATOR + ReferenceDataLocations.ID_REL_WHOLE_GENSEQ_PATH;
-        String genomeFastaFile = pathToFasta + FILESEPARATOR + "genome.fa";
-        genomeFastaFile = genomeFastaFile.replace(FILESEPARATOR + FILESEPARATOR, FILESEPARATOR).trim();
-        if (new File(genomeFastaFile + FILESEPARATOR + "genes.gtf").exists()==false){
+        String genomeFastaFile = this.cleanPath(pathToFasta + FILESEPARATOR + "genome.fa");
+        if (new File(genomeFastaFile).exists()==false){
+            logger.error("no fasta file was found for reference genome <" 
+                    + this.getReferenceGenome() + "> at location <" 
+                    + genomeFastaFile + ">");
             throw new IOException("no fasta file was found for reference genome <" 
                     + this.getReferenceGenome() + "> at location <" 
                     + genomeFastaFile + ">");
-
         }
         
         String annotationFile = "";
@@ -806,8 +815,11 @@ public class StepAnalyzeSAMforStartPositions extends NGSStep implements NGSBase{
             annotationFile = pathToAnnotation + FILESEPARATOR + "genes.gff";
         }
         if (annotationFile == null) {
-            throw new IOException("no fasta file was found for reference genome <" 
-                    + this.getReferenceGenome() + "> at location <"
+            logger.error("no annotation file was found for reference genome <" 
+                    + pathToAnnotation + "> at location <"
+                    + annotationFile + ">");
+            throw new IOException("no annotation file was found for reference genome <" 
+                    + pathToAnnotation + "> at location <"
                     + annotationFile + ">");
         }
         
@@ -817,22 +829,28 @@ public class StepAnalyzeSAMforStartPositions extends NGSStep implements NGSBase{
         Iterator itSD = this.stepInputData.getSampleData().iterator();
         while (itSD.hasNext()){
             SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
-            String fastqFile1 = (String)sampleData.getFastqFile1();
             
-            //Fastq 1
-            if (fastqFile1==null) throw new IOException("no Fastq1 file specified");
+            //Fastq 1 SAM file
+            if (sampleData.getFastqFile1()==null) throw new IOException("no Fastq1 file specified");
+            String samFileIn = this.cleanPath(inFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", INFILE_EXTENSION));
             
-            if ((new File(fastqFile1)).exists()==false){
-                throw new IOException("unzipFastqFiles: fastq File1 <" 
-                  + fastqFile1 + "> does not exist");
+            if ((new File(samFileIn)).exists()==false){
+                logger.error("SAM input file <" 
+                  + samFileIn + "> does not exist");
+                throw new IOException("SAM input file  <" 
+                  + samFileIn + "> does not exist");
             }
-            if (fastqFile1.toUpperCase().endsWith(INFILE_EXTENSION.toUpperCase())==false)
+            if (samFileIn.toUpperCase().endsWith(INFILE_EXTENSION.toUpperCase())==false)
             {
-                throw new IOException("unzipFastqFiles: incorrect file extension for input file <" 
-                  + fastqFile1 + ">.  \n" 
+                logger.error("incorrect file extension for SAM input file <" 
+                  + samFileIn + ">.  \n" 
+                  + "should have <" + INFILE_EXTENSION + "> as extension");
+                throw new IOException("incorrect file extension for SAM input file <" 
+                  + samFileIn + ">.  \n" 
                   + "should have <" + INFILE_EXTENSION + "> as extension");
             }
         }
+        logger.info("passed");
     }
     
     /**
@@ -895,20 +913,6 @@ public class StepAnalyzeSAMforStartPositions extends NGSStep implements NGSBase{
      */
     public void setBaselinePercent(int baselinePercent) {
         this.baselinePercent = baselinePercent;
-    }
-
-    /**
-     * @return the analyzeIsomirs
-     */
-    public Boolean getAnalyzeIsomirs() {
-        return analyzeIsomirs;
-    }
-
-    /**
-     * @param analyzeIsomirs the analyzeIsomirs to set
-     */
-    public void setAnalyzeIsomirs(Boolean analyzeIsomirs) {
-        this.analyzeIsomirs = analyzeIsomirs;
     }
 
     /**

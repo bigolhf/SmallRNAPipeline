@@ -135,9 +135,7 @@ public class StepAnalyzeIsomiRDispersion extends NGSStep implements NGSBase{
     
     @Override
     public void execute() throws IOException{
-        this.setPaths();
 
-        stepInputData.verifyInputData();            
 
         sourceList      = new ArrayList<>();
         conditionList   = new ArrayList<>();
@@ -351,6 +349,7 @@ public class StepAnalyzeIsomiRDispersion extends NGSStep implements NGSBase{
             throw new IOException(STEP_ID_STRING + ": miRBase Fasta file not found at location < " + faFileMirBase +">");
         }
         
+        logger.info(STEP_ID_STRING + ": completed");
         
       }
     

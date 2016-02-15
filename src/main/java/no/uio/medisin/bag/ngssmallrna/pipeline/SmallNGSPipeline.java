@@ -152,6 +152,10 @@ public class SmallNGSPipeline {
                 case "exit":
                     return;
                     
+                default:
+                    logger.error("unknown step:");
+                    throw new IOException("unknown step: " + stepData.getStepType());
+                    
             }
             
         }

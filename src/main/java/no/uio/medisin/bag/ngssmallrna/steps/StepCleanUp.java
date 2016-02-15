@@ -94,18 +94,19 @@ public class StepCleanUp extends NGSStep implements NGSBase{
         
         
         try{
-            Integer.parseInt((String) configData.get(ID_THREADS));
+            this.setNoOfThreads((Integer)configData.get(ID_THREADS));
         }
         catch(NumberFormatException exNm){
             logger.error(ID_THREADS + " <" + configData.get(ID_THREADS) + "> is not an integer");
             throw new NumberFormatException(ID_THREADS + " <" + configData.get(ID_THREADS) + "> is not an integer");
         }
         
-        if (Integer.parseInt((String) configData.get(ID_THREADS)) <= 0){
-            logger.error(ID_THREADS + " <" + (String) configData.get(ID_THREADS) + "> must be positive");
-            throw new IllegalArgumentException(ID_THREADS + " <" + (String) configData.get(ID_THREADS) + "> must be positive");
+        if (this.getNoOfThreads() <= 0){
+            logger.error(ID_THREADS + " <" + configData.get(ID_THREADS) + "> must be positive");
+            throw new IllegalArgumentException(ID_THREADS + " <" + configData.get(ID_THREADS) + "> must be positive");
         }
-        setNoOfThreads(Integer.parseInt((String) configData.get(ID_THREADS)));
+        
+        this.setUnzipSoftware((String) configData.get(ID_SOFTWARE));
         
         try{
             this.setFileTypes((ArrayList<String> )configData.get(ID_FILE_TYPES));
@@ -123,6 +124,9 @@ public class StepCleanUp extends NGSStep implements NGSBase{
     
     @Override
     public void execute() throws IOException{
+        
+        logger.info(STEP_ID_STRING + ": execute step");        
+        
         String projectRoot = stepInputData.getProjectRoot() + FILESEPARATOR + stepInputData.getProjectID();
         File directory = new File(projectRoot);
         String cmdZip = "";
@@ -143,8 +147,7 @@ public class StepCleanUp extends NGSStep implements NGSBase{
                     pigz -p 4 -d /data/ngsdata/project1/sra_data.fastq.gz 
                     */      
 
-                    cmdZip = StringUtils.join(cmd, " ");
-                    cmdZip = cmdZip.replace(FILESEPARATOR + FILESEPARATOR, FILESEPARATOR);
+                    cmdZip = this.cleanPath(StringUtils.join(cmd, " "));
                     logger.info("pigz zip command:\t" + cmdZip);
 
                     Runtime rt = Runtime.getRuntime();
@@ -187,13 +190,14 @@ public class StepCleanUp extends NGSStep implements NGSBase{
     
             
     @Override
-    public void verifyInputData(){
+    public void verifyInputData() throws IOException{
         
-        logger.info("verify input data");        
-        this.setPaths();
+        logger.info("verify input data");  
         
-            // does input file have correct extension?
-        // does input file have the same extension as expected for the output file?
+        if(new File(this.getUnzipSoftware()).exists() == false){
+            logger.error("unzip software not found at location < " + this.getUnzipSoftware() +">");
+            throw new IOException("unzip software not found at location < " + this.getUnzipSoftware() +">");
+        }
     }
     
     /**

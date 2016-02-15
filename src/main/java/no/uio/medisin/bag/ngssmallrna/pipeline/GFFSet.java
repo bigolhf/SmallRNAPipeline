@@ -44,8 +44,9 @@ public class GFFSet {
      * @param filename
      * @return number of lines read
      * 
+     * @throws IOException
      */
-    public int readGFF(String filename){
+    public int readGFF(String filename) throws IOException{
         String line = null;
         int lineCount = 0;
         try{
@@ -60,7 +61,8 @@ public class GFFSet {
             logger.error("exception thrown on line " + lineCount);
             logger.error(line);
             logger.error(exIO);
-            return lineCount;
+            throw new IOException("error parsing GFF file " + filename + "\n" 
+            + "exception was thrown on line " + lineCount);  
         }
         return lineCount;
     }

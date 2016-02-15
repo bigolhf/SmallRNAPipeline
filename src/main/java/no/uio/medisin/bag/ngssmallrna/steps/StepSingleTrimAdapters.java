@@ -163,9 +163,8 @@ public class StepSingleTrimAdapters extends NGSStep implements NGSBase{
     @Override
     public void execute() throws IOException{
         
-        this.setPaths();
-
         logger.info(STEP_ID_STRING + ": execute step");        
+
         String cmdTrimAdapters = "";
         
         Iterator itSD = this.stepInputData.getSampleData().iterator();

@@ -158,8 +158,8 @@ public class StepParseSAMForMiRNAs extends NGSStep implements NGSBase{
             this.setAnalyzeIsomirs((Boolean) configData.get(ID_ISOMIRS));
         }
         catch(NumberFormatException exNm){
-            logger.error(ID_BLEED + " <" + configData.get(ID_BLEED) + "> cannot be cast as Boolean");
-            throw new NumberFormatException(ID_BLEED + " <" + configData.get(ID_BLEED) + "> cannot be cast as Boolean");
+            logger.error(ID_ISOMIRS + " <" + configData.get(ID_ISOMIRS) + "> cannot be cast as Boolean");
+            throw new NumberFormatException(ID_ISOMIRS + " <" + configData.get(ID_ISOMIRS) + "> cannot be cast as Boolean");
         }        
         
 
@@ -176,26 +176,26 @@ public class StepParseSAMForMiRNAs extends NGSStep implements NGSBase{
     @Override
     public void execute()  throws IOException{
         
+        logger.info(STEP_ID_STRING + ": execute");                
         
-        this.setPaths();
-        stepInputData.verifyInputData();            
     
-        String gffFileMirBase = stepInputData.getDataLocations().getMirbaseFolder() + FILESEPARATOR + this.getMiRBaseRelease() + FILESEPARATOR + this.getReferenceGenome() + ".gff3";
+        String gffFileMirBase = this.cleanPath(stepInputData.getDataLocations().getMirbaseFolder() 
+                + FILESEPARATOR + this.getMiRBaseRelease() + FILESEPARATOR + this.getReferenceGenome() + ".gff3");
         String faFileMirBase = gffFileMirBase.replace("gff3", "mature.fa");
-        mirBaseSet.loadMiRBaseData(this.getReferenceGenome(),gffFileMirBase, faFileMirBase);
+        mirBaseSet.loadMiRBaseData(this.getReferenceGenome(), gffFileMirBase, faFileMirBase);
         
         Boolean fA = new File(outFolder).mkdir();       
         if (fA) logger.info("created output folder <" + outFolder + "> for results" );
         String samLine = null;
         String samInputFile = "";
         Iterator itSD = this.stepInputData.getSampleData().iterator();
+        int bleed = this.getLocationBleed();
         while (itSD.hasNext()){
             try{
                 
-                int bleed = this.getLocationBleed();
                 SampleDataEntry sampleData = (SampleDataEntry)itSD.next();
                 
-                samInputFile = inFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", INFILE_EXTENSION);
+                samInputFile = this.cleanPath(inFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", INFILE_EXTENSION));
                 logger.info(sampleData.getFastqFile1().replace(".fastq", INFILE_EXTENSION));
                 int matchCount5 = 0;
                 int matchCount3 = 0;
@@ -366,7 +366,9 @@ public class StepParseSAMForMiRNAs extends NGSStep implements NGSBase{
                 logger.info("error writing isomiR dispersion File <" + dispersionFile + ">\n" + exIO);
                 throw new IOException(STEP_ID_STRING + "error writing isomiR dispersion File <" + dispersionFile + ">");
             }
+           
         }
+        logger.info(STEP_ID_STRING + ": completed");
         
         
     }
@@ -420,6 +422,27 @@ public class StepParseSAMForMiRNAs extends NGSStep implements NGSBase{
         
         logger.info("verify input data");        
         this.setPaths();
+        String gffFileMirBase = this.cleanPath(stepInputData.getDataLocations().getMirbaseFolder() 
+                + FILESEPARATOR + this.getMiRBaseRelease() + FILESEPARATOR + this.getReferenceGenome() + ".gff3");
+        
+        if (new File(gffFileMirBase).exists()==false){
+            logger.error("no annotation file was found for mirBase HOST:<" 
+                    + this.getReferenceGenome() + "> VERSION: <"+ this.getMiRBaseRelease() + "> at location <" 
+                    + gffFileMirBase + ">");
+            throw new IOException("no annotation file was found for mirBase HOST:<" 
+                    + this.getReferenceGenome() + "> VERSION: <"+ this.getMiRBaseRelease() + "> at location <" 
+                    + gffFileMirBase + ">");
+        }
+                
+        String faFileMirBase = gffFileMirBase.replace("gff3", "mature.fa");
+        if (new File(gffFileMirBase).exists()==false){
+            logger.error("no fasta file was found for mirBase HOST:<" 
+                    + this.getReferenceGenome() + "> VERSION: <"+ this.getMiRBaseRelease() + "> at location <" 
+                    + faFileMirBase + ">");
+            throw new IOException("no fasta file was found for mirBase HOST:<" 
+                    + this.getReferenceGenome() + "> VERSION: <"+ this.getMiRBaseRelease() + "> at location <" 
+                    + faFileMirBase + ">");
+        }
                 
         // check the SAM files exist
         Iterator itSD = this.stepInputData.getSampleData().iterator();

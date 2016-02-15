@@ -64,7 +64,7 @@ public class StepBowtieMapSingleReads extends NGSStep implements NGSBase{
     private             String  fastqGenomeUnAln                = "";
     
     private  ArrayList<String>  mapGenStdErr;
-
+    private  ArrayList<String>  mapAbunStdErr;
     /**
      *
      * @param sid StepInputData
@@ -170,7 +170,7 @@ public class StepBowtieMapSingleReads extends NGSStep implements NGSBase{
     @Override
     public void execute() throws IOException{
 
-        this.setPaths();
+        logger.info(STEP_ID_STRING + ": execute");        
 
         Boolean fA = new File(outFolder).mkdir();
         if (fA) {
@@ -273,6 +273,7 @@ public class StepBowtieMapSingleReads extends NGSStep implements NGSBase{
                 throw new IOException(STEP_ID_STRING + ": \"error executing Bowtie Mapping command " + cmd);
             }
         }
+        logger.info(STEP_ID_STRING + ": completed");
 
     }
 
@@ -296,17 +297,17 @@ public class StepBowtieMapSingleReads extends NGSStep implements NGSBase{
 
 
             cmd.add(mappingCmd);
-            String pathToBowtieIndex = this.cleanPath(this.getRootDataFolder()
-                    + FILESEPARATOR + this.getReferenceGenome() + ReferenceDataLocations.ID_REL_ABUN_DATA_PATH);
+            String pathToBowtieIndex = this.cleanPath(stepInputData.getDataLocations().getGenomeRootFolder()
+                    + FILESEPARATOR + this.getReferenceGenome() + FILESEPARATOR + ReferenceDataLocations.ID_REL_ABUN_DATA_PATH);
             cmd.add(pathToBowtieIndex);
 
             fastqTrimmedInputFile = this.cleanPath(inFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", INFILE_EXTENSION));
             cmd.add("-f");
             cmd.add(fastqTrimmedInputFile);
 
-            cmd.add("-v " + this.getAlignMode());
+            cmd.add("-" + this.getAlignMode());
             cmd.add("--best");
-            cmd.add("-m 2");
+            cmd.add("-m " + this.getNoOfMismatches());
 
             fastqAbundantAln = this.cleanPath(outFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", FASTQ_ABUNALN_EXTENSION));
             fastqAbundantUnAln = this.cleanPath(outFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", FASTQ_ABUNUNALN_EXTENSION));
@@ -334,7 +335,7 @@ public class StepBowtieMapSingleReads extends NGSStep implements NGSBase{
 
             logger.info("<ERROR>");
             int skipCount = 0;
-            ArrayList<String> mapAbunStdErr = new ArrayList<>();
+            mapAbunStdErr = new ArrayList<>();
             while ((line = brAStdErr.readLine()) != null) {
                 if (line.contains("Warning: Skipping") && line.contains("less than")) {
                     skipCount++;
@@ -376,64 +377,64 @@ public class StepBowtieMapSingleReads extends NGSStep implements NGSBase{
         logger.info(STEP_ID_STRING + ": mapping reads to genome");
         String cmdBowtieMapGenomeReads = "";
         try{
-        String pathToBowtieGenomeIndex = this.cleanPath(stepInputData.getDataLocations().getGenomeRootFolder()
-                + FILESEPARATOR + this.getReferenceGenome() + ReferenceDataLocations.ID_REL_BOWTIE_PATH);
-                
-        ArrayList cmd = new ArrayList<>();
-        cmd.add(this.getMappingSoftware());
-        cmd.add(pathToBowtieGenomeIndex);
+            String pathToBowtieGenomeIndex = this.cleanPath(stepInputData.getDataLocations().getGenomeRootFolder()
+                    + FILESEPARATOR + this.getReferenceGenome() + FILESEPARATOR + ReferenceDataLocations.ID_REL_BOWTIE_PATH);
 
-        cmd.add("-f");
-        cmd.add(fastqAbundantUnAln);
+            ArrayList cmd = new ArrayList<>();
+            cmd.add(this.getMappingSoftware());
+            cmd.add(pathToBowtieGenomeIndex);
 
-        cmd.add("-v" + this.getNoOfMismatches());
-        cmd.add("--best");
-        cmd.add("-m 2");
+            cmd.add("-f");
+            cmd.add(fastqAbundantUnAln);
 
-        fastqGenomeAln = this.cleanPath(outFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", FASTQ_GENALN_EXTENSION));
-        fastqGenomeUnAln = this.cleanPath(outFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", FASTQ_UNALN_EXTENSION));
-        String samGenomeAln = this.cleanPath(outFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", SAM_GENALN_EXTENSION));
-        cmd.add("--al " + fastqGenomeAln);
-        cmd.add("--un " + fastqGenomeUnAln);
-        cmd.add("--sam " + samGenomeAln);
-        cmd.add("-p " + this.getNoOfThreads());
+            cmd.add("-" + this.getAlignMode());
+            cmd.add("--best");
+            cmd.add("-m " + this.getNoOfMismatches());
 
-        cmdBowtieMapGenomeReads = this.cleanPath(StringUtils.join(cmd, " "));
-        logger.info("Bowtie Map Genome Reads command:\t" + cmdBowtieMapGenomeReads);
+            fastqGenomeAln = this.cleanPath(outFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", FASTQ_GENALN_EXTENSION));
+            fastqGenomeUnAln = this.cleanPath(outFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", FASTQ_UNALN_EXTENSION));
+            String samGenomeAln = this.cleanPath(outFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", SAM_GENALN_EXTENSION));
+            cmd.add("--al " + fastqGenomeAln);
+            cmd.add("--un " + fastqGenomeUnAln);
+            cmd.add("--sam " + samGenomeAln);
+            cmd.add("-p " + this.getNoOfThreads());
 
-        Runtime rtGenMap = Runtime.getRuntime();
-        Process procGenMap = rtGenMap.exec(cmdBowtieMapGenomeReads);
-        BufferedReader brGStdin = new BufferedReader(new InputStreamReader(procGenMap.getInputStream()));
-        BufferedReader brGStdErr = new BufferedReader(new InputStreamReader(procGenMap.getErrorStream()));
+            cmdBowtieMapGenomeReads = this.cleanPath(StringUtils.join(cmd, " "));
+            logger.info("Bowtie Map Genome Reads command:\t" + cmdBowtieMapGenomeReads);
 
-        String line = "";
-        String gLine = null;
-        logger.info("<OUTPUT>");
-        while ((gLine = brGStdin.readLine()) != null) {
-            logger.info(line);
-        }
-        logger.info("</OUTPUT>");
+            Runtime rtGenMap = Runtime.getRuntime();
+            Process procGenMap = rtGenMap.exec(cmdBowtieMapGenomeReads);
+            BufferedReader brGStdin = new BufferedReader(new InputStreamReader(procGenMap.getInputStream()));
+            BufferedReader brGStdErr = new BufferedReader(new InputStreamReader(procGenMap.getErrorStream()));
 
-        logger.info("<ERROR>");
-        int skipCount = 0;
-        ArrayList<String> mapGenStdErr = new ArrayList<>();
-        while ((line = brGStdErr.readLine()) != null) {
-            if (line.contains("Warning: Skipping") && line.contains("less than")) {
-                skipCount++;
-            } else {
+            String line = "";
+            String gLine = null;
+            logger.info("<OUTPUT>");
+            while ((gLine = brGStdin.readLine()) != null) {
                 logger.info(line);
-                mapGenStdErr.add(line);
             }
-        }
-        // need to parse the output from Bowtie to get the mapping summary
-        logger.info(skipCount + " lines were skipped because the read was too short");
-        logger.info("</ERROR>");
+            logger.info("</OUTPUT>");
 
-        int gExitVal = procGenMap.waitFor();
-        logger.info("Process exitValue: " + gExitVal);
+            logger.info("<ERROR>");
+            int skipCount = 0;
+            mapGenStdErr = new ArrayList<>();
+            while ((line = brGStdErr.readLine()) != null) {
+                if (line.contains("Warning: Skipping") && line.contains("less than")) {
+                    skipCount++;
+                } else {
+                    logger.info(line);
+                    mapGenStdErr.add(line);
+                }
+            }
+            // need to parse the output from Bowtie to get the mapping summary
+            logger.info(skipCount + " lines were skipped because the read was too short");
+            logger.info("</ERROR>");
 
-        brGStdin.close();
-        brGStdErr.close();
+            int gExitVal = procGenMap.waitFor();
+            logger.info("Process exitValue: " + gExitVal);
+
+            brGStdin.close();
+            brGStdErr.close();
         } catch (IOException | InterruptedException ex) {
             logger.error("error Bowtie Mapping genome reads\n");
             logger.error(cmdBowtieMapGenomeReads);
@@ -454,12 +455,26 @@ public class StepBowtieMapSingleReads extends NGSStep implements NGSBase{
     @Override
     public void verifyInputData()  throws IOException, NullPointerException{
 
-        logger.info("verify input data");        
+        logger.info(STEP_ID_STRING + ": verify input data");        
         this.setPaths();
                 
         if(new File(this.getMappingSoftware()).exists() == false){
             logger.error("mapping software not found at location < " + this.getMappingSoftware() +">");
             throw new IOException("mapping software not found at location < " + this.getMappingSoftware() +">");
+        }
+
+        String pathToAbunBowtieIndex = this.cleanPath(stepInputData.getDataLocations().getGenomeRootFolder()
+                + FILESEPARATOR + this.getReferenceGenome() + FILESEPARATOR + ReferenceDataLocations.ID_REL_ABUN_DATA_PATH + ".1.ebwt");
+        if(new File(pathToAbunBowtieIndex).exists() == false){
+            logger.error("abundant sequence bowtie index < " + pathToAbunBowtieIndex +"> not found");
+            throw new IOException("abundant sequence bowtie index  < " + pathToAbunBowtieIndex +"> not found");
+        }
+        
+        String pathToBowtieGenomeIndex = this.cleanPath(stepInputData.getDataLocations().getGenomeRootFolder()
+                + FILESEPARATOR + this.getReferenceGenome() + FILESEPARATOR + ReferenceDataLocations.ID_REL_BOWTIE_PATH  + ".1.ebwt");
+        if(new File(pathToBowtieGenomeIndex).exists() == false){
+            logger.error("genome bowtie index < " + pathToBowtieGenomeIndex +"> not found");
+            throw new IOException("genome bowtie index  < " + pathToBowtieGenomeIndex +"> not found");
         }
         
                     
@@ -493,11 +508,10 @@ public class StepBowtieMapSingleReads extends NGSStep implements NGSBase{
                   + "should have <" + INFILE_EXTENSION + "> as extension");
             }
             
-            
             // we dont check for Fastq 2 as this is single mapping
-                        
             
         }
+        logger.info("passed");        
     }
 
     
