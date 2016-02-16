@@ -20,6 +20,7 @@ public class ReferenceDataLocations {
     public final static     String ID_CONFIG_ID             = "ReferenceData";
     public final static     String ID_GENOME_FOLDER         = "genomeRootFolder";
     public final static     String ID_MIRBASE_FOLDER        = "mirbaseFolder";
+    public final static     String ID_TARGETSCAN_FOLDER     = "targetscanFolder";
     
     public final static     String ID_REL_BOWTIE_PATH       = "Sequence/BowtieIndex/genome";
     public final static     String ID_REL_ABUN_DATA_PATH    = "/Sequence/AbundantSequences/abundant";
@@ -30,6 +31,7 @@ public class ReferenceDataLocations {
     
     private                 String genomeRootFolder;
     private                 String mirbaseFolder;
+    private                 String targetbaseFolder;
 
     
     public ReferenceDataLocations(){
@@ -125,6 +127,20 @@ public class ReferenceDataLocations {
      */
     public void setMirbaseFolder(String mirbaseFolder) {
         this.mirbaseFolder = mirbaseFolder;
+    }
+
+    /**
+     * @return the targetbaseFolder
+     */
+    public String getTargetbaseFolder() {
+        return targetbaseFolder;
+    }
+
+    /**
+     * @param targetbaseFolder the targetbaseFolder to set
+     */
+    public void setTargetbaseFolder(String targetbaseFolder) {
+        this.targetbaseFolder = targetbaseFolder;
     }
     
 }
