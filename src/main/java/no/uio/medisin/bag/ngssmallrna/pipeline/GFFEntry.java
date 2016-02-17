@@ -30,6 +30,7 @@ public class GFFEntry {
     
     
     private                 String  seqID;
+    private                 String  featureID;
     private                 String  src;
     private                 String  type;
     private                 int     start;
@@ -50,6 +51,7 @@ public class GFFEntry {
         catch(Exception ex){
             logger.error("exception while parsing seqID/src/type values in GFF entry" + line);
             logger.error(ex);
+            //throw new Exception("exception while parsing seqID/src/type values in GFF entry" + line);
         }
         try{
             start   = Integer.parseInt(line.split("\t")[GFF_START]);
@@ -57,8 +59,10 @@ public class GFFEntry {
         }
         catch(Exception ex){
             logger.error("exception while parsing start/stop values in GFF entry" + line);
-            logger.error(ex);       
-            
+            logger.error(ex);      
+            start = -1;
+            stop  = -1;
+            //throw new Exception("exception while parsing seqID/src/type values in GFF entry" + line);
         }
         try{
             score   = Float.parseFloat(line.split("\t")[GFF_SCORE]);
@@ -76,8 +80,17 @@ public class GFFEntry {
             phase = 0;
         }
         
-        if(line.split("\t")[GFF_ATTR].isEmpty() == false)
+        if(line.split("\t")[GFF_ATTR].isEmpty() == false){
             attr    = line.split("\t")[GFF_ATTR];
+            String attribs[] = attr.split(";");
+            for(String a:attribs){
+                if(a.toUpperCase().contains("ID=")){
+                    featureID=a.split("=")[1];
+                }
+            }
+        }
+
+        
         
         
     }
@@ -127,12 +140,21 @@ public class GFFEntry {
                 + "ID=" + seqID + ";" + "Alias=" + seqID + ";" + "Name=" + seqID;
         return gff3String;
     }
+        
+    
+
+    /**
+     * add attribute to attribute string
+     * 
+     * @param attrKey
+     * @param attrVal 
+     */
+    public void addAttr(String attrKey, String attrVal){
+        attr = attr.concat(attrKey + "=" + attrVal + ";");            
+    }   
     
     
-    
-    
-    
-    
+
     /**
      * @return the seqID
      */
@@ -248,5 +270,19 @@ public class GFFEntry {
                     + CR + attr.substring(startPos, stopPos);
         }
         return "";
+    }
+
+    /**
+     * @return the featureID
+     */
+    public String getFeatureID() {
+        return featureID;
+    }
+
+    /**
+     * @param featureID the featureID to set
+     */
+    public void setFeatureID(String featureID) {
+        this.featureID = featureID;
     }
 }

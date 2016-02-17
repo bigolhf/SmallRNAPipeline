@@ -12,20 +12,41 @@ import org.apache.logging.log4j.Logger;
  *
  * @author simonray
  */
-public class TargetScanConservedFamilyEntry {
+public class TargetScanMirFamily {
     
     static Logger                       logger                          = LogManager.getLogger();
     
+    
+    public final static int             MIRFAMILY_COL       = 0;
+    public final static int             SEED_COL            = 1;
+    public final static int             SPECIESID_COL       = 2;
+    public final static int             MIRBASEID_COL       = 3;
+    public final static int             SEQ_COL             = 4;
+    public final static int             CONSERVATION_COL    = 5;
+    public final static int             MIRBASEACC_COL      = 6;
+    
+    
+    
     private String                      miRFamily;
-    private String                      Seedm8;
-    private String                      SpeciesID;
+    private String                      seedM8;
+    private String                      speciesID;
     private String                      miRBaseID;
     private String                      matureSequence;
     private String                      familyConservation;
     private String                      miRBaseAccession;
 
     
-    
+    public TargetScanMirFamily(String familyLine){
+        
+        miRFamily           = familyLine.split("\t")[MIRFAMILY_COL].trim();
+        seedM8              = familyLine.split("\t")[MIRFAMILY_COL].trim();
+        speciesID           = familyLine.split("\t")[MIRFAMILY_COL].trim();
+        miRBaseID           = familyLine.split("\t")[MIRFAMILY_COL].trim();
+        matureSequence      = familyLine.split("\t")[MIRFAMILY_COL].trim();
+        familyConservation  = familyLine.split("\t")[MIRFAMILY_COL].trim();
+        miRBaseAccession    = familyLine.split("\t")[MIRFAMILY_COL].trim();
+        
+    }
     
     
     /**
@@ -43,31 +64,31 @@ public class TargetScanConservedFamilyEntry {
     }
 
     /**
-     * @return the Seedm8
+     * @return the seedM8
      */
     public String getSeedm8() {
-        return Seedm8;
+        return seedM8;
     }
 
     /**
-     * @param Seedm8 the Seedm8 to set
+     * @param seedM8 the Seedm8 to set
      */
-    public void setSeedm8(String Seedm8) {
-        this.Seedm8 = Seedm8;
+    public void setSeedm8(String seedM8) {
+        this.seedM8 = seedM8;
     }
 
     /**
      * @return the SpeciesID
      */
     public String getSpeciesID() {
-        return SpeciesID;
+        return speciesID;
     }
 
     /**
      * @param SpeciesID the SpeciesID to set
      */
     public void setSpeciesID(String SpeciesID) {
-        this.SpeciesID = SpeciesID;
+        this.speciesID = SpeciesID;
     }
 
     /**

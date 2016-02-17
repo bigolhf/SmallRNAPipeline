@@ -17,15 +17,19 @@ import static no.uio.medisin.bag.ngssmallrna.pipeline.MiRNAFeature.logger;
  */
 public class ReferenceDataLocations {
     
-    public final static     String ID_CONFIG_ID             = "ReferenceData";
-    public final static     String ID_GENOME_FOLDER         = "genomeRootFolder";
-    public final static     String ID_MIRBASE_FOLDER        = "mirbaseFolder";
-    public final static     String ID_TARGETSCAN_FOLDER     = "targetscanFolder";
+    public final static     String ID_CONFIG_ID                    = "ReferenceData";
+    public final static     String ID_GENOME_FOLDER                = "genomeRootFolder";
+    public final static     String ID_MIRBASE_FOLDER               = "mirbaseFolder";
+    public final static     String ID_TARGETSCAN_FOLDER            = "targetscanFolder";
     
-    public final static     String ID_REL_BOWTIE_PATH       = "Sequence/BowtieIndex/genome";
-    public final static     String ID_REL_ABUN_DATA_PATH    = "/Sequence/AbundantSequences/abundant";
-    public final static     String ID_REL_WHOLE_GENSEQ_PATH = "Sequence/WholeGenomeFasta";
-    public final static     String ID_GENE_ANNOTATION       = "/Annotation/Genes";
+    public final static     String ID_REL_BOWTIE_PATH              = "Sequence/BowtieIndex/genome";
+    public final static     String ID_REL_ABUN_DATA_PATH           = "/Sequence/AbundantSequences/abundant";
+    public final static     String ID_REL_WHOLE_GENSEQ_PATH        = "Sequence/WholeGenomeFasta";
+    public final static     String ID_GENE_ANNOTATION              = "/Annotation/Genes";
+    
+    public final static     String ID_TSCAN_MIRFAMILY_FILE         = "miR_Family_Info.txt";
+    public final static     String ID_TSCAN_PREDICTIONS_FILE       = "Predicted_Targets_Info.txt";
+    
     
     
     

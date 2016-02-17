@@ -100,6 +100,23 @@ public class GFFSet {
     
     
     /**
+     * seek matching entry based on SeqID
+     * 
+     * @param sID
+     * @return 
+     */
+    public GFFEntry findEntryByID(String sID){
+        for(GFFEntry gffEntry: GFFEntries){
+            if(gffEntry.getFeatureID().equals(sID)) return gffEntry;
+        }
+        return null;
+    }
+    
+    
+    
+    
+    
+    /**
      * Does the specified region contain a feature?
      * 
      * @param start

@@ -27,6 +27,7 @@ import no.uio.medisin.bag.ngssmallrna.steps.StepAnalyzeSAMforStartPositions;
 import no.uio.medisin.bag.ngssmallrna.steps.StepBowtieMapPairedReads;
 import no.uio.medisin.bag.ngssmallrna.steps.StepCleanUp;
 import no.uio.medisin.bag.ngssmallrna.steps.StepInputData;
+import no.uio.medisin.bag.ngssmallrna.steps.StepMatchSmallRNAsBySeedRegions;
 import no.uio.medisin.bag.ngssmallrna.steps.StepUnzipInputFiles;
 import no.uio.medisin.bag.ngssmallrna.steps.StepSingleTrimAdapters;
 import org.yaml.snakeyaml.Yaml;
@@ -143,6 +144,10 @@ public class SmallNGSPipeline {
 
                 case StepDEwithEdgeR.STEP_ID_STRING:
                     this.addStepDifferentialExpression(stepData);
+                    break;
+                    
+                case StepMatchSmallRNAsBySeedRegions.STEP_ID_STRING:
+                    this.addStepAnalyzeSeedRegions(stepData);
                     break;
                     
                 case StepCleanUp.STEP_ID_STRING:
@@ -350,6 +355,23 @@ public class SmallNGSPipeline {
         StepCleanUp cleanUp = new StepCleanUp(sidCleanUp);
         cleanUp.parseConfigurationData((HashMap)pipelineConfigurationDataHash.get(StepCleanUp.STEP_ID_STRING));
         ngsSteps.add(cleanUp);
+        
+    }
+    
+    
+    /**
+     * add step to perform clean up after an analysis is complete
+     * 
+     * @param stepData 
+     */
+    private void addStepAnalyzeSeedRegions(NGSRunStepData stepData) throws IOException, Exception{
+
+        logger.info("loading step " + StepCleanUp.STEP_ID_STRING);
+        StepInputData sidMatchSeedRegions = new StepInputData(this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), 
+                 refDataLocations, stepData.getInputFileList(), stepData.getOutputFileList(), this.getSampleData());
+        StepMatchSmallRNAsBySeedRegions stepMatchSeedRegions = new StepMatchSmallRNAsBySeedRegions(sidMatchSeedRegions);
+        stepMatchSeedRegions.parseConfigurationData((HashMap)pipelineConfigurationDataHash.get(StepCleanUp.STEP_ID_STRING));
+        ngsSteps.add(stepMatchSeedRegions);
         
     }
     

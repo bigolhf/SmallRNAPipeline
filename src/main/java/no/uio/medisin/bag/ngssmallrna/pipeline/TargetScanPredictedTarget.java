@@ -12,10 +12,22 @@ import org.apache.logging.log4j.Logger;
  * 
  * @author simonray
  */
-public class TargetScanPredictedTargetEntry {
+public class TargetScanPredictedTarget {
     
     static Logger                       logger                          = LogManager.getLogger();
     
+    public final static int             MIRFAMILY_COL       = 0;
+    public final static int             GENEID_COL          = 1;
+    public final static int             GENESYMB_COL        = 2;
+    public final static int             TRANSID_COL         = 3;
+    public final static int             SPECIESID_COL       = 4;
+    public final static int             UTTSTART_COL        = 5;
+    public final static int             UTREND_COL          = 6;
+    public final static int             MSASTART_COL        = 7;
+    public final static int             MSASTOP_COL         = 8;
+    public final static int             SEEDMATCH_COL       = 9;
+    public final static int             PCT_COL             = 10;
+
     private String                      miRFamily;	
     private String                      GeneID;	
     private String                      GeneSymbol;	
@@ -30,7 +42,21 @@ public class TargetScanPredictedTargetEntry {
 
     
     
-    
+    public TargetScanPredictedTarget(String targetLine){
+        
+        miRFamily       = targetLine.split("\t")[MIRFAMILY_COL].trim();
+        GeneID          = targetLine.split("\t")[GENEID_COL].trim();
+        GeneSymbol      = targetLine.split("\t")[GENESYMB_COL].trim();
+        TranscriptID    = targetLine.split("\t")[TRANSID_COL].trim();
+        SpeciesID       = Integer.parseInt(targetLine.split("\t")[SPECIESID_COL].trim());
+        UTRstart        = Integer.parseInt(targetLine.split("\t")[UTTSTART_COL].trim());
+        UTRend          = Integer.parseInt(targetLine.split("\t")[UTREND_COL].trim());
+        MSAstart        = Integer.parseInt(targetLine.split("\t")[MSASTART_COL].trim());
+        MSAend          = Integer.parseInt(targetLine.split("\t")[MSASTOP_COL].trim());
+        Seedmatch       = targetLine.split("\t")[SEEDMATCH_COL].trim();
+        PCT             = targetLine.split("\t")[PCT_COL].trim();
+        
+    }
     
     
     
