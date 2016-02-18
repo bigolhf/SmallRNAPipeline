@@ -150,7 +150,7 @@ public class GFFEntry {
      * @param attrVal 
      */
     public void addAttr(String attrKey, String attrVal){
-        attr = attr.concat(attrKey + "=" + attrVal + ";");            
+        attr = attr.concat(";" + attrKey + "=" + attrVal );            
     }   
     
     
@@ -233,7 +233,7 @@ public class GFFEntry {
      * @param seq 
      */
     public void setSequence(String seq){
-        attr = attr.concat("seq=" + seq + ";");            
+        attr = attr.concat(";seq=" + seq);            
     }
     
     

@@ -22,6 +22,7 @@ import org.apache.logging.log4j.Logger;
 public class SmallNGSCmd {
     
     static Logger logger = LogManager.getRootLogger();
+    //conf.getLoggerConfig(LogManager.ROOT_LOGGER_NAME).setLevel(Level.DEBUG);
     static Options options = new Options();
     
     public static void main(String args[]){

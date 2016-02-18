@@ -366,11 +366,11 @@ public class SmallNGSPipeline {
      */
     private void addStepAnalyzeSeedRegions(NGSRunStepData stepData) throws IOException, Exception{
 
-        logger.info("loading step " + StepCleanUp.STEP_ID_STRING);
+        logger.info("loading step " + StepMatchSmallRNAsBySeedRegions.STEP_ID_STRING);
         StepInputData sidMatchSeedRegions = new StepInputData(this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), 
                  refDataLocations, stepData.getInputFileList(), stepData.getOutputFileList(), this.getSampleData());
         StepMatchSmallRNAsBySeedRegions stepMatchSeedRegions = new StepMatchSmallRNAsBySeedRegions(sidMatchSeedRegions);
-        stepMatchSeedRegions.parseConfigurationData((HashMap)pipelineConfigurationDataHash.get(StepCleanUp.STEP_ID_STRING));
+        stepMatchSeedRegions.parseConfigurationData((HashMap)pipelineConfigurationDataHash.get(StepMatchSmallRNAsBySeedRegions.STEP_ID_STRING));
         ngsSteps.add(stepMatchSeedRegions);
         
     }

@@ -35,7 +35,7 @@ public class ReferenceDataLocations {
     
     private                 String genomeRootFolder;
     private                 String mirbaseFolder;
-    private                 String targetbaseFolder;
+    private                 String targetscanFolder;
 
     
     public ReferenceDataLocations(){
@@ -47,7 +47,7 @@ public class ReferenceDataLocations {
         
         genomeRootFolder    = (String) options.get(ReferenceDataLocations.ID_GENOME_FOLDER);
         mirbaseFolder       = (String)options.get(ReferenceDataLocations.ID_MIRBASE_FOLDER);
-        
+        targetscanFolder    = (String)options.get(ReferenceDataLocations.ID_TARGETSCAN_FOLDER);
     }
     /**
      * in this method we are simply checking that the configuration file 
@@ -67,6 +67,9 @@ public class ReferenceDataLocations {
         if(configData.get(ID_MIRBASE_FOLDER)==null) {
             throw new NullPointerException("<" + ID_MIRBASE_FOLDER + "> : Missing Definition in Configuration File");
         }
+        if(configData.get(ID_TARGETSCAN_FOLDER)==null) {
+            throw new NullPointerException("<" + ID_TARGETSCAN_FOLDER + "> : Missing Definition in Configuration File");
+        }
 
         logger.info("passed");
     }
@@ -84,6 +87,10 @@ public class ReferenceDataLocations {
         if(new File(ID_MIRBASE_FOLDER).exists()==false){
             throw new IOException("root mirbase folder <" + ID_MIRBASE_FOLDER + "> not found");
         }
+        if(new File(ID_TARGETSCAN_FOLDER).exists()==false){
+            throw new IOException("root targetscan folder <" + ID_TARGETSCAN_FOLDER + "> not found");
+        }
+        
     }
     
 
@@ -98,6 +105,7 @@ public class ReferenceDataLocations {
         HashMap configData = new HashMap();
         configData.put(ID_GENOME_FOLDER, "/data/genomes");
         configData.put(ID_MIRBASE_FOLDER, "/data/mirbase");
+        configData.put(ID_TARGETSCAN_FOLDER, "/data/targetscan");
     
         return configData;
     }
@@ -136,15 +144,15 @@ public class ReferenceDataLocations {
     /**
      * @return the targetbaseFolder
      */
-    public String getTargetbaseFolder() {
-        return targetbaseFolder;
+    public String getTargetscanFolder() {
+        return targetscanFolder;
     }
 
     /**
      * @param targetbaseFolder the targetbaseFolder to set
      */
-    public void setTargetbaseFolder(String targetbaseFolder) {
-        this.targetbaseFolder = targetbaseFolder;
+    public void setTargetscanFolder(String targetbaseFolder) {
+        this.targetscanFolder = targetbaseFolder;
     }
     
 }

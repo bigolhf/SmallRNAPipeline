@@ -28,6 +28,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
 
 
 
@@ -88,13 +91,16 @@ public class StepAnalyzeIsomiRDispersion extends NGSStep implements NGSBase{
         logger.info(STEP_ID_STRING + ": verify configuration data");
         
         if(configData.get(ID_PVALUE)==null) {
+            logger.error("<" + ID_PVALUE + "> : Missing Definition in Configuration File");
             throw new NullPointerException("<" + ID_PVALUE + "> : Missing Definition in Configuration File");
         }
-        if(configData.get(ID_REF_GENOME)==null) {
-            throw new NullPointerException("<" + ID_REF_GENOME + "> : Missing Definition in Configuration File");
-        }
         if(configData.get(ID_MIRBASE_VERSION)==null) {
+            logger.error("<" + ID_MIRBASE_VERSION + "> : Missing Definition in Configuration File");
             throw new NullPointerException("<" + ID_MIRBASE_VERSION + "> : Missing Definition in Configuration File");
+        }
+        if(configData.get(ID_REF_GENOME)==null) {
+            logger.error("<" + ID_REF_GENOME + "> : Missing Definition in Configuration File");
+            throw new NullPointerException("<" + ID_REF_GENOME + "> : Missing Definition in Configuration File");
         }
         
 
@@ -103,9 +109,11 @@ public class StepAnalyzeIsomiRDispersion extends NGSStep implements NGSBase{
             this.setMiRBaseRelease((Integer) configData.get(ID_MIRBASE_VERSION));
         }
         catch(NumberFormatException exNm){
+            logger.info(ID_MIRBASE_VERSION + " <" + configData.get(ID_MIRBASE_VERSION) + "> is not an integer");
             throw new NumberFormatException(ID_MIRBASE_VERSION + " <" + configData.get(ID_MIRBASE_VERSION) + "> is not an integer");
         }        
-        if (Integer.parseInt((String) configData.get(ID_MIRBASE_VERSION)) <= 0){
+        if (this.getMiRBaseRelease() <= 0){
+            logger.info(ID_MIRBASE_VERSION + " <" + configData.get(ID_MIRBASE_VERSION) + "> must be positive integer");
             throw new IllegalArgumentException(ID_MIRBASE_VERSION + " <" + configData.get(ID_MIRBASE_VERSION) + "> must be positive integer");
         }
         

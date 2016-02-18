@@ -32,6 +32,7 @@ public class TargetScanMirFamilyList {
         
         String familyLine = "";
         try(BufferedReader brCF = new BufferedReader(new FileReader(new File(miRFamilyDataFilename)))){
+            brCF.readLine();
             while((familyLine=brCF.readLine())!=null){
                 targetScanMirFamilies.add(new TargetScanMirFamily(familyLine));
             }

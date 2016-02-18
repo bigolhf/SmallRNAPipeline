@@ -202,4 +202,14 @@ public class GFFSet {
             bwFA.write(gffEntry.toMirbaseFastAString() + "\n");
         }
     }
+    
+    
+    /**
+     * return the number of entries in the Array
+     * 
+     * @return 
+     */
+    public int getNoOfEntries(){
+        return this.GFFEntries.size();
+    }
 }
