@@ -46,7 +46,7 @@ public final class SAMEntry {
     private static final int            TLEN    = 8;
     private static final int            SEQ     = 9;
     private static final int            QUAL    = 10;
-    private static final int            MDSTR   = 11;
+    private static final int            TAGSTR   = 11;
     
     private static final short          UNMAPPED  = 0x04;
 
@@ -63,7 +63,7 @@ public final class SAMEntry {
     private int                         tLen;
     private String                      seq;
     private String                      qual;
-    private String                      mdString;
+    private String                      tagString;
     private Boolean                     header;
     private Boolean                     mapped;
     
@@ -124,7 +124,7 @@ public final class SAMEntry {
                 String cigarStr = samLine.split("\t")[CIGAR].replace("M", "").trim();
                 endPos = getStartPos() + Integer.parseInt(cigarStr) - 1;
                 rName= samLine.split("\t")[RNAME].trim();
-                mdString = samLine.split("\t")[MDSTR];
+                tagString = samLine.split("\t", TAGSTR+1)[TAGSTR];
                 cigar = samLine.split("\t")[CIGAR];
                 rNext = samLine.split("\t")[RNEXT];
                 pNext = Integer.parseInt(samLine.split("\t")[PNEXT]);
@@ -133,6 +133,7 @@ public final class SAMEntry {
                     seq = samLine.split("\t")[SEQ];
                     qual = samLine.split("\t")[QUAL];
                 }
+                
             }
         }
         catch(Exception ex){
@@ -141,6 +142,55 @@ public final class SAMEntry {
         }
         
     }
+    
+    
+    /**
+     * Find the String associated with the specified tag
+     * Attributes are in the format 
+     * 
+     *   TWO LETTER TAG:TAG_TYPE:VALUE
+     *   where 
+     *      TAG_TYPE is Z, i, or ?
+     * 
+     * @param tagID 
+     * @return
+     */
+    public String getTag(String tagID){
+        String tags[] = tagString.split("\\s+");
+        for(String tag:tags){
+            if(tag.contains(tagID)){
+                return tag;
+            }
+        }
+        return null;
+    }
+    
+    
+    
+    
+    /**
+     * Find the String associated with the specified tag
+     * Attributes are in the format 
+     * 
+     *   TWO LETTER TAG:TAG_TYPE:VALUE
+     *   where 
+     *      TAG_TYPE is Z, i, or ?
+     * 
+     * @param tagID 
+     * @return
+     */
+    public String getTagValue(String tagID){
+        String tags[] = tagString.split("\\s+");
+        for(String tag:tags){
+            if(tag.contains(tagID)){
+                return tag.split(":")[2];
+            }
+        }
+        return null;
+    }
+
+    
+    
 
     /**
      * @return the qName
@@ -229,8 +279,8 @@ public final class SAMEntry {
     /**
      * @return the mdString
      */
-    public String getMdString() {
-        return mdString;
+    public String getTagString() {
+        return tagString;
     }
 
     /**

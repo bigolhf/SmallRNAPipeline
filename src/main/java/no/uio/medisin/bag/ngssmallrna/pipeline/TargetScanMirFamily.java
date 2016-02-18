@@ -39,12 +39,13 @@ public class TargetScanMirFamily {
     public TargetScanMirFamily(String familyLine){
         
         miRFamily           = familyLine.split("\t")[MIRFAMILY_COL].trim();
-        seedM8              = familyLine.split("\t")[MIRFAMILY_COL].trim();
-        speciesID           = familyLine.split("\t")[MIRFAMILY_COL].trim();
-        miRBaseID           = familyLine.split("\t")[MIRFAMILY_COL].trim();
-        matureSequence      = familyLine.split("\t")[MIRFAMILY_COL].trim();
-        familyConservation  = familyLine.split("\t")[MIRFAMILY_COL].trim();
-        miRBaseAccession    = familyLine.split("\t")[MIRFAMILY_COL].trim();
+        seedM8              = familyLine.split("\t")[SEED_COL].trim();
+        speciesID           = familyLine.split("\t")[SPECIESID_COL].trim();
+        miRBaseID           = familyLine.split("\t")[MIRBASEID_COL].trim();
+        matureSequence      = familyLine.split("\t")[SEQ_COL].trim();
+        familyConservation  = familyLine.split("\t")[CONSERVATION_COL].trim();
+        if (familyLine.split("\t").length == 7)
+            miRBaseAccession    = familyLine.split("\t")[MIRBASEACC_COL].trim();
         
     }
     

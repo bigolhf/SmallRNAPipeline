@@ -37,11 +37,11 @@ public class TargetScanPredictedTargetList {
         
         String targetLine ="";
         try(BufferedReader brCF = new BufferedReader(new FileReader(new File(predictedTargetInfoFilename)))){
+            brCF.readLine();
             while((targetLine=brCF.readLine())!=null){
                 targetScanPredictedTargets.add(new TargetScanPredictedTarget(targetLine));
             }
             brCF.close(); 
-            logger.info("read " + targetScanPredictedTargets.size() + " lines");
         }
         catch(IOException exIO){
             
@@ -53,11 +53,40 @@ public class TargetScanPredictedTargetList {
                     + "error occurred on this line\n" + targetLine);
             
         }
-        logger.info("completed");
         
     }
     
     
+    
+    /**
+     * match the input list of miR Family ids to the PredictedTarget entries
+     * 
+     * @param qMiRfamilyList
+     * @return 
+     */
+    public ArrayList<String> getGeneTargetHits(ArrayList<String> qMiRfamilyList){
+        ArrayList<String> geneTargetHits = new ArrayList<>();
+        
+        for( TargetScanPredictedTarget predictedTarget: targetScanPredictedTargets){
+            if(qMiRfamilyList.contains(predictedTarget.getMiRFamily())){
+                String targetString = predictedTarget.getMiRFamily()  + "|" + predictedTarget.getGeneID() 
+                        + predictedTarget.getGeneSymbol() + "|" + predictedTarget.getTranscriptID();
+                if(geneTargetHits.contains(targetString)==false){
+                    geneTargetHits.add(targetString);
+                }
+            }
+        }
+        
+        return geneTargetHits;
+    }
             
+    /**
+     * return the number of entries in the dataset
+     * 
+     * @return 
+     */
+    public int getNumberOfEntries(){
+        return targetScanPredictedTargets.size();
+    }
     
 }

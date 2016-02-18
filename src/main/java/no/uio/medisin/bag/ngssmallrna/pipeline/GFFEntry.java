@@ -154,7 +154,23 @@ public class GFFEntry {
     }   
     
     
-
+    
+    /**
+     * return the specified Attribute value
+     * 
+     * @param attrKey
+     * @return 
+     */
+    public String getAttrValue(String attrKey){
+        String attrs[] = attr.split(";");
+        for (String attr: attrs){
+            if(attr.contains(attrKey)){
+                return attr.split("=")[1].trim();
+            }
+        }
+        return null;
+    }
+    
     /**
      * @return the seqID
      */
@@ -247,7 +263,7 @@ public class GFFEntry {
         if(attr.contains("seq=")){
             int startPos = attr.indexOf("seq=")+4;
             int stopPos = attr.indexOf(";", startPos);
-            return attr.substring(startPos, startPos);
+            return attr.substring(startPos, stopPos);
         }
         return "";
     }

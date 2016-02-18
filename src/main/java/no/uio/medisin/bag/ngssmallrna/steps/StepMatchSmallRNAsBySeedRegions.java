@@ -6,16 +6,24 @@
 package no.uio.medisin.bag.ngssmallrna.steps;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import no.uio.medisin.bag.ngssmallrna.pipeline.GFFEntry;
 import no.uio.medisin.bag.ngssmallrna.pipeline.GFFSet;
+import no.uio.medisin.bag.ngssmallrna.pipeline.MiRNAFeature;
 import no.uio.medisin.bag.ngssmallrna.pipeline.MirFeatureSet;
 import no.uio.medisin.bag.ngssmallrna.pipeline.ReferenceDataLocations;
+import no.uio.medisin.bag.ngssmallrna.pipeline.SAMEntry;
 import no.uio.medisin.bag.ngssmallrna.pipeline.TargetScanMirFamilyList;
 import no.uio.medisin.bag.ngssmallrna.pipeline.TargetScanPredictedTargetList;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 
 import org.apache.logging.log4j.Logger;
@@ -55,6 +63,7 @@ public class StepMatchSmallRNAsBySeedRegions extends NGSStep implements NGSBase{
     public static final String          STEP_ID_STRING          = "MatchSmallRNAsBySeedRegions";
     private static final String         ID_MIRBASE_VERSION      = "mirbaseVersion";
     private static final String         ID_REF_GENOME           = "host";
+    private static final String         ID_QUERY_GENOME         = "query";    
     private static final String         ID_THREADS              = "noOfThreads";
     private static final String         ID_MINCOUNTS            = "minCounts";
     
@@ -74,6 +83,7 @@ public class StepMatchSmallRNAsBySeedRegions extends NGSStep implements NGSBase{
     private String                      unzipSoftware           = "";
     private int                         miRBaseRelease          = 20;
     private String                      referenceGenome         = "";
+    
     
     private String                      queryGenome             = "";
     private String                      queryCountDataFile      = "";
@@ -127,6 +137,10 @@ public class StepMatchSmallRNAsBySeedRegions extends NGSStep implements NGSBase{
             logger.error("<" + ID_REF_GENOME + "> : Missing Definition in Configuration File");
             throw new NullPointerException("<" + ID_REF_GENOME + "> : Missing Definition in Configuration File");
         }
+        if(configData.get(ID_QUERY_GENOME)==null) {
+            logger.error("<" + ID_QUERY_GENOME + "> : Missing Definition in Configuration File");
+            throw new NullPointerException("<" + ID_QUERY_GENOME + "> : Missing Definition in Configuration File");
+        }
                 
         try{
             this.setMinCounts((Integer)configData.get(ID_MINCOUNTS));
@@ -162,6 +176,10 @@ public class StepMatchSmallRNAsBySeedRegions extends NGSStep implements NGSBase{
             throw new IllegalArgumentException(ID_THREADS + " <" + configData.get(ID_THREADS) + "> must be positive");
         }
 
+        this.setQueryGenome((String) configData.get(ID_QUERY_GENOME));
+        if(this.getQueryGenome().length() !=3 ){
+            throw new IllegalArgumentException(ID_QUERY_GENOME + " <" + configData.get(ID_QUERY_GENOME) + "> must be a 3 letter string");            
+        }
         this.setReferenceGenome((String) configData.get(ID_REF_GENOME));
         if(this.getReferenceGenome().length() !=3 ){
             throw new IllegalArgumentException(ID_REF_GENOME + " <" + configData.get(ID_REF_GENOME) + "> must be a 3 letter string");            
@@ -181,7 +199,9 @@ public class StepMatchSmallRNAsBySeedRegions extends NGSStep implements NGSBase{
     @Override
     public void execute() throws IOException{
 
-        logger.info(STEP_ID_STRING + ": execute step");        
+        logger.info(STEP_ID_STRING + ": execute step");      
+        this.loadQueryFeaturesAndFastAFiles();
+        this.loadQueryCountData();
         
         /*
         GeneralizedSuffixTree in = new GeneralizedSuffixTree();
@@ -194,18 +214,34 @@ public class StepMatchSmallRNAsBySeedRegions extends NGSStep implements NGSBase{
         String gffFileMirBase = this.cleanPath(stepInputData.getDataLocations().getMirbaseFolder() 
                 + FILESEPARATOR + this.getMiRBaseRelease() + FILESEPARATOR + this.getReferenceGenome() + ".gff3");
         String faFileMirBase = gffFileMirBase.replace("gff3", "mature.fa");
+        logger.info("loading miRBase Data");
+        logger.info("-- GFF file is <" + gffFileMirBase + ">");
+        logger.info("-- FA  file is<" + faFileMirBase + ">");
         mirBaseSet.loadMiRBaseData(this.getReferenceGenome(), gffFileMirBase, faFileMirBase);
+        logger.info("read " + mirBaseSet.getNumberOfEntries() + " entries");
+        logger.info("--");
         
+
+        logger.info("reading Target Scan Data");
         String targetScanFamily = this.cleanPath(stepInputData.getDataLocations().getTargetscanFolder()
                 + FILESEPARATOR + ReferenceDataLocations.ID_TSCAN_MIRFAMILY_FILE);
+        logger.info("-- miR Family file is + <" + targetScanFamily + ">");
         tScanMirFamilies.loadConservedFamilyList(targetScanFamily);
+        logger.info("read " + tScanMirFamilies.getNumberOfEntries() + " entries");
+        logger.info("--");
         
         
         String targetScanPrediction = this.cleanPath(stepInputData.getDataLocations().getTargetscanFolder()
-                + FILESEPARATOR + ReferenceDataLocations.ID_TSCAN_MIRFAMILY_FILE);
+                + FILESEPARATOR + ReferenceDataLocations.ID_TSCAN_PREDICTIONS_FILE);
+        logger.info("-- Predicted Target Data file is + <" + targetScanPrediction + ">");
         tscanPredictedTargets.loadPredictedTargetInfo(targetScanPrediction);
+        logger.info("read " + tscanPredictedTargets.getNumberOfEntries() + " entries");
+        logger.info("--\n");
         
         
+        this.parseSAMFile();
+
+
         // need a list of tabbed delimited MSY mapped smallRNAs entries
         /*
             ultimately, this should be the following steps:
@@ -217,6 +253,143 @@ public class StepMatchSmallRNAsBySeedRegions extends NGSStep implements NGSBase{
                 6. 
             for now, lets start from step 5
         */
+        
+        
+        logger.info("--");
+        logger.info(STEP_ID_STRING + ": completed");
+        
+        
+        
+        
+    }
+    
+    
+    
+    /**
+     * parse the SAM file for candidate hits
+     * 
+     */
+    private void parseSAMFile() throws IOException{
+        // read in the SAM file
+        // then cycle through each entry and search for conserved family match
+        this.setHostVersusQuerySAMFile( this.cleanPath(this.inFolder 
+                + FILESEPARATOR + stepInputData.getProjectID() + "." 
+                + this.getQueryGenome() + "_vs_" + this.getReferenceGenome() + ".sam"));
+        String SAMLine = "";
+        int queryRefMatches = 0;
+        int queryHits = 0;
+        try(BufferedReader brSM = new BufferedReader(new FileReader(new File(this.getHostVersusQuerySAMFile())))){
+            while((SAMLine=brSM.readLine())!=null){
+                if(SAMEntry.isHeaderLine(SAMLine)) continue;
+                SAMEntry samEntry  = new SAMEntry(SAMLine);
+                if(samEntry.getFlags()==0 || samEntry.getFlags()==16){
+                    String qFeatureID = samEntry.getqName().split("\\|")[0].trim();
+                    String mdString = samEntry.getTagValue("MD");
+                    /*
+                        MD:Z:15G2T4 ok
+                        MD:Z:4T1A13 not ok
+                        MD:Z:0C13A7 ok (first base doesnt matter)
+                    */
+                    // is first char a '0'?
+                    Pattern mdPattern;
+                    Matcher match;
+                    String querySeed="";
+                    if (mdString.startsWith("0")){
+                        //logger.info("-- first character is '0'");
+                        mdPattern = Pattern.compile("(^(0)(\\w))|((^7-9)(\\w))");
+                        match = mdPattern.matcher(mdString);
+                    }else{
+//                        mdPattern = Pattern.compile("^[(1)(\\d)]|[(7-9)](\\w)");
+                        mdPattern = Pattern.compile("(^(1)(\\d)(\\w))|(^[7-9](\\w))");
+                        match = mdPattern.matcher(mdString);
+                    }
+                    if (match.find()){
+                        // find the entry in the QueryFeature list
+                        GFFEntry queryFeature = this.queryFeatures.findEntryByID(qFeatureID);
+                        querySeed = (String) queryFeature.getSequence().subSequence(1, 8);
+                        
+                        if(Integer.parseInt(queryFeature.getAttrValue("counts")) > this.minCounts){
+                            
+                            try(BufferedWriter bwSH = new BufferedWriter(new FileWriter(
+                                    new File(this.cleanPath(this.inFolder 
+                                            + FILESEPARATOR + stepInputData.getProjectID() + "." 
+                                            + this.getQueryGenome() + "_vs_" + this.getReferenceGenome() 
+                                            + "." + queryFeature.getFeatureID().replace(":", "_") + ".summary"))))){
+                                logger.info(querySeed + "|" + queryFeature.getFeatureID() + "|" + queryFeature.getAttrValue("counts"));
+                                logger.info("search for seed in TargetScan miR Family..");
+
+                                bwSH.write("+" + StringUtils.repeat("-", 40) + "+\n");
+                                bwSH.write("          " + queryFeature.getFeatureID() + "\n");
+                                bwSH.write("+" + StringUtils.repeat("-", 40) + "+\n\n");
+                                bwSH.write("          " + queryFeature.getAttrValue("counts") + "\n");
+                                bwSH.write(queryFeature.getSeqID() + "\t" + queryFeature.getStart() + "\t" 
+                                        + queryFeature.getStop() + "\t" + queryFeature.getStrand() + "\n");
+                                bwSH.write("seed region =\t" + querySeed + "\n");
+                                bwSH.write("+" + StringUtils.repeat("-", 40) + "+\n");
+                                bwSH.write("          Target Hits\n");
+                                bwSH.write("+" + StringUtils.repeat("-", 40) + "+\n");
+                                ArrayList<String> miRFamilyHits = this.tScanMirFamilies.findSeedHits(querySeed);
+                                ArrayList<String> miRTargetHits = this.tscanPredictedTargets.getGeneTargetHits(miRFamilyHits);
+                                for (String hit: miRTargetHits){
+                                   bwSH.write(hit + "\n"); 
+                                }
+                                
+                                
+                                bwSH.close();
+                            }
+                            catch(IOException exIO){
+                                logger.info("error writing summary file <" + queryFeature.getFeatureID() + ".summary" + ">");
+                                logger.info(exIO);
+                                throw new IOException("error writing summary file <" + queryFeature.getFeatureID() + ".summary" + ">"
+                                + "\n" + "see log file for details");
+                            }
+
+                        }
+                        //querySeed = 
+                    }
+                    
+                    // now try to match to a host miRNA entry
+                    /*
+                    if(!querySeed.isEmpty()){
+                        Boolean hit = false;
+                        for(MiRNAFeature miRfeature: mirBaseSet.getMiRBaseMiRNAList()){
+                            if(miRfeature.getSequence()!= null && miRfeature.getSequence().substring(1, 7).equals(querySeed)){
+                                GFFEntry queryHit = queryFeatures.findEntryByID(qFeatureID);
+                                if(Integer.parseInt(queryHit.getAttrValue("counts")) > this.minCounts){
+                                    //logger.info(querySeed);
+                                    //logger.info(querySeed + ":matched " + qFeatureID + "(" + queryHit.getAttrValue("counts") + ")" + "->" + miRfeature.getName());
+                                    queryRefMatches++;
+                                    if(!hit) {
+                                        queryHits++;
+                                        hit = true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    */
+                }
+                
+            }
+            logger.info("found " + queryHits + " query smallRNAs with matching seeds");
+            logger.info("and a total of " +  queryRefMatches + " seed matches");
+        }
+        catch(IOException exIO){
+            logger.error("error parsing SAM file <" + this.getHostVersusQuerySAMFile() + ">");
+            logger.error("error occurred on line " + SAMLine);
+            logger.error(exIO);
+            throw new IOException("error parsing SAM file <" 
+                    + this.getHostVersusQuerySAMFile() + ">\nsee log file for details");
+        }
+        
+    }
+    /**
+     * load Query Fasta File
+     * 
+     * @return
+     * @throws IOException 
+     */
+    private int loadQueryFeaturesAndFastAFiles() throws IOException{
         
         this.setQueryFastaFile(this.cleanPath(this.inFolder + FILESEPARATOR + stepInputData.getProjectID() + QUERYFA_EXTENSION));
         String faLine = "";
@@ -268,6 +441,7 @@ public class StepMatchSmallRNAsBySeedRegions extends NGSStep implements NGSBase{
             brFA.close();
             logger.info("read " + faCount + "lines");
             logger.info("matched " + faMatchCount + " entries in the feature file");
+            logger.info("--");
         }
         catch(IOException exIO){
             logger.error("error reading Query Fasta file <" + this.getQueryFastaFile() + ">");
@@ -275,8 +449,18 @@ public class StepMatchSmallRNAsBySeedRegions extends NGSStep implements NGSBase{
             logger.error(exIO);
             throw new IOException("error reading Query Fasta file <" + this.getQueryFastaFile() + ">\nsee log file for details");
         }
-        
-        logger.info("--");
+        return queryFeatures.getNoOfEntries();
+    }
+    
+    
+    
+    
+    /**
+     * load Query Count data file
+     * 
+     * @throws IOException 
+     */
+    private void loadQueryCountData() throws IOException{
         int cCount = 0;
         int ctMatchCount = 0;
         int dualMatchCount = 0;
@@ -306,25 +490,18 @@ public class StepMatchSmallRNAsBySeedRegions extends NGSStep implements NGSBase{
             logger.info("read " + cCount + " lines");
             logger.info("matched " + ctMatchCount + " entries in the feature file");
             logger.info("matched " + dualMatchCount + " entries in the feature file with 'seq=' attr");
+            logger.info("--");
             
         }
         catch(IOException exIO){
             logger.error("error reading Query count file <" + this.getQueryCountDataFile() + ">");
-            logger.error("error occurred on line " + faLine);
+            logger.error("error occurred on line " + countLine);
             logger.error(exIO);
             throw new IOException("error reading Query Fasta file <" + this.getQueryCountDataFile() + ">\nsee log file for details");
         }
+
         
-        
-        //
-        // cycle through each entry and search for conserved family match
-        
-        logger.info(STEP_ID_STRING + ": completed");
     }
-    
-    
-    
-            
     /**
      * this should be called prior to executing the step.
      * check unzip software exists and input files are available
@@ -350,6 +527,14 @@ public class StepMatchSmallRNAsBySeedRegions extends NGSStep implements NGSBase{
         this.setQueryCountDataFile(this.cleanPath(this.inFolder + FILESEPARATOR + stepInputData.getProjectID() + QUERYCOUNTS_EXTENSION));
         if(new File(this.getQueryCountDataFile()).exists() == false){
             throw new IOException(STEP_ID_STRING + ": Query counts file < " + this.getQueryCountDataFile() +"> not found");
+        }
+        
+        
+        this.setHostVersusQuerySAMFile( this.cleanPath(this.inFolder 
+                + FILESEPARATOR + stepInputData.getProjectID() + "." 
+                + this.getQueryGenome() + "_vs_" + this.getReferenceGenome() + ".sam"));
+        if(new File(this.getHostVersusQuerySAMFile()).exists() == false){
+            throw new IOException(STEP_ID_STRING + ": SAM hits file < " + this.getHostVersusQuerySAMFile() +"> not found");
         }
         
         /*
@@ -411,6 +596,7 @@ public class StepMatchSmallRNAsBySeedRegions extends NGSStep implements NGSBase{
         HashMap<String, Object> configData = new HashMap();
         
         configData.put(ID_REF_GENOME, "hsa");
+        configData.put(ID_QUERY_GENOME, "hsa");
         configData.put(ID_MIRBASE_VERSION, 20);
         configData.put(ID_MINCOUNTS, 1000);
         configData.put(ID_THREADS, 4);
