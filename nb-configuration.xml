@@ -12,8 +12,9 @@ Without this configuration present, some functionality in the IDE may be limited
             <configuration id="liver" profiles=""/>
             <configuration id="sweden" profiles=""/>
             <configuration id="testGenome" profiles=""/>
-            <configuration id="thyroid" profiles=""/>
             <configuration id="testGenome_clone" profiles=""/>
+            <configuration id="thyroid" profiles=""/>
+            <configuration id="sweden_clone" profiles=""/>
         </configurations>
     </config-data>
 </project-shared-configuration>

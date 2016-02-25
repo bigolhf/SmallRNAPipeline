@@ -15,7 +15,6 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import static no.uio.medisin.bag.ngssmallrna.pipeline.SmallNGSCmd.logger;
 import no.uio.medisin.bag.ngssmallrna.steps.NGSBase;
 import no.uio.medisin.bag.ngssmallrna.steps.StepAnalyzeIsomiRDispersion;
 import no.uio.medisin.bag.ngssmallrna.steps.StepBowtieMapSingleReads;
@@ -30,6 +29,8 @@ import no.uio.medisin.bag.ngssmallrna.steps.StepInputData;
 import no.uio.medisin.bag.ngssmallrna.steps.StepMatchSmallRNAsBySeedRegions;
 import no.uio.medisin.bag.ngssmallrna.steps.StepUnzipInputFiles;
 import no.uio.medisin.bag.ngssmallrna.steps.StepSingleTrimAdapters;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.yaml.snakeyaml.Yaml;
 import org.codehaus.jackson.annotate.JsonAutoDetect;
 import org.codehaus.jackson.annotate.JsonMethod;
@@ -42,6 +43,7 @@ import org.yaml.snakeyaml.DumperOptions;
  */
 public class SmallNGSPipeline {
     
+    static Logger                       logger           = LogManager.getLogger();
     static  final String                FILE_SEPARATOR = System.getProperty("file.separator");
     
     private String                      configurationFile = "";
