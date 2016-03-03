@@ -31,6 +31,18 @@ import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
 import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
 import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
 import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
+import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
 
 
 

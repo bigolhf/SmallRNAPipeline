@@ -25,6 +25,7 @@ public class ReferenceDataLocations {
     public final static     String ID_REL_BOWTIE_PATH              = "Sequence/BowtieIndex/genome";
     public final static     String ID_REL_ABUN_DATA_PATH           = "/Sequence/AbundantSequences/abundant";
     public final static     String ID_REL_WHOLE_GENSEQ_PATH        = "Sequence/WholeGenomeFasta";
+    public final static     String ID_REL_WHOLE_GENSEQ_FA          = "Sequence/WholeGenomeFasta/genome.fa";
     public final static     String ID_GENE_ANNOTATION              = "/Annotation/Genes";
     
     public final static     String ID_TSCAN_MIRFAMILY_FILE         = "miR_Family_Info.txt";
