@@ -8,6 +8,7 @@ package no.uio.medisin.bag.ngssmallrna.steps;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import no.uio.medisin.bag.jmirpara.SimpleSeq;
@@ -105,7 +106,6 @@ public class StepBSMap extends NGSStep implements NGSBase{
     private             int             mapFirstNucleotides         = 0;
     private             int             genomeIndexInterval         = 4;
     private     ArrayList<String>       adapterSequences;
-    private             String          adapterSequence             = "";
     private             Boolean         trimAdapterSequence         = false;
     private             Boolean         includeRefSeq               = false;
     private             Boolean         skipSAMHeader               = false;
@@ -663,7 +663,10 @@ public class StepBSMap extends NGSStep implements NGSBase{
         configData.put(ID_MIN_INSERT_SIZE, 28);
         configData.put(ID_MAP_FIRST_N_NUCS, 0);
         configData.put(ID_GENOME_INDEX_INTERVAL, 4);
-        configData.put(ID_TRIM_ADAPTERSEQ, false);
+        configData.put(ID_TRIM_ADAPTERSEQ, true);
+        configData.put(ID_ADAPTERSEQ, new ArrayList<>(Arrays.asList(
+                "GATCGGAAGAGCACACGTCTGAACTCCAGTCACACAGTGATCTCGTATGCCGTCTTCTGCTTG", 
+                "AATGATACGGCGACCACCGAGATCTACACTCTTTCCCTACACGACGCTCTTCCGATCT")));        
         configData.put(ID_ADAPTERSEQ, "");
         configData.put(ID_INCLUDE_REF_SEQ, false);
         configData.put(ID_SKIP_SAM_HEADER, false);
@@ -921,20 +924,6 @@ public class StepBSMap extends NGSStep implements NGSBase{
      */
     public void setGenomeIndexInterval(int genomeIndexInterval) {
         this.genomeIndexInterval = genomeIndexInterval;
-    }
-
-    /**
-     * @return the adapterSequence
-     */
-    public String getAdapterSequence() {
-        return adapterSequence;
-    }
-
-    /**
-     * @param adapterSequence the adapterSequence to set
-     */
-    public void setAdapterSequence(String adapterSequence) {
-        this.adapterSequence = adapterSequence;
     }
 
     /**
