@@ -14,6 +14,7 @@ import java.util.Iterator;
 import no.uio.medisin.bag.jmirpara.SimpleSeq;
 import no.uio.medisin.bag.ngssmallrna.pipeline.ReferenceDataLocations;
 import no.uio.medisin.bag.ngssmallrna.pipeline.SampleDataEntry;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 
 import org.apache.logging.log4j.Logger;
@@ -32,44 +33,45 @@ import org.apache.logging.log4j.Logger;
  * @author sr
  */
 
-public class StepBSMap extends NGSStep implements NGSBase{
+public class StepBSMapReads extends NGSStep implements NGSBase{
     
     private static Logger               logger                      = LogManager.getLogger();
     
-    private static final String         STEP_ID_STRING              = "BSMapReads";
+    public static final String         STEP_ID_STRING              = "BSMapReads";
 
-    private static final String         ID_SOFTWARE                 = "pathToBSmap:";
-    private static final String         ID_REF_GENOME               = "host:";
-    private static final String         ID_MISMATCHES               = "noOfMismatches:";
+    private static final String         ID_SOFTWARE                 = "pathToBSmap";
+    private static final String         ID_REF_GENOME               = "host";
+    private static final String         ID_MISMATCHES               = "noOfMismatches";
     private static final String         ID_SEED_SIZE                = "seedSize:";
-    //private static final String         ID_MISMATCH                 = "mismatches";
     private static final String         ID_THREEMAPPING             = "threeNucleoideMapping";
     private static final String         ID_GAPSIZE                  = "gapSize";
-    private static final String         ID_KMERCUTOFF               = "kmerCutoffRatio:";
-    private static final String         ID_REPORT_REPEATS           = "reportRepeatsValue:";
-    private static final String         ID_QUAL_THRESHOLD_VALUE     = "qualityThresholdTrimValue:";
-    private static final String         ID_LOW_QUAL_VALUE           = "lowQualityFilterValue:";
-    private static final String         ID_THREADS                  = "noOfThreads:";
-    private static final String         ID_MAX_INSERT_SIZE          = "maxInsertSize:";
-    private static final String         ID_MIN_INSERT_SIZE          = "minInsertSize:";
-    private static final String         ID_MAP_FIRST_N_NUCS         = "mapFirstNucleotides:";
-    private static final String         ID_GENOME_INDEX_INTERVAL    = "genomeIndexInterval:";
-    private static final String         ID_ADAPTERSEQ               = "adapterSequence:";
-    private static final String         ID_TRIM_ADAPTERSEQ          = "trimAdapterSequence:";
-    private static final String         ID_INCLUDE_REF_SEQ          = "includeRefSeq:";
-    private static final String         ID_SKIP_SAM_HEADER          = "skipSAMHeader:";
-    private static final String         ID_REPORT_UNMAPPED_READS    = "reportUnmappedReads:";
-    private static final String         ID_START_AT_READ_N          = "startAtThisRead:";
-    private static final String         ID_END_AT_READ_N            = "endtAtThisRead:";
-    private static final String         ID_DIGESTIONSITE            = "digestionSite:";
-    private static final String         ID_RANDOMSEED               = "randomSeed:";
-    private static final String         ID_MAPPINGSTRAND            = "mappingStrand:";
-    private static final String         ID_TRANSITIONMAP            = "transitionMap:";
-    private static final String         ID_MESSAGELEVEL             = "messageLevel:";
+    private static final String         ID_KMERCUTOFF               = "kmerCutoffRatio";
+    private static final String         ID_REPORT_REPEATS           = "reportRepeatsValue";
+    private static final String         ID_QUAL_THRESHOLD_VALUE     = "qualityThresholdTrimValue";
+    private static final String         ID_LOW_QUAL_VALUE           = "lowQualityFilterValue";
+    private static final String         ID_THREADS                  = "noOfThreads";
+    private static final String         ID_MAX_INSERT_SIZE          = "maxInsertSize";
+    private static final String         ID_MIN_INSERT_SIZE          = "minInsertSize";
+    private static final String         ID_MAP_FIRST_N_NUCS         = "mapFirstNucleotides";
+    private static final String         ID_GENOME_INDEX_INTERVAL    = "genomeIndexInterval";
+    private static final String         ID_ADAPTERSEQ               = "adapterSequence";
+    private static final String         ID_TRIM_ADAPTERSEQ          = "trimAdapterSequence";
+    private static final String         ID_INCLUDE_REF_SEQ          = "includeRefSeq";
+    private static final String         ID_SKIP_SAM_HEADER          = "skipSAMHeader";
+    private static final String         ID_REPORT_UNMAPPED_READS    = "reportUnmappedReads";
+    private static final String         ID_START_AT_READ_N          = "startAtThisRead";
+    private static final String         ID_END_AT_READ_N            = "endtAtThisRead";
+    private static final String         ID_DIGESTIONSITE            = "digestionSite";
+    private static final String         ID_RANDOMSEED               = "randomSeed";
+    private static final String         ID_MAPPINGSTRAND            = "mappingStrand";
+    private static final String         ID_TRANSITIONMAP            = "transitionMap";
+    private static final String         ID_MESSAGELEVEL             = "messageLevel";
     
     
-    private static final String         INFILE_EXTENSION            = ".fastq";
-    private static final String         OUTFILE_EXTENSION           = ".fastq";
+    private static final String         INFILE_EXTENSION_TRIM       = ".fastq";
+    private static final String         INFILE_EXTENSION_NOTRIM     = ".trimmed.paired.fastq";
+    
+    private static final String         OUTFILE_EXTENSION           = ".trimmed.paired.fastq";
 
     /**
      * @return the logger
@@ -86,7 +88,7 @@ public class StepBSMap extends NGSStep implements NGSBase{
     }
 
     
-    private String                      pathToSoftware              = "";
+    //private String                      pathToSoftware              = "";
 
     private             String          pathToBSMap                 = "";
     private             int             seedSize                    = 0;
@@ -124,7 +126,7 @@ public class StepBSMap extends NGSStep implements NGSBase{
      * @param sid StepInputData
      * 
      */
-    public StepBSMap(StepInputData sid){
+    public StepBSMapReads(StepInputData sid){
        stepInputData = sid;
     }
     
@@ -145,10 +147,10 @@ public class StepBSMap extends NGSStep implements NGSBase{
             the following parameters have to be specfied in the configuration file for the 
             analysis to proceed
         */
-        if(configData.get(ID_SOFTWARE)==null) {
-            getLogger().info("<" + configData.get(ID_SOFTWARE) + "> : Missing Definition in Configuration File");
-            getLogger().error("<" + configData.get(ID_SOFTWARE) + "> : Missing Definition in Configuration File");
-            throw new NullPointerException("<" + configData.get(ID_SOFTWARE) + "> : Missing Definition in Configuration File");
+        if(configData == null || configData.get(ID_SOFTWARE)==null) {
+            getLogger().info("<" + ID_SOFTWARE + "> : Missing Definition in Configuration File");
+            getLogger().error("<" + ID_SOFTWARE + "> : Missing Definition in Configuration File");
+            throw new NullPointerException("<" + ID_SOFTWARE + "> : Missing Definition in Configuration File");
         }
         if(configData.get(ID_REF_GENOME)==null) {
             getLogger().info("<" + configData.get(ID_REF_GENOME) + "> : Missing Definition in Configuration File");
@@ -171,84 +173,90 @@ public class StepBSMap extends NGSStep implements NGSBase{
             throw new NullPointerException("<" + configData.get(ID_TRIM_ADAPTERSEQ) + "> : Missing Definition in Configuration File");
         }
         
-
+        this.setReferenceGenome((String) configData.get(ID_REF_GENOME));
+        if(this.getReferenceGenome().length() !=3 ){
+            logger.error(ID_REF_GENOME + " <" + configData.get(ID_REF_GENOME) + "> must be a 3 letter string");            
+            throw new IllegalArgumentException(ID_REF_GENOME + " <" + configData.get(ID_REF_GENOME) + "> must be a 3 letter string");            
+        }
+        this.setPathToBSMap((String) configData.get(ID_SOFTWARE));
+        
 
         String chk;
 
-        chk = checkParameter("Integer", ID_SEED_SIZE, (String)configData.get(ID_SEED_SIZE), "8", "16", logger);
+        chk = checkParameter("Integer", ID_SEED_SIZE, Integer.toString((Integer)configData.get(ID_SEED_SIZE)), "8", "16", logger);
         if(chk!=null)
             this.setSeedSize((Integer)configData.get(ID_SEED_SIZE));
             
-        chk = checkParameter("Double", ID_MISMATCHES, (String)configData.get(ID_MISMATCHES), "0", "15", logger);
+        chk = checkParameter("Double", ID_MISMATCHES, Double.toString((Double)configData.get(ID_MISMATCHES)), "0", "15", logger);
         if(chk!=null)
             this.setNoOfMismatches((Double)configData.get(ID_MISMATCHES));
             
-        chk = checkParameter("Integer", ID_GAPSIZE, (String)configData.get(ID_GAPSIZE), "0", "NA", logger);
+        chk = checkParameter("Integer", ID_GAPSIZE, Integer.toString((Integer)configData.get(ID_GAPSIZE)), "0", "NA", logger);
         if(chk!=null)
             this.setGapSize((Integer)configData.get(ID_GAPSIZE));
                         
-        chk = checkParameter("Boolean", ID_THREEMAPPING, (String)configData.get(ID_THREEMAPPING), "0", "NA", logger);
+        chk = checkParameter("Boolean", ID_THREEMAPPING, Boolean.toString((Boolean)configData.get(ID_THREEMAPPING)), "0", "NA", logger);
         if(chk!=null)
             this.setThreeNucMapping((Boolean)configData.get(ID_THREEMAPPING));
                         
-        chk = checkParameter("Integer", ID_THREADS, (String)configData.get(ID_THREADS), "0", "12", logger);
+        chk = checkParameter("Integer", ID_THREADS, Integer.toString((Integer)configData.get(ID_THREADS)), "0", "12", logger);
         if(chk!=null)
             this.setNoOfThreads((Integer)configData.get(ID_THREADS));
             
-        chk = checkParameter("Double", ID_KMERCUTOFF, (String)configData.get(ID_KMERCUTOFF), "0", "12", logger);
+        chk = checkParameter("Double", ID_KMERCUTOFF, Double.toString((Double)configData.get(ID_KMERCUTOFF)), "0", "12", logger);
         if(chk!=null)
             this.setKmerCutoffRatio((Double)configData.get(ID_KMERCUTOFF));
             
-        chk = checkParameter("Integer", ID_REPORT_REPEATS, (String)configData.get(ID_REPORT_REPEATS), "0", "2", logger);
+        chk = checkParameter("Integer", ID_REPORT_REPEATS, Integer.toString((Integer)configData.get(ID_REPORT_REPEATS)), "0", "2", logger);
         if(chk!=null)
             this.setReportRepeatsValue((Integer)configData.get(ID_REPORT_REPEATS));
             
-        chk = checkParameter("Integer", ID_QUAL_THRESHOLD_VALUE, (String)configData.get(ID_QUAL_THRESHOLD_VALUE), "0", "40", logger);
+        chk = checkParameter("Integer", ID_QUAL_THRESHOLD_VALUE, Integer.toString((Integer)configData.get(ID_QUAL_THRESHOLD_VALUE)), "0", "40", logger);
         if(chk!=null)
             this.setQualityThresholdTrimValue((Integer)configData.get(ID_QUAL_THRESHOLD_VALUE));
             
-        chk = checkParameter("Integer", ID_LOW_QUAL_VALUE, (String)configData.get(ID_LOW_QUAL_VALUE), "0", "NA", logger);
+        chk = checkParameter("Integer", ID_LOW_QUAL_VALUE, Integer.toString((Integer)configData.get(ID_LOW_QUAL_VALUE)), "0", "NA", logger);
         if(chk!=null)
             this.setLowQualityFilterValue((Integer)configData.get(ID_LOW_QUAL_VALUE));
             
-        chk = checkParameter("Integer", ID_MAX_INSERT_SIZE, (String)configData.get(ID_MAX_INSERT_SIZE), "0", "NA", logger);
+        chk = checkParameter("Integer", ID_MAX_INSERT_SIZE, Integer.toString((Integer)configData.get(ID_MAX_INSERT_SIZE)), "0", "NA", logger);
         if(chk!=null)
             this.setMaxInsertSize((Integer)configData.get(ID_MAX_INSERT_SIZE));
             
-        chk = checkParameter("Integer", ID_MIN_INSERT_SIZE, (String)configData.get(ID_MIN_INSERT_SIZE), "0", "NA", logger);
+        chk = checkParameter("Integer", ID_MIN_INSERT_SIZE, Integer.toString((Integer)configData.get(ID_MIN_INSERT_SIZE)), "0", "NA", logger);
         if(chk!=null)
             this.setMinInsertSize((Integer)configData.get(ID_MIN_INSERT_SIZE));
             
-        chk = checkParameter("Integer", ID_MAP_FIRST_N_NUCS, (String)configData.get(ID_MAP_FIRST_N_NUCS), "0", "NA", logger);
+        chk = checkParameter("Integer", ID_MAP_FIRST_N_NUCS, Integer.toString((Integer)configData.get(ID_MAP_FIRST_N_NUCS)), "0", "NA", logger);
         if(chk!=null)
             this.setMapFirstNucleotides((Integer)configData.get(ID_MAP_FIRST_N_NUCS));
             
-        chk = checkParameter("Integer", ID_GENOME_INDEX_INTERVAL, (String)configData.get(ID_GENOME_INDEX_INTERVAL), "0", "NA", logger);
+        chk = checkParameter("Integer", ID_GENOME_INDEX_INTERVAL, Integer.toString((Integer)configData.get(ID_GENOME_INDEX_INTERVAL)), "0", "NA", logger);
         if(chk!=null)
             this.setGenomeIndexInterval((Integer)configData.get(ID_GENOME_INDEX_INTERVAL));
  
-        chk = checkParameter("Boolean", ID_TRIM_ADAPTERSEQ, (String)configData.get(ID_TRIM_ADAPTERSEQ), "NA", "NA", logger);
+        chk = checkParameter("Boolean", ID_TRIM_ADAPTERSEQ, Boolean.toString((Boolean)configData.get(ID_TRIM_ADAPTERSEQ)), "NA", "NA", logger);
         if(chk!=null && this.getTrimAdapterSequence()==true && this.checkAdaptorSequences()!=null){
             this.setAdapterSequences((ArrayList<String>)configData.get(ID_TRIM_ADAPTERSEQ));
         }
 
-        chk = checkParameter("Boolean", ID_INCLUDE_REF_SEQ, (String)configData.get(ID_INCLUDE_REF_SEQ), "NA", "NA", logger);
-        if(chk!=null)
+        chk = checkParameter("Boolean", ID_INCLUDE_REF_SEQ, Boolean.toString((Boolean)configData.get(ID_INCLUDE_REF_SEQ)), "NA", "NA", logger);
+        if(chk!=null  && Boolean.parseBoolean(chk)==true)
             this.setIncludeRefSeq((Boolean)configData.get(ID_INCLUDE_REF_SEQ));
         
-        chk = checkParameter("Boolean", ID_SKIP_SAM_HEADER, (String)configData.get(ID_SKIP_SAM_HEADER), "NA", "NA", logger);
-        if(chk!=null)
+        chk = checkParameter("Boolean", ID_SKIP_SAM_HEADER, Boolean.toString((Boolean)configData.get(ID_SKIP_SAM_HEADER)), "NA", "NA", logger);
+        if(chk!=null && Boolean.parseBoolean(chk)==true)
             this.setSkipSAMHeader((Boolean)configData.get(ID_SKIP_SAM_HEADER));
         
-        chk = checkParameter("Boolean", ID_REPORT_UNMAPPED_READS, (String)configData.get(ID_REPORT_UNMAPPED_READS), "NA", "NA", logger);
-        if(chk!=null)
+        chk = checkParameter("Boolean", ID_REPORT_UNMAPPED_READS, Boolean.toString((Boolean)configData.get(ID_REPORT_UNMAPPED_READS)), "NA", "NA", logger);
+        if(chk!=null && Boolean.parseBoolean(chk)==true)
             this.setReportUnmappedReads((Boolean)configData.get(ID_REPORT_UNMAPPED_READS));       
         
-        chk = checkParameter("Integer", ID_START_AT_READ_N, (String)configData.get(ID_START_AT_READ_N), "0", "NA", logger);
+        chk = checkParameter("Integer", ID_START_AT_READ_N, Integer.toString((Integer)configData.get(ID_START_AT_READ_N)), "0", "NA", logger);
         if(chk!=null)
             this.setStartAtThisRead((Integer)configData.get(ID_START_AT_READ_N));
             
-        chk = checkParameter("Integer", ID_END_AT_READ_N, (String)configData.get(ID_END_AT_READ_N), "0", "NA", logger);
+        chk = checkParameter("Integer", ID_END_AT_READ_N, Integer.toString((Integer)configData.get(ID_END_AT_READ_N)), "-1", "NA", logger);
         if(chk!=null)
             this.setEndtAtThisRead((Integer)configData.get(ID_END_AT_READ_N));
         
@@ -256,11 +264,11 @@ public class StepBSMap extends NGSStep implements NGSBase{
             this.setDigestionSite((String)configData.get(ID_DIGESTIONSITE));
         }
 
-        checkParameter("Integer", ID_RANDOMSEED, (String)configData.get(ID_RANDOMSEED), "0", "NA", logger);
+        checkParameter("Integer", ID_RANDOMSEED, Integer.toString((Integer)configData.get(ID_RANDOMSEED)), "0", "NA", logger);
         if(chk!=null)
             this.setRandomSeed((Integer)configData.get(ID_RANDOMSEED));
             
-        checkParameter("Integer", ID_MAPPINGSTRAND, (String)configData.get(ID_MAPPINGSTRAND), "0", "NA", logger);
+        checkParameter("Integer", ID_MAPPINGSTRAND, Integer.toString((Integer)configData.get(ID_MAPPINGSTRAND)), "0", "NA", logger);
         if(chk!=null)
             this.setMappingStrand((Integer)configData.get(ID_MAPPINGSTRAND));
             
@@ -268,7 +276,7 @@ public class StepBSMap extends NGSStep implements NGSBase{
             this.setTransitionMap((String)configData.get(ID_TRANSITIONMAP));
         }
 
-        checkParameter("Integer", ID_MESSAGELEVEL, (String)configData.get(ID_MESSAGELEVEL), "0", "NA", logger);
+        checkParameter("Integer", ID_MESSAGELEVEL, Integer.toString((Integer)configData.get(ID_MESSAGELEVEL)), "0", "NA", logger);
         if(chk!=null)
             this.setMessageLevel((Integer)configData.get(ID_MESSAGELEVEL));
             
@@ -323,7 +331,7 @@ public class StepBSMap extends NGSStep implements NGSBase{
             rawSeq = rawSeq + ch;
         }
         
-        if(SimpleSeq.complement(seq).equals(seq)==false){
+        if(SimpleSeq.complement(seq.replace("-","")).equals(seq.replace("-",""))==false){
             logger.info("Digestion Site <" + seq + ">" 
                     + " must be palindromic: Complement<" + seq + ">=" + SimpleSeq.complement(seq));            
             logger.error("Digestion Site <" + seq + ">" 
@@ -400,12 +408,32 @@ public class StepBSMap extends NGSStep implements NGSBase{
                 
                 String cmdBSMap = "";   
                 ArrayList<String> cmd = new ArrayList<>();
-                cmd.add(this.getPathToSoftware());
+                cmd.add(this.getPathToBSMap());
                 
-                fastqFile1in = this.cleanPath(inFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", INFILE_EXTENSION));
+                if(this.trimAdapterSequence){
+                    fastqFile1out = this.cleanPath(outFolder 
+                            + FILESEPARATOR + sampleData.getFastqFile1());
+                    fastqFile1in = this.cleanPath(inFolder 
+                            + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", INFILE_EXTENSION_TRIM));                
+                }else{
+                    fastqFile1out = this.cleanPath(outFolder 
+                            + FILESEPARATOR + sampleData.getFastqFile1());
+                    fastqFile1in = this.cleanPath(inFolder 
+                            + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", INFILE_EXTENSION_NOTRIM));                
+                }
                 cmd.add("-a " + fastqFile1in);
                 if (sampleData.getFastqFile2() != null){
-                    fastqFile2in = this.cleanPath(inFolder + FILESEPARATOR + sampleData.getFastqFile2().replace(".fastq", INFILE_EXTENSION));
+                    if(this.trimAdapterSequence){
+                        fastqFile2out = this.cleanPath(outFolder 
+                                + FILESEPARATOR + sampleData.getFastqFile2());
+                        fastqFile2in = this.cleanPath(inFolder 
+                                + FILESEPARATOR + sampleData.getFastqFile2().replace(".fastq", INFILE_EXTENSION_TRIM));                
+                    }else{
+                        fastqFile2out = this.cleanPath(outFolder 
+                                + FILESEPARATOR + sampleData.getFastqFile2());
+                        fastqFile2in = this.cleanPath(inFolder 
+                                + FILESEPARATOR + sampleData.getFastqFile2().replace(".fastq", INFILE_EXTENSION_NOTRIM));                
+                    }
                     cmd.add("-b " + fastqFile2in);
                 }
                 
@@ -536,6 +564,8 @@ public class StepBSMap extends NGSStep implements NGSBase{
                     -z  <int>   base quality, default=33 [Illumina is using 64, Sanger Institute is using 33]
                 */                
                                 
+                cmdBSMap = this.cleanPath(StringUtils.join(cmd, " "));
+                logger.info("BSMap command is: " + cmdBSMap);
             }
             catch(Exception ex){
                 getLogger().info("error executing bsmap command:\n" + ex.toString());
@@ -562,10 +592,10 @@ public class StepBSMap extends NGSStep implements NGSBase{
         getLogger().info("verify input data");        
         this.setPaths();
         
-        if(new File(this.getPathToSoftware()).exists() == false){
-            getLogger().info("BSMap software not found at location < " + this.getPathToSoftware() +">");
-            getLogger().error("BSMap software not found at location < " + this.getPathToSoftware() +">");
-            throw new IOException("unzip software not found at location < " + this.getPathToSoftware() +">");
+        if(new File(this.getPathToBSMap()).exists() == false){
+            getLogger().info("BSMap software not found at location < " + this.getPathToBSMap() +">");
+            getLogger().error("BSMap software not found at location < " + this.getPathToBSMap() +">");
+            throw new IOException("BSMap software not found at location < " + this.getPathToBSMap() +">");
         }
                 
                 
@@ -573,7 +603,6 @@ public class StepBSMap extends NGSStep implements NGSBase{
         // check the data files
         String fastqFile1in = "";
         String fastqFile1out = "";
-        Iterator itSD = this.stepInputData.getSampleData().iterator();
         for(SampleDataEntry sampleData: this.stepInputData.getSampleData()){
             
             
@@ -583,20 +612,33 @@ public class StepBSMap extends NGSStep implements NGSBase{
                 throw new IOException("no Fastq1 file specified");
             }
             
-            fastqFile1out = this.cleanPath(inFolder + FILESEPARATOR + sampleData.getFastqFile1());
-            fastqFile1in = this.cleanPath(inFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", INFILE_EXTENSION));
-            String fastqFile1 = inFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", INFILE_EXTENSION);
-            if (new File(fastqFile1in).exists()==false && new File(fastqFile1out).exists()==false){
-                getLogger().error(STEP_ID_STRING + ": fastq 1 Files <" + fastqFile1in + "> & <" + fastqFile1out + "> do not exist");
-                throw new IOException(STEP_ID_STRING + ": fastq 2 Files <" + fastqFile1in + "> & <" + fastqFile1out + "> do not exist");
+            if(this.trimAdapterSequence){
+                //fastqFile1out = this.cleanPath(inFolder + FILESEPARATOR + sampleData.getFastqFile1());
+                fastqFile1in = this.cleanPath(inFolder + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", INFILE_EXTENSION_TRIM));                
+                if (fastqFile1in.toUpperCase().endsWith(INFILE_EXTENSION_TRIM.toUpperCase())==false)
+                {
+                    getLogger().info(STEP_ID_STRING + ": incorrect file extension for input file <" 
+                      + fastqFile1in + ">. should have <" + INFILE_EXTENSION_TRIM + "> as extension");
+                    throw new IOException(STEP_ID_STRING + ": incorrect file extension for input file <" 
+                      + fastqFile1in + ">.  \n" 
+                      + "should have <" + INFILE_EXTENSION_TRIM + "> as extension");
+                }
+            }else{
+                //fastqFile1out = this.cleanPath(outFolder + FILESEPARATOR + sampleData.getFastqFile1());
+                fastqFile1in = this.cleanPath(inFolder 
+                        + FILESEPARATOR + sampleData.getFastqFile1().replace(".fastq", INFILE_EXTENSION_NOTRIM));                
+                if (fastqFile1in.toUpperCase().endsWith(INFILE_EXTENSION_TRIM.toUpperCase())==false)
+                {
+                    getLogger().info(STEP_ID_STRING + ": incorrect file extension for input file <" 
+                      + fastqFile1in + ">. should have <" + INFILE_EXTENSION_NOTRIM + "> as extension");
+                    throw new IOException(STEP_ID_STRING + ": incorrect file extension for input file <" 
+                      + fastqFile1in + ">.  \n" 
+                      + "should have <" + INFILE_EXTENSION_NOTRIM + "> as extension");
+                }
             }
-            if (fastqFile1.toUpperCase().endsWith(INFILE_EXTENSION.toUpperCase())==false)
-            {
-                getLogger().info(STEP_ID_STRING + ": incorrect file extension for input file <" 
-                  + fastqFile1 + ">. should have <" + INFILE_EXTENSION + "> as extension");
-                throw new IOException(STEP_ID_STRING + ": incorrect file extension for input file <" 
-                  + fastqFile1 + ">.  \n" 
-                  + "should have <" + INFILE_EXTENSION + "> as extension");
+            if (new File(fastqFile1in).exists()==false){
+                getLogger().error(STEP_ID_STRING + ": fastq 1 File <" + fastqFile1in + "> does not exist");
+                throw new IOException(STEP_ID_STRING + ": fastq 1 File <" + fastqFile1in + "> does not exist");
             }
             
             
@@ -604,24 +646,39 @@ public class StepBSMap extends NGSStep implements NGSBase{
             if (sampleData.getFastqFile2()==null) continue;
             String fastqFile2in = "";
             String fastqFile2out = "";
-            fastqFile2in = this.cleanPath(inFolder + FILESEPARATOR + sampleData.getFastqFile2().replace(".fastq", INFILE_EXTENSION));
-            fastqFile2out = this.cleanPath(inFolder + FILESEPARATOR + sampleData.getFastqFile2());
+            if(this.trimAdapterSequence){
+                //fastqFile2out = this.cleanPath(outFolder + FILESEPARATOR + sampleData.getFastqFile2());
+                fastqFile2in = this.cleanPath(inFolder 
+                        + FILESEPARATOR + sampleData.getFastqFile2().replace(".fastq", INFILE_EXTENSION_TRIM));                
+                if (fastqFile2in.toUpperCase().endsWith(INFILE_EXTENSION_TRIM.toUpperCase())==false)
+                {
+                    getLogger().error(STEP_ID_STRING + ": incorrect file extension for fastq file 2 <" 
+                      + fastqFile2in + ">. should have <" + INFILE_EXTENSION_TRIM + "> as extension");
+                    throw new IOException(STEP_ID_STRING + ": incorrect file extension for fastq file 2 <" 
+                      + fastqFile2in + ">. \n" 
+                      + "should have <" + INFILE_EXTENSION_TRIM + "> as extension");
+                }
+            }else{
+                //fastqFile2out = this.cleanPath(outFolder + FILESEPARATOR + sampleData.getFastqFile2());
+                fastqFile2in = this.cleanPath(inFolder 
+                        + FILESEPARATOR + sampleData.getFastqFile2().replace(".fastq", INFILE_EXTENSION_NOTRIM));                
+                if (fastqFile2in.toUpperCase().endsWith(INFILE_EXTENSION_NOTRIM.toUpperCase())==false)
+                {
+                    getLogger().error(STEP_ID_STRING + ": incorrect file extension for fastq file 2 <" 
+                      + fastqFile2in + ">. should have <" + INFILE_EXTENSION_NOTRIM + "> as extension");
+                    throw new IOException(STEP_ID_STRING + ": incorrect file extension for fastq file 2 <" 
+                      + fastqFile2in + ">. \n" 
+                      + "should have <" + INFILE_EXTENSION_NOTRIM + "> as extension");
+                }
+            }
 
             
-            if ((new File(fastqFile2in)).exists()==false && (new File(fastqFile2in)).exists()==false){
-                getLogger().error(STEP_ID_STRING + ": fastq 2 Files <" + fastqFile2in + "> & <" + fastqFile2out + "> do not exist");
-                throw new IOException(STEP_ID_STRING + ": fastq 2 Files <" + fastqFile2in + "> & <" + fastqFile2out + "> do not exist");
-            }
-            if (fastqFile2in.toUpperCase().endsWith(INFILE_EXTENSION.toUpperCase())==false)
-            {
-                getLogger().error(STEP_ID_STRING + ": incorrect file extension for fastq file 2 <" 
-                  + fastqFile2in + ">. should have <" + INFILE_EXTENSION + "> as extension");
-                throw new IOException(STEP_ID_STRING + ": incorrect file extension for fastq file 2 <" 
-                  + fastqFile2in + ">. \n" 
-                  + "should have <" + INFILE_EXTENSION + "> as extension");
+            if ((new File(fastqFile2in)).exists()==false ){
+                getLogger().error(STEP_ID_STRING + ": fastq 2 File <" + fastqFile2in + "> does not exist");
+                throw new IOException(STEP_ID_STRING + ": fastq 2 File <" + fastqFile2in + "> does not exist");
             }
                         
-            
+            logger.info("passed");
         }
 
     }
@@ -646,11 +703,13 @@ public class StepBSMap extends NGSStep implements NGSBase{
 
         getLogger().info(STEP_ID_STRING + ": generate example configuration data");
         
-        HashMap<String, Object> configData = new HashMap();
+        //HashMap<String, Object> configData = new HashMap();
+        HashMap configData = new HashMap();
         
         configData.put(ID_SOFTWARE, "/usr/local/bin/bsmap");
         configData.put(ID_REF_GENOME, "hsa");
         configData.put(ID_SEED_SIZE, 16);
+        
         configData.put(ID_MISMATCHES, 0.08);
         configData.put(ID_GAPSIZE, 0);
         configData.put(ID_THREEMAPPING, false);
@@ -667,7 +726,6 @@ public class StepBSMap extends NGSStep implements NGSBase{
         configData.put(ID_ADAPTERSEQ, new ArrayList<>(Arrays.asList(
                 "GATCGGAAGAGCACACGTCTGAACTCCAGTCACACAGTGATCTCGTATGCCGTCTTCTGCTTG", 
                 "AATGATACGGCGACCACCGAGATCTACACTCTTTCCCTACACGACGCTCTTCCGATCT")));        
-        configData.put(ID_ADAPTERSEQ, "");
         configData.put(ID_INCLUDE_REF_SEQ, false);
         configData.put(ID_SKIP_SAM_HEADER, false);
         configData.put(ID_REPORT_UNMAPPED_READS, false);
@@ -688,19 +746,6 @@ public class StepBSMap extends NGSStep implements NGSBase{
     
     
     
-    /**
-     * @return the unzipSoftware
-     */
-    public String getPathToSoftware() {
-        return pathToSoftware;
-    }
-
-    /**
-     * @param unzipSoftware the unzipSoftware to set
-     */
-    public void setPathToSoftware(String unzipSoftware) {
-        this.pathToSoftware = unzipSoftware;
-    }
 
     /**
      * @return the pathToBSMap

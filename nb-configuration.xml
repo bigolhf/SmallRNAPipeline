@@ -11,10 +11,11 @@ Without this configuration present, some functionality in the IDE may be limited
             <configuration id="Rtest" profiles=""/>
             <configuration id="liver" profiles=""/>
             <configuration id="sweden" profiles=""/>
+            <configuration id="sweden_clone" profiles=""/>
             <configuration id="testGenome" profiles=""/>
             <configuration id="testGenome_clone" profiles=""/>
             <configuration id="thyroid" profiles=""/>
-            <configuration id="sweden_clone" profiles=""/>
+            <configuration id="bsmap_debug" profiles=""/>
         </configurations>
     </config-data>
 </project-shared-configuration>

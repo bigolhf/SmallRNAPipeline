@@ -82,19 +82,19 @@ abstract public class NGSStep {
         double          dVal;
         Boolean         bVal;
                 
-        if(className.equals(Integer.class.getName())){
+        if(Integer.class.getName().contains(className)){
             iVal = checkIntegerParameter(paramID, param, lowerLimit, upperLimit, logger);
             return Integer.toString(iVal);
         }
         
-        if(className.equals(Double.class.getName())){
+        if(Double.class.getName().contains(className)){
             dVal = checkDoubleParameter(paramID, param, lowerLimit, upperLimit, logger);
             return Double.toString(dVal);
         }
         
-        if(className.equals(Boolean.class.getName())){
+        if(Boolean.class.getName().contains(className)){
             bVal = checkBooleanParameter(paramID, param, lowerLimit, upperLimit, logger);
-            return Boolean.toString(true);
+            return Boolean.toString(bVal);
         }
                 
         return null;

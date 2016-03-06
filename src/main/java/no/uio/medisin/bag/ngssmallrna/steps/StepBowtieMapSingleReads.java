@@ -41,7 +41,7 @@ public class StepBowtieMapSingleReads extends NGSStep implements NGSBase{
     private static final String ID_ALIGN_MODE                   = "alignmentMode";
     private static final String ID_THREADS                      = "noOfThreads";
 
-    private static final String INFILE_EXTENSION                = ".trim.clp.fasta";
+    private static final String INFILE_EXTENSION                = ".trim.clp.trimmed.paired.fastq";
     private static final String FASTQ_ABUNALN_EXTENSION         = ".trim.clp.abun.fasta";
     private static final String FASTQ_ABUNUNALN_EXTENSION       = ".trim.clp.notabun.fasta";
     private static final String SAM_ABUNALN_EXTENSION           = ".trim.clp.abun.sam";

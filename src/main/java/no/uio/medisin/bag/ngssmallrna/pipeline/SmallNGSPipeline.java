@@ -23,6 +23,7 @@ import no.uio.medisin.bag.ngssmallrna.steps.NGSRunStepData;
 import no.uio.medisin.bag.ngssmallrna.steps.StepParseSAMForMiRNAs;
 import no.uio.medisin.bag.ngssmallrna.steps.StepDEwithEdgeR;
 import no.uio.medisin.bag.ngssmallrna.steps.StepAnalyzeSAMforStartPositions;
+import no.uio.medisin.bag.ngssmallrna.steps.StepBSMapReads;
 import no.uio.medisin.bag.ngssmallrna.steps.StepBowtieMapPairedReads;
 import no.uio.medisin.bag.ngssmallrna.steps.StepCleanUp;
 import no.uio.medisin.bag.ngssmallrna.steps.StepInputData;
@@ -127,6 +128,10 @@ public class SmallNGSPipeline {
                     
                 case StepBowtieMapSingleReads.STEP_ID_STRING:
                     this.addStepBowtieMapSingleReads(stepData);
+                    break;
+                    
+                case StepBSMapReads.STEP_ID_STRING:
+                    this.addStepBSMapReads(stepData);
                     break;
                     
                 case "BowtieMapPairedReads":
@@ -345,6 +350,24 @@ public class SmallNGSPipeline {
     
     
     /**
+     * add step to map single reads using Bowtie
+     * 
+     * @param stepData 
+     */
+    private void addStepBSMapReads(NGSRunStepData stepData) throws IOException, Exception{
+
+        
+        logger.info("loading step " + StepBowtieMapSingleReads.STEP_ID_STRING);
+        StepInputData sidBSMap = new StepInputData(this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), 
+                 refDataLocations, stepData.getInputFileList(), stepData.getOutputFileList(), this.getSampleData());
+        StepBSMapReads ngsBSMapReads = new StepBSMapReads(sidBSMap);
+        ngsBSMapReads.parseConfigurationData((HashMap)pipelineConfigurationDataHash.get(StepBSMapReads.STEP_ID_STRING));
+        ngsSteps.add(ngsBSMapReads);
+        
+    }
+    
+    
+    /**
      * add step to perform clean up after an analysis is complete
      * 
      * @param stepData 
@@ -486,6 +509,9 @@ public class SmallNGSPipeline {
         
         StepBowtieMapSingleReads stepBowtieSingleMap = new StepBowtieMapSingleReads(emptySID);
         pipelineExampleConfiguration.put(StepBowtieMapSingleReads.STEP_ID_STRING, stepBowtieSingleMap.generateExampleConfigurationData());
+
+        StepBSMapReads stepBSMapReads = new StepBSMapReads(emptySID);
+        pipelineExampleConfiguration.put(StepBowtieMapSingleReads.STEP_ID_STRING, stepBSMapReads.generateExampleConfigurationData());
         
         StepAnalyzeSAMforStartPositions stepAnalyzeStartPos = new StepAnalyzeSAMforStartPositions(emptySID);
         pipelineExampleConfiguration.put(StepAnalyzeSAMforStartPositions.STEP_ID_STRING, stepAnalyzeStartPos.generateExampleConfigurationData());
