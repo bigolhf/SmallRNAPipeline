@@ -5,8 +5,12 @@
  */
 package no.uio.medisin.bag.ngssmallrna.steps;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -397,6 +401,12 @@ public class StepBSMapReads extends NGSStep implements NGSBase{
         */
         getLogger().info(STEP_ID_STRING + ": execute step");        
         
+        Boolean fA = new File(outFolder).mkdir();
+        if (fA) {
+            logger.info("created output folder <" + outFolder + "> for results");
+        }
+        
+        
         String fastqFile1in = "";
         String fastqFile1out = "";
         String fastqFile2in = "";
@@ -448,7 +458,7 @@ public class StepBSMapReads extends NGSStep implements NGSBase{
                  * 
                  */
                 String samAlnFile = this.cleanPath(outFolder + FILESEPARATOR 
-                        + sampleData.getFastqFile1().replace(".fastq", "sam").split("_")[0].trim());
+                        + sampleData.getFastqFile1().split("_")[0].trim()+".sam");
                 cmd.add("-o " + samAlnFile);
                 
                 cmd.add("-s " + this.getSeedSize());
@@ -531,7 +541,7 @@ public class StepBSMapReads extends NGSStep implements NGSBase{
                     cmd.add("-u");
                 
                 cmd.add("-B " + this.getStartAtThisRead());
-                cmd.add("-H " + this.getEndtAtThisRead());
+                cmd.add("-E " + this.getEndtAtThisRead());
                 cmd.add("-D " + this.getDigestionSite());
                 cmd.add("-S " + this.getSeedSize());
                 
@@ -566,8 +576,61 @@ public class StepBSMapReads extends NGSStep implements NGSBase{
                                 
                 cmdBSMap = this.cleanPath(StringUtils.join(cmd, " "));
                 logger.info("BSMap command is: " + cmdBSMap);
+                Runtime rt = Runtime.getRuntime();
+                Process proc = rt.exec(cmdBSMap);
+                BufferedReader brAStdin = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+                BufferedReader brAStdErr = new BufferedReader(new InputStreamReader(proc.getErrorStream()));
+
+                String line = null;
+                logger.info("<OUTPUT>");
+                while ((line = brAStdin.readLine()) != null) {
+                    logger.info(line);
+                }
+                logger.info("</OUTPUT>");
+
+                logger.info("<ERROR>");
+                int skipCount = 0;
+                
+                ArrayList<String>  mapAbunStdErr;
+
+                mapAbunStdErr = new ArrayList<>();
+                while ((line = brAStdErr.readLine()) != null) {
+                    if (line.contains("Warning: Skipping") && line.contains("less than")) {
+                        skipCount++;
+                    } else {
+                        logger.info(line);
+                        mapAbunStdErr.add(line);
+                    }
+                }
+                
+
+                // need to parse the output from Bowtie to get the mapping summary
+                logger.info(skipCount + " lines were skipped because the read was too short");
+                logger.info("</ERROR>");
+
+                int exitVal = proc.waitFor();
+                logger.info("Process exitValue: " + exitVal);
+
+                brAStdin.close();
+                brAStdErr.close();
+                logger.info(STEP_ID_STRING + ": done");
+                
+                String samAlnOutput = this.cleanPath(outFolder + FILESEPARATOR 
+                    + sampleData.getFastqFile1().split("_")[0].trim()+".bsmap_output");
+                try(BufferedWriter bwAO = new BufferedWriter(new FileWriter(new File(samAlnOutput)))){
+                    for(String logString:mapAbunStdErr){
+                        bwAO.write(logString + "\n");
+                    }
+                }
+                catch(IOException exIO){
+                    logger.error("error writing BSMap summary file <" + samAlnOutput +  ">");
+                    logger.info("error writing BSMap summary file <" + samAlnOutput +  ">");
+                    throw new IOException("error writing BSMap summary file <" + samAlnOutput +  ">" + exIO);
+                }
+                
+                
             }
-            catch(Exception ex){
+            catch(IOException | InterruptedException ex ){
                 getLogger().info("error executing bsmap command:\n" + ex.toString());
                 getLogger().error("error executing bsmap command:\n" + ex.toString());
                 throw new IOException("error executing bsmap command");
