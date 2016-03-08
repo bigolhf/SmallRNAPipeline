@@ -27,11 +27,11 @@ import org.apache.logging.log4j.Logger;
 
 
 /**
- *  Adapter Trimming Step
- *  perform QC of FASTQ file list.
+ *  Perform mapping of BS reads using BSMap
+ *  the calculation of methylation ratios is performed in a separate step
  * 
- *   Input is a FASTQ file
- *   Output is a quality report
+ *   Input is a FASTQ file, raw or trimmed
+ *   Output is a alignment file 
  * 
  * 
  * @author sr
@@ -46,7 +46,7 @@ public class StepBSMapReads extends NGSStep implements NGSBase{
     private static final String         ID_SOFTWARE                 = "pathToBSmap";
     private static final String         ID_REF_GENOME               = "host";
     private static final String         ID_MISMATCHES               = "noOfMismatches";
-    private static final String         ID_SEED_SIZE                = "seedSize:";
+    private static final String         ID_SEED_SIZE                = "seedSize";
     private static final String         ID_THREEMAPPING             = "threeNucleoideMapping";
     private static final String         ID_GAPSIZE                  = "gapSize";
     private static final String         ID_KMERCUTOFF               = "kmerCutoffRatio";
@@ -95,7 +95,7 @@ public class StepBSMapReads extends NGSStep implements NGSBase{
     //private String                      pathToSoftware              = "";
 
     private             String          pathToBSMap                 = "";
-    private             int             seedSize                    = 0;
+    private             int             seedSize                    = 16;
     private             String          AlignMode                   = "";
     private             double          noOfMismatches              = 0.08;
     private             int             gapSize                     = 0;
@@ -103,13 +103,13 @@ public class StepBSMapReads extends NGSStep implements NGSBase{
     private             int             noOfThreads                 = 4;
     private             String          rootDataFolder              = "";
     private             String          ReferenceGenome             = "";
-    private             double          kmerCutoffRatio             = 1e-06;
+    private             double          kmerCutoffRatio             = 5e-07;
     private             int             reportRepeatsValue          = 1;
     private             int             qualityThresholdTrimValue   = 0;
     private             int             lowQualityFilterValue       = 5;
-    private             int             maxInsertSize               = 500;
+    private             int             maxInsertSize               = 1000;
     private             int             minInsertSize               = 28;
-    private             int             mapFirstNucleotides         = 0;
+    private             int             mapFirstNucleotides         = 160;
     private             int             genomeIndexInterval         = 4;
     private     ArrayList<String>       adapterSequences;
     private             Boolean         trimAdapterSequence         = false;
@@ -187,7 +187,7 @@ public class StepBSMapReads extends NGSStep implements NGSBase{
 
         String chk;
 
-        chk = checkParameter("Integer", ID_SEED_SIZE, Integer.toString((Integer)configData.get(ID_SEED_SIZE)), "8", "16", logger);
+        chk = checkParameter("Integer", ID_SEED_SIZE, Integer.toString((Integer)configData.get(ID_SEED_SIZE)), "10", "16", logger);
         if(chk!=null)
             this.setSeedSize((Integer)configData.get(ID_SEED_SIZE));
             
@@ -235,7 +235,7 @@ public class StepBSMapReads extends NGSStep implements NGSBase{
         if(chk!=null)
             this.setMapFirstNucleotides((Integer)configData.get(ID_MAP_FIRST_N_NUCS));
             
-        chk = checkParameter("Integer", ID_GENOME_INDEX_INTERVAL, Integer.toString((Integer)configData.get(ID_GENOME_INDEX_INTERVAL)), "0", "NA", logger);
+        chk = checkParameter("Integer", ID_GENOME_INDEX_INTERVAL, Integer.toString((Integer)configData.get(ID_GENOME_INDEX_INTERVAL)), "1", "16", logger);
         if(chk!=null)
             this.setGenomeIndexInterval((Integer)configData.get(ID_GENOME_INDEX_INTERVAL));
  
@@ -379,7 +379,7 @@ public class StepBSMapReads extends NGSStep implements NGSBase{
     
     /**
      * BSMap single or paired end reads
-     * Still need to add ability to include multiple adapter sequences
+     * 
      * 
      * @throws IOException 
      */
@@ -543,7 +543,7 @@ public class StepBSMapReads extends NGSStep implements NGSBase{
                 cmd.add("-B " + this.getStartAtThisRead());
                 cmd.add("-E " + this.getEndtAtThisRead());
                 cmd.add("-D " + this.getDigestionSite());
-                cmd.add("-S " + this.getSeedSize());
+                cmd.add("-S " + this.getRandomSeed());
                 
                 /*
                     -n 0: only map to 2 forward strands, i.e. BSW(++) and BSC(-+) ("Lister protocol")
@@ -595,17 +595,10 @@ public class StepBSMapReads extends NGSStep implements NGSBase{
 
                 mapAbunStdErr = new ArrayList<>();
                 while ((line = brAStdErr.readLine()) != null) {
-                    if (line.contains("Warning: Skipping") && line.contains("less than")) {
-                        skipCount++;
-                    } else {
-                        logger.info(line);
-                        mapAbunStdErr.add(line);
-                    }
+                    mapAbunStdErr.add(line);
                 }
                 
 
-                // need to parse the output from Bowtie to get the mapping summary
-                logger.info(skipCount + " lines were skipped because the read was too short");
                 logger.info("</ERROR>");
 
                 int exitVal = proc.waitFor();

@@ -160,7 +160,8 @@ abstract public class NGSStep {
                         + "> must be must be >= " + lowerLimit + " <= " + upperLimit);
                 logger.error(paramID + " <" + param 
                         + "> must be must be >= " + lowerLimit + " <= " + upperLimit);
-                throw new IllegalArgumentException(paramID + " <" + param + "> must be > " + upperLimit);
+                throw new IllegalArgumentException(paramID + " <" + param 
+                        + "> must be must be >= " + lowerLimit + " <= " + upperLimit);
 
         }
         else{
