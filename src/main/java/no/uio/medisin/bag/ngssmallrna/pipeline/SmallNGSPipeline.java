@@ -23,6 +23,7 @@ import no.uio.medisin.bag.ngssmallrna.steps.NGSRunStepData;
 import no.uio.medisin.bag.ngssmallrna.steps.StepParseSAMForMiRNAs;
 import no.uio.medisin.bag.ngssmallrna.steps.StepDEwithEdgeR;
 import no.uio.medisin.bag.ngssmallrna.steps.StepAnalyzeSAMforStartPositions;
+import no.uio.medisin.bag.ngssmallrna.steps.StepBSMapCalcMethRatios;
 import no.uio.medisin.bag.ngssmallrna.steps.StepBSMapReads;
 import no.uio.medisin.bag.ngssmallrna.steps.StepBowtieMapPairedReads;
 import no.uio.medisin.bag.ngssmallrna.steps.StepCleanUp;
@@ -132,6 +133,10 @@ public class SmallNGSPipeline {
                     
                 case StepBSMapReads.STEP_ID_STRING:
                     this.addStepBSMapReads(stepData);
+                    break;
+                    
+                case StepBSMapCalcMethRatios.STEP_ID_STRING:
+                    this.addStepBSMapMethylationRatios(stepData);
                     break;
                     
                 case "BowtieMapPairedReads":
@@ -368,6 +373,24 @@ public class SmallNGSPipeline {
     
     
     /**
+     * add step to map single reads using Bowtie
+     * 
+     * @param stepData 
+     */
+    private void addStepBSMapMethylationRatios(NGSRunStepData stepData) throws IOException, Exception{
+
+        
+        logger.info("loading step " + StepBowtieMapSingleReads.STEP_ID_STRING);
+        StepInputData sidBSMap = new StepInputData(this.getPipelineData().getProjectID(), this.getPipelineData().getProjectRoot(), 
+                 refDataLocations, stepData.getInputFileList(), stepData.getOutputFileList(), this.getSampleData());
+        StepBSMapCalcMethRatios ngsStepBSMapMethRatios = new StepBSMapCalcMethRatios(sidBSMap);
+        ngsStepBSMapMethRatios.parseConfigurationData((HashMap)pipelineConfigurationDataHash.get(StepBSMapCalcMethRatios.STEP_ID_STRING));
+        ngsSteps.add(ngsStepBSMapMethRatios);
+        
+    }
+
+
+    /**
      * add step to perform clean up after an analysis is complete
      * 
      * @param stepData 
@@ -512,6 +535,9 @@ public class SmallNGSPipeline {
 
         StepBSMapReads stepBSMapReads = new StepBSMapReads(emptySID);
         pipelineExampleConfiguration.put(StepBowtieMapSingleReads.STEP_ID_STRING, stepBSMapReads.generateExampleConfigurationData());
+        
+        StepBSMapCalcMethRatios stepCalcMethRatios = new StepBSMapCalcMethRatios(emptySID);
+        pipelineExampleConfiguration.put(StepBSMapCalcMethRatios.STEP_ID_STRING, stepCalcMethRatios.generateExampleConfigurationData());
         
         StepAnalyzeSAMforStartPositions stepAnalyzeStartPos = new StepAnalyzeSAMforStartPositions(emptySID);
         pipelineExampleConfiguration.put(StepAnalyzeSAMforStartPositions.STEP_ID_STRING, stepAnalyzeStartPos.generateExampleConfigurationData());

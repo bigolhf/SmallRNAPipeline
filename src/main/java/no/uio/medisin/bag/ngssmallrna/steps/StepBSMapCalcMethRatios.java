@@ -38,7 +38,7 @@ import org.apache.logging.log4j.Logger;
  * @author sr
  */
 
-public class StepBSMapMethylationRatios extends NGSStep implements NGSBase{
+public class StepBSMapCalcMethRatios extends NGSStep implements NGSBase{
     
     private static Logger               logger                      = LogManager.getLogger();
     
@@ -64,10 +64,10 @@ public class StepBSMapMethylationRatios extends NGSStep implements NGSBase{
     
     
     
-    private static final String         INFILE_EXTENSION            = "sam";
-    private static final String         INFILE_EXTENSION_NOTRIM     = ".trimmed.paired.fastq";
+    private static final String         INFILE_EXTENSION            = ".sam";
     
-    private static final String         OUTFILE_EXTENSION           = "methylation_ratios.tsv";
+    private static final String         METHFILE_EXTENSION          = ".methylation_ratios.tsv";
+    private static final String         WIGGLEFILE_EXTENSION        = ".wiggle";
 
     /**
      * @return the logger
@@ -91,8 +91,7 @@ public class StepBSMapMethylationRatios extends NGSStep implements NGSBase{
     private             String          ReferenceGenome             = "";
 
     
-    private             String          pathToBSmethRatio           = "";
-    private             String          outputWiggleFile            = "";
+    private             Boolean         outputWiggleFile            = false;
     private             int             wiggleFileBinSize           = 25;
     private             String          processTheseChromosomes     = "all";
     private             String          pathToSAMTools              = "none";
@@ -115,7 +114,7 @@ public class StepBSMapMethylationRatios extends NGSStep implements NGSBase{
      * @param sid StepInputData
      * 
      */
-    public StepBSMapMethylationRatios(StepInputData sid){
+    public StepBSMapCalcMethRatios(StepInputData sid){
        stepInputData = sid;
     }
     
@@ -156,14 +155,16 @@ public class StepBSMapMethylationRatios extends NGSStep implements NGSBase{
         this.setPathToMethRatioPy((String) configData.get(ID_SOFTWARE));        
         this.setPathToSAMTools((String) configData.get(ID_PATH_TO_SAMTOOLS));
 
-        this.setOutputWiggleFile((String) configData.get(ID_OUTPUT_WIGGLE_FILE));
-
         String chk;
+        chk = checkParameter("Boolean", ID_OUTPUT_WIGGLE_FILE, Boolean.toString((Boolean)configData.get(ID_OUTPUT_WIGGLE_FILE)), "0", "NA", logger);
+        if(chk!=null)
+            this.setOutputWiggleFile((Boolean) configData.get(ID_OUTPUT_WIGGLE_FILE));        
+
         chk = checkParameter("Integer", ID_OUTPUT_WIGGLE_BINSIZE, Integer.toString((Integer)configData.get(ID_OUTPUT_WIGGLE_BINSIZE)), "1", "NA", logger);
         if(chk!=null)
             this.setWiggleFileBinSize((Integer)configData.get(ID_OUTPUT_WIGGLE_BINSIZE));
 
-        chk = checkParameter("Integer", ID_TRIM_FILL_IN_NTS, Integer.toString((Integer)configData.get(ID_TRIM_FILL_IN_NTS)), "1", "NA", logger);
+        chk = checkParameter("Integer", ID_TRIM_FILL_IN_NTS, Integer.toString((Integer)configData.get(ID_TRIM_FILL_IN_NTS)), "0", "NA", logger);
         if(chk!=null)
             this.setTrimNfillInNucleotides((Integer)configData.get(ID_TRIM_FILL_IN_NTS));
 
@@ -178,11 +179,6 @@ public class StepBSMapMethylationRatios extends NGSStep implements NGSBase{
         chk = checkParameter("Boolean", ID_PAIRED_MAPPINGS_ONLY, Boolean.toString((Boolean)configData.get(ID_PAIRED_MAPPINGS_ONLY)), "NA", "NA", logger);
         if(chk!=null){
             this.setOnlyProcessPairedMappings((Boolean)configData.get(ID_PAIRED_MAPPINGS_ONLY));
-        }
-        
-        chk = checkParameter("Boolean", ID_REMOVE_DUPLICATE_READS, Boolean.toString((Boolean)configData.get(ID_REMOVE_DUPLICATE_READS)), "NA", "NA", logger);
-        if(chk!=null){
-            this.setRemoveDuplicateReads((Boolean)configData.get(ID_REMOVE_DUPLICATE_READS));
         }
         
         chk = checkParameter("Boolean", ID_REMOVE_DUPLICATE_READS, Boolean.toString((Boolean)configData.get(ID_REMOVE_DUPLICATE_READS)), "NA", "NA", logger);
@@ -213,7 +209,7 @@ public class StepBSMapMethylationRatios extends NGSStep implements NGSBase{
             this.setProcessTheseChromosomes((String)configData.get(ID_PROCESS_THESE_CHRS));
         }
             
-        if(this.checkCT_SNPParameter((String)configData.get(ID_PROCESS_THESE_CHRS))){
+        if(this.checkCT_SNPParameter((String)configData.get(ID_CT_SNP_ACTION))){
             this.setCtSnpAction((String)configData.get(ID_CT_SNP_ACTION));
         }
             
@@ -338,7 +334,7 @@ public class StepBSMapMethylationRatios extends NGSStep implements NGSBase{
                 
                 String cmdCalcMethRatios = "";   
                 ArrayList<String> cmd = new ArrayList<>();
-                cmd.add(this.getPathToBSMap());
+                cmd.add(this.getPathToMethRatioPy());
                 
                 
                 String pathToGenomeFA = this.cleanPath(stepInputData.getDataLocations().getGenomeRootFolder()
@@ -351,14 +347,16 @@ public class StepBSMapMethylationRatios extends NGSStep implements NGSBase{
                  * SAMPLENAME_SEQUENCERDATA1_SEQUENCEDATA_..., so we split at the first "_"
                  * 
                  */
-                String samAlnFile = this.cleanPath(outFolder + FILESEPARATOR 
-                        + sampleData.getFastqFile1().split("_")[0].trim()+ INFILE_EXTENSION);
+                String methOutFile = this.cleanPath(outFolder + FILESEPARATOR 
+                        + sampleData.getFastqFile1().split("_")[0].trim()+ METHFILE_EXTENSION);
                 
-                String methOutFile = samAlnFile.replace(INFILE_EXTENSION, OUTFILE_EXTENSION);
                 cmd.add("-o " + methOutFile);
                 
-                cmd.add("-w " + this.getOutputWiggleFile());                
-                cmd.add("-b " + this.getWiggleFileBinSize());
+                if(this.getOutputWiggleFile()){
+                    String wiggleFile = methOutFile.replace(METHFILE_EXTENSION, WIGGLEFILE_EXTENSION);
+                    cmd.add("-w " + wiggleFile);                
+                    cmd.add("-b " + this.getWiggleFileBinSize());                
+                }
                 cmd.add("-c " + this.getProcessTheseChromosomes());
                 
                 if(this.getPathToSAMTools().isEmpty()==false)
@@ -367,7 +365,7 @@ public class StepBSMapMethylationRatios extends NGSStep implements NGSBase{
                 
                 if(this.getOnlyProcessUniqueMappings())
                     cmd.add("-u");
-                if(!this.getOnlyProcessPairedMappings())
+                if(this.getOnlyProcessPairedMappings())
                     cmd.add("-p");
                 if(this.getQuietMode())
                     cmd.add("-q");
@@ -378,9 +376,13 @@ public class StepBSMapMethylationRatios extends NGSStep implements NGSBase{
                 if(this.getNoHeader())
                     cmd.add("-n");
                 
+                String samAlnFile = this.cleanPath(inFolder + FILESEPARATOR 
+                    + sampleData.getFastqFile1().split("_")[0].trim() + INFILE_EXTENSION);
+                cmd.add(samAlnFile);
+                
                                 
                 cmdCalcMethRatios = this.cleanPath(StringUtils.join(cmd, " "));
-                logger.info("BSMap command is: " + cmdCalcMethRatios);
+                logger.info("methylratio command is: " + cmdCalcMethRatios);
                 Runtime rt = Runtime.getRuntime();
                 Process proc = rt.exec(cmdCalcMethRatios);
                 BufferedReader brAStdin = new BufferedReader(new InputStreamReader(proc.getInputStream()));
@@ -454,10 +456,10 @@ public class StepBSMapMethylationRatios extends NGSStep implements NGSBase{
         getLogger().info("verify input data");        
         this.setPaths();
         
-        if(new File(this.getPathToBSmethRatio()).exists() == false){
-            getLogger().info("methratio.py not found at location < " + this.getPathToBSmethRatio() +">");
-            getLogger().error("methratio.py not found at location < " + this.getPathToBSmethRatio() +">");
-            throw new IOException("methratio.py not found at location < " + this.getPathToBSmethRatio() +">");
+        if(new File(this.getPathToMethRatioPy()).exists() == false){
+            getLogger().info("methratio.py not found at location < " + this.getPathToMethRatioPy() +">");
+            getLogger().error("methratio.py not found at location < " + this.getPathToMethRatioPy() +">");
+            throw new IOException("methratio.py not found at location < " + this.getPathToMethRatioPy() +">");
         }
                 
         String pathToGenomeFA = this.cleanPath(stepInputData.getDataLocations().getGenomeRootFolder()
@@ -484,13 +486,13 @@ public class StepBSMapMethylationRatios extends NGSStep implements NGSBase{
                 throw new IOException("no Fastq1 file specified");
             }
             
-            String alnFile = this.cleanPath(outFolder + FILESEPARATOR 
+            String alnFile = this.cleanPath(inFolder + FILESEPARATOR 
                     + sampleData.getFastqFile1().split("_")[0].trim()+".sam");
 
             //fastqFile1out = this.cleanPath(inFolder + FILESEPARATOR + sampleData.getFastqFile1());
             Boolean correctExt = false;
             for(String end:INFILE_EXTENSION.split("/")){
-                if (alnFile.toUpperCase().endsWith(end)==true) {
+                if (alnFile.toUpperCase().endsWith(end.toUpperCase())==true) {
                     correctExt = true;
                     break;
                 }     
@@ -508,12 +510,10 @@ public class StepBSMapMethylationRatios extends NGSStep implements NGSBase{
                 getLogger().error(STEP_ID_STRING + ": input alignment file <" + alnFile + "> does not exist");
                 throw new IOException(STEP_ID_STRING + ": input alignment file <" + alnFile + "> does not exist");
             }
-            
-            
-                        
-            logger.info("passed");
-        }
+                       
 
+        }
+        logger.info("passed");
     }
     
     
@@ -566,7 +566,7 @@ public class StepBSMapMethylationRatios extends NGSStep implements NGSBase{
     /**
      * @return the pathToBSMap
      */
-    public String getPathToBSMap() {
+    public String getPathToMethRatioPy() {
         return pathToMethRatioPy;
     }
 
@@ -606,30 +606,16 @@ public class StepBSMapMethylationRatios extends NGSStep implements NGSBase{
     }
 
     /**
-     * @return the pathToBSmethRatio
-     */
-    public String getPathToBSmethRatio() {
-        return pathToBSmethRatio;
-    }
-
-    /**
-     * @param pathToBSmethRatio the pathToBSmethRatio to set
-     */
-    public void setPathToBSmethRatio(String pathToBSmethRatio) {
-        this.pathToBSmethRatio = pathToBSmethRatio;
-    }
-
-    /**
      * @return the outputWiggleFile
      */
-    public String getOutputWiggleFile() {
+    public Boolean getOutputWiggleFile() {
         return outputWiggleFile;
     }
 
     /**
      * @param outputWiggleFile the outputWiggleFile to set
      */
-    public void setOutputWiggleFile(String outputWiggleFile) {
+    public void setOutputWiggleFile(Boolean outputWiggleFile) {
         this.outputWiggleFile = outputWiggleFile;
     }
 
@@ -655,10 +641,10 @@ public class StepBSMapMethylationRatios extends NGSStep implements NGSBase{
     }
 
     /**
-     * @param processTheseChromosomes the processTheseChromosomes to set
+     * @param chromString the processTheseChromosomes to set
      */
-    public void setProcessTheseChromosomes(String processTheseChromosomes) {
-        this.setProcessTheseChromosomes(processTheseChromosomes);
+    public void setProcessTheseChromosomes(String chromString) {
+        processTheseChromosomes = chromString;
     }
 
     /**
