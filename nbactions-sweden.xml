@@ -10,7 +10,7 @@
                 <goal>org.codehaus.mojo:exec-maven-plugin:1.2.1:exec</goal>
             </goals>
             <properties>
-                <exec.args>-Dlog4j.configurationFile=file:/data/ngsdata/sweden/log4j2.xml -classpath %classpath no.uio.medisin.bag.ngssmallrna.pipeline.SmallNGSCmd -r /data/ngsdata/sweden/kari.update.yaml -p /data/ngsdata/methylation/kari.pipe.json -d /data/ngsdata/sweden/kari.short.data.tsv</exec.args>
+                <exec.args>-Dlog4j.configurationFile=file:/data/ngsdata/sweden/log4j2.xml -classpath %classpath no.uio.medisin.bag.ngssmallrna.pipeline.SmallNGSCmd -r /data/ngsdata/sweden/sweden.small_ngs.config.yaml -p /data/ngsdata/sweden/sweden.pipe.json -d /data/ngsdata/sweden/sweden.data.1.tsv</exec.args>
                 <exec.executable>java</exec.executable>
             </properties>
         </action>
@@ -24,7 +24,7 @@
                 <goal>org.codehaus.mojo:exec-maven-plugin:1.2.1:exec</goal>
             </goals>
             <properties>
-                <exec.args>-Xdebug -Xrunjdwp:transport=dt_socket,server=n,address=${jpda.address} -Dlog4j.configurationFile=file:/data/ngsdata/sweden/log4j2.xml -classpath %classpath no.uio.medisin.bag.ngssmallrna.pipeline.SmallNGSCmd -r /data/ngsdata/sweden/sweden.update.yaml -p /data/ngsdata/sweden/sweden.pipe.json -d /data/ngsdata/sweden/sweden.short.data.tsv</exec.args>
+                <exec.args>-Xdebug -Xrunjdwp:transport=dt_socket,server=n,address=${jpda.address} -Dlog4j.configurationFile=file:/data/ngsdata/sweden/log4j2.xml -classpath %classpath no.uio.medisin.bag.ngssmallrna.pipeline.SmallNGSCmd -r /data/ngsdata/sweden/sweden.small_ngs.config.yaml -p /data/ngsdata/sweden/sweden.pipe.json -d /data/ngsdata/sweden/sweden.data.1.tsv</exec.args>
                 <jpda.listen>true</jpda.listen>
                 <exec.executable>java</exec.executable>
             </properties>
@@ -39,7 +39,7 @@
                 <goal>org.codehaus.mojo:exec-maven-plugin:1.2.1:exec</goal>
             </goals>
             <properties>
-                <exec.args>-Dlog4j.configurationFile=file:/data/ngsdata/sweden/log4j2.xml -classpath %classpath no.uio.medisin.bag.ngssmallrna.pipeline.SmallNGSCmd -r /data/ngsdata/sweden/sweden.update.yaml -p /data/ngsdata/sweden/sweden.pipe.json -d /data/ngsdata/sweden/sweden.short.data.tsv</exec.args>
+                <exec.args>-Dlog4j.configurationFile=file:/data/ngsdata/sweden/log4j2.xml -classpath %classpath no.uio.medisin.bag.ngssmallrna.pipeline.SmallNGSCmd -r /data/ngsdata/sweden/sweden.small_ngs.config.yaml -p /data/ngsdata/sweden/sweden.pipe.json -d /data/ngsdata/sweden/sweden.data.1.tsv</exec.args>
                 <exec.executable>java</exec.executable>
             </properties>
         </action>

@@ -240,8 +240,9 @@ public class StepBSMapReads extends NGSStep implements NGSBase{
             this.setGenomeIndexInterval((Integer)configData.get(ID_GENOME_INDEX_INTERVAL));
 
         chk = checkParameter("Boolean", ID_TRIM_ADAPTERSEQ, Boolean.toString((Boolean)configData.get(ID_TRIM_ADAPTERSEQ)), "NA", "NA", logger);
-        if(chk!=null)
+        if(chk!=null){
             this.setTrimAdapterSequence((Boolean)configData.get(ID_TRIM_ADAPTERSEQ));
+        }
         if(this.getTrimAdapterSequence()==true){
             this.setAdapterSequences((ArrayList<String>)configData.get(ID_ADAPTERSEQ));
             this.checkAdaptorSequences();

@@ -34,7 +34,7 @@ public class GFFSet {
      * @param gffEntry 
      */
     public void addEntry(GFFEntry gffEntry){
-        GFFEntries.add(gffEntry);
+        getGFFEntries().add(gffEntry);
     }
     
     
@@ -82,7 +82,7 @@ public class GFFSet {
      * @return 
      */
     public GFFEntry findMatch(int start, int stop, String strand, String chr, int bleed){
-        Iterator itGF = GFFEntries.iterator();
+        Iterator itGF = getGFFEntries().iterator();
         while(itGF.hasNext()){
             GFFEntry gffEntry = (GFFEntry)itGF.next();
             if(gffEntry.getStrand().equals(strand)
@@ -106,7 +106,7 @@ public class GFFSet {
      * @return 
      */
     public GFFEntry findEntryByID(String sID){
-        for(GFFEntry gffEntry: GFFEntries){
+        for(GFFEntry gffEntry: getGFFEntries()){
             if(gffEntry.getFeatureID().equals(sID)) return gffEntry;
         }
         return null;
@@ -117,30 +117,127 @@ public class GFFSet {
     
     
     /**
-     * Does the specified region contain a feature?
+     * Does the specified region overlap any feature?
      * 
      * @param start
      * @param stop
      * @param strand
      * @param chr
      * @param bleed
+     * @param featureType
      * @return 
      */
-    public Boolean doesRegionContainFeature(int start, int stop, Strand strand, String chr, int bleed){
-        Iterator itGF = GFFEntries.iterator();
-        while(itGF.hasNext()){
-            GFFEntry gffEntry = (GFFEntry)itGF.next();
-            if(gffEntry.getStrand() ==strand
-                && gffEntry.getSrc().equals(chr)
-                && Math.abs(gffEntry.getStart()-start) < bleed 
-                && Math.abs(gffEntry.getStop() - stop) < bleed
-                    ){
+    public Boolean doesRegionContainFeature(int start, int stop, Strand strand, String chr, String featureType, int bleed){
+        
+        for(GFFEntry gffEntry: getGFFEntries()){
+            if(gffEntry.doesRegionOverlap(start, stop, strand, chr, featureType, bleed)){
                 return true;
             }
         }
         return false;
         
     }
+    
+    
+    
+    
+    
+    /**
+     * Does the specified region overlap a feature regardless of its type?
+     * 
+     * @param start
+     * @param stop
+     * @param strand
+     * @param chr
+     * @param bleed
+     * @param featureType
+     * @return 
+     */
+    public Boolean doesRegionContainFeature(int start, int stop, Strand strand, String chr, int bleed){
+        
+        for(GFFEntry gffEntry: getGFFEntries()){
+            if(gffEntry.doesRegionOverlap(start, stop, strand, chr, bleed)){
+                return true;
+            }
+        }
+        return false;
+        
+    }
+    
+    
+    
+    
+    
+    /**
+     * find if specified region overlaps a gffEntry in this set
+     * 
+     * @param start
+     * @param stop
+     * @param strand
+     * @param chr
+     * @param bleed
+     * @param featureType
+     * 
+     * @return 
+     */
+    public GFFEntry findOverlappingFeature(int start, int stop, Strand strand, String chr, String featureType, int bleed){
+        
+        for(GFFEntry gffEntry: getGFFEntries()){
+            if(gffEntry.doesRegionOverlap(start, stop, strand, chr, featureType, bleed)){
+                return gffEntry;
+            }
+        }
+        
+        return null;
+    }
+    
+    
+    
+    
+    
+    /**
+     * find if specified mappedRead overlaps a gffEntry in this set
+     * 
+     * @param queryRead
+     * @param bleed
+     * @param featureType
+     * @return 
+     */
+    public GFFEntry findOverlappingFeature(MappedRead queryRead, String featureType, int bleed){
+        
+        for(GFFEntry gffEntry: getGFFEntries()){
+            if(gffEntry.doesRegionOverlap(queryRead.getStartPos(), queryRead.getEndPos(), queryRead.getStrand(), queryRead.getChr(), featureType, bleed)){
+                return gffEntry;
+            }
+        }
+        
+        return null;       
+    }
+    
+    
+    
+    
+    
+    /**
+     * find if specified mappedRead overlaps a gffEntry in this set
+     * 
+     * @param queryRead
+     * @param featureType
+     * @return 
+     */
+    public GFFEntry doesFeatureContainRegion(MappedRead queryRead, String featureType){
+        
+        for(GFFEntry gffEntry: getGFFEntries()){
+            if(gffEntry.doesFeatureContainRegion(queryRead.getStartPos(), queryRead.getEndPos(), queryRead.getStrand(), queryRead.getChr(), featureType)){
+                return gffEntry;
+            }
+        }
+        
+        return null;       
+    }
+    
+    
+    
     
     
     /**
@@ -152,7 +249,7 @@ public class GFFSet {
      */
     public void writeLengthDistribution(BufferedWriter bwLD, int start, int stop) throws IOException{
         Frequency freqDist = new Frequency();
-        Iterator itGF = GFFEntries.iterator();
+        Iterator itGF = getGFFEntries().iterator();
         while(itGF.hasNext()){
             GFFEntry gffEntry = (GFFEntry)itGF.next();            
             freqDist.addValue(gffEntry.getStop() - gffEntry.getStart() + 1);
@@ -179,7 +276,7 @@ public class GFFSet {
             bwFT.write("# ");
             bwFT.write("# \n");
         
-        Iterator itGF = GFFEntries.iterator();
+        Iterator itGF = getGFFEntries().iterator();
         while(itGF.hasNext()){
             GFFEntry gffEntry = (GFFEntry)itGF.next();            
             bwFT.write(gffEntry.toGFF3String() + "\n");
@@ -196,9 +293,10 @@ public class GFFSet {
      * @throws IOException 
      */
     public void writeFeaturesAsFastA(BufferedWriter bwFA) throws IOException{
-        Iterator itGF = GFFEntries.iterator();
+        Iterator itGF = getGFFEntries().iterator();
         while(itGF.hasNext()){
             GFFEntry gffEntry = (GFFEntry)itGF.next();            
+            logger.info(gffEntry.getFeatureID());
             bwFA.write(gffEntry.toMirbaseFastAString() + "\n");
         }
     }
@@ -210,6 +308,13 @@ public class GFFSet {
      * @return 
      */
     public int getNoOfEntries(){
-        return this.GFFEntries.size();
+        return this.getGFFEntries().size();
+    }
+
+    /**
+     * @return the GFFEntries
+     */
+    public ArrayList<GFFEntry> getGFFEntries() {
+        return GFFEntries;
     }
 }

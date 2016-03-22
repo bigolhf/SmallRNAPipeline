@@ -534,7 +534,7 @@ public class SmallNGSPipeline {
         pipelineExampleConfiguration.put(StepBowtieMapSingleReads.STEP_ID_STRING, stepBowtieSingleMap.generateExampleConfigurationData());
 
         StepBSMapReads stepBSMapReads = new StepBSMapReads(emptySID);
-        pipelineExampleConfiguration.put(StepBowtieMapSingleReads.STEP_ID_STRING, stepBSMapReads.generateExampleConfigurationData());
+        pipelineExampleConfiguration.put(StepBSMapReads.STEP_ID_STRING, stepBSMapReads.generateExampleConfigurationData());
         
         StepBSMapCalcMethRatios stepCalcMethRatios = new StepBSMapCalcMethRatios(emptySID);
         pipelineExampleConfiguration.put(StepBSMapCalcMethRatios.STEP_ID_STRING, stepCalcMethRatios.generateExampleConfigurationData());

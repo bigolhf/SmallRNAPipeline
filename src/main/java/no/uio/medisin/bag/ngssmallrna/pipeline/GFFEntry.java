@@ -10,6 +10,31 @@ import org.apache.logging.log4j.Logger;
 
 /**
  * stores a single entry from a GFF line
+ * Undefined fields are replaced with the "." character, as described in the original GFF spec.
+ *
+ * Column 1: "seqid"
+ * Column 2: "source"
+ * Column 3: "type"
+ * Columns 4 & 5: "start" and "end"
+ * Column 6: "score"
+ * Column 7: "strand"
+ * Column 8: "phase"
+ * Column 9: "attributes"
+ * A list of feature attributes in the format tag=value. Multiple tag=value pairs are separated by semicolons. 
+ * These tags have predefined meanings:
+ * 
+ *   ID            - Indicates the ID of the feature. must be unique within the scope of the GFF file. 
+ *   Name          - Display name for the feature. not necessarily unique
+ *   Alias         - A secondary name for the feature. e.g. locus names and accession numbers. not necessarily unique
+ *   Parent        - Indicates the parent of the feature. 
+ *   Target        - Indicates the target of a nucleotide-to-nucleotide or protein-to-nucleotide alignment. 
+ *   Gap           - The alignment of the feature to the target if the two are not collinear 
+ *   Derives_from  - Used to disambiguate the relationship between one feature and another 
+ *   Note          - A free text note.
+ *   Dbxref        - A database cross reference. 
+ *   Ontology_term - A cross reference to an ontology term. 
+ *   Is_circular   - A flag to indicate whether a feature is circular. 
+ * 
  * @author simonray
  */
 public class GFFEntry {
@@ -29,7 +54,7 @@ public class GFFEntry {
     static String   CR = System.getProperty("line.separator");
     
     
-    private                 String  seqID;
+    private                 String  refSeqID;
     private                 String  featureID;
     private                 String  src;
     private                 String  type;
@@ -38,15 +63,15 @@ public class GFFEntry {
     private                 float   score;
     private                 Strand  strand;
     private                 int     phase;
-    private                 String  attr;
+    private                 String  attrString;
     
     
     public GFFEntry(String line){
         
         try{
-            seqID   = line.split("\t")[GFF_SEQID];
-            src     = line.split("\t")[GFF_SRC];
-            type    = line.split("\t")[GFF_TYPE];
+            refSeqID    = line.split("\t")[GFF_SEQID];
+            src         = line.split("\t")[GFF_SRC];
+            type        = line.split("\t")[GFF_TYPE];
         }
         catch(Exception ex){
             logger.error("exception while parsing seqID/src/type values in GFF entry" + line);
@@ -81,8 +106,8 @@ public class GFFEntry {
         }
         
         if(line.split("\t")[GFF_ATTR].isEmpty() == false){
-            attr    = line.split("\t")[GFF_ATTR];
-            String attribs[] = attr.split(";");
+            attrString    = line.split("\t")[GFF_ATTR];
+            String attribs[] = attrString.split(";");
             for(String a:attribs){
                 if(a.toUpperCase().contains("ID=")){
                     featureID=a.split("=")[1];
@@ -96,24 +121,141 @@ public class GFFEntry {
     }
     
     
+    
+    
+    
+    
     /**
-     * create a new GFFEntry from a limited information set
+     * create a new GFF Entry.
+     * We require all fields to be specified because there are too many possible
+     * subsets of parameters that might be specified
      * 
-     * @param id
-     * @param s
-     * @param c
-     * @param b
-     * @param e 
+     * @param nRefSeqID
+     * @param nSource
+     * @param nType
+     * @param nStart
+     * @param nStop
+     * @param nScore
+     * @param nStrand
+     * @param nPhase
+     * @param nAttrString 
+     * 
      */
-    public GFFEntry(String id, String s, String c, int b, int e){
-        start = b;
-        stop = e;
-        src = c;
-        strand = StrandString.guessStrand(s);
-        seqID = id;
-        attr = id;
+    public GFFEntry(String nRefSeqID, String nSource, String nType, int nStart, int nStop, String nScore, String nStrand, String nPhase, String nAttrString){
+        
+        refSeqID = nRefSeqID;
+        src = nSource;
+        type = nType;
+        start = nStart;
+        stop = nStop;
+        try{
+            score   = Float.parseFloat(nScore);
+        }
+        catch(NumberFormatException exNF){
+            score = 0;
+        }
+        strand = StrandString.guessStrand(nStrand);
+        try{
+            phase   = Integer.parseInt(nPhase);
+        }
+        catch(NumberFormatException exNF){
+            phase = 0;
+        }
+        attrString = nAttrString;
+        if(nAttrString.isEmpty() == false){
+            String attribs[] = attrString.split(";");
+            for(String a:attribs){
+                if(a.toUpperCase().contains("ID=")){
+                    featureID=a.split("=")[1];
+                }
+            }
+        }
     }
 
+    
+    /**
+     * does the specified region overlap this gffEntry and featureType ?
+     * 
+     * @param qStart
+     * @param qStop
+     * @param qStrand
+     * @param qChr
+     * @param featureName
+     * @param bleed
+     * @return 
+     */
+    public Boolean doesRegionOverlap(int qStart, int qStop, Strand qStrand, String qChr, String featureName, int bleed){
+        return 
+          this.getType().toUpperCase().equals(featureName.toUpperCase())  
+            && this.getStrand() == qStrand
+            && this.getSeqID().equals(qChr)
+            && Math.abs(this.getStart()- qStart) < bleed 
+            && Math.abs(this.getStop() - qStop) < bleed;
+    }
+    
+    
+
+    
+    
+    /**
+     * does the specified region overlap this gffEntry and featureType ?
+     * 
+     * @param qStart
+     * @param qStop
+     * @param qStrand
+     * @param qChr
+     * @param featureName
+     * @return 
+     */
+    public Boolean doesFeatureContainRegion(int qStart, int qStop, Strand qStrand, String qChr, String featureName){
+        return 
+          this.getType().toUpperCase().equals(featureName.toUpperCase())  
+            && this.getStrand() == qStrand
+            && this.getSeqID().equals(qChr)
+            && this.getStart() <= qStart 
+            && this.getStop() >= qStop;
+    }
+
+
+
+
+    
+    /**
+     * does the specified region overlap this gffEntry and featureType ?
+     * 
+     * @param queryGFFEntry
+     * @return 
+     */
+    public Boolean doesFeatureContainRegion(GFFEntry queryGFFEntry){
+        return 
+           this.getStrand() == queryGFFEntry.getStrand()
+            && this.getSeqID().equals(queryGFFEntry.getSeqID())
+            && this.getStart() <= queryGFFEntry.getStart()
+            && this.getStop() >= queryGFFEntry.getStop();
+    }
+
+
+
+
+    
+    /**
+     * does the specified region overlap this gffEntry regardless of featureType?
+     * 
+     * @param qStart
+     * @param qStop
+     * @param qStrand
+     * @param qChr
+     * @param bleed
+     * @return 
+     */
+    public Boolean doesRegionOverlap(int qStart, int qStop, Strand qStrand, String qChr, int bleed){
+        return 
+            this.getStrand() == qStrand
+            && this.getSrc().equals(qChr)
+            && Math.abs(this.getStart()- qStart) < bleed 
+            && Math.abs(this.getStop() - qStop) < bleed;
+    }
+    
     
 
     public String toGFF3String(){
@@ -129,15 +271,15 @@ public class GFFEntry {
             attributes      e.g. ID=MIMAT0027619;Alias=MIMAT0027619;Name=hsa-miR-6859-3p;Derives_from=MI0022705
 
         */
-        String gff3String = this.src + "\t"
-                + "." + "\t"
-                + "smallRNA" + "\t"
+        String gff3String = this.refSeqID + "\t"
+                + this.src + "\t"
+                + this.type + "\t"
                 + start + "\t"
                 + stop + "\t"
                 + "." + "\t"
                 + strand + "\t"
                 + "." + "\t"
-                + "ID=" + seqID + ";" + "Alias=" + seqID + ";" + "Name=" + seqID;
+                + "ID=" + featureID + ";"  + "Seq=" + this.getSequence();
         return gff3String;
     }
         
@@ -150,7 +292,7 @@ public class GFFEntry {
      * @param attrVal 
      */
     public void addAttr(String attrKey, String attrVal){
-        attr = attr.concat(";" + attrKey + "=" + attrVal );            
+        attrString = attrString.concat(";" + attrKey + "=" + attrVal );            
     }   
     
     
@@ -162,7 +304,7 @@ public class GFFEntry {
      * @return 
      */
     public String getAttrValue(String attrKey){
-        String attrs[] = attr.split(";");
+        String attrs[] = attrString.split(";");
         for (String attr: attrs){
             if(attr.contains(attrKey)){
                 return attr.split("=")[1].trim();
@@ -175,14 +317,14 @@ public class GFFEntry {
      * @return the seqID
      */
     public String getSeqID() {
-        return seqID;
+        return refSeqID;
     }
 
     /**
      * @param seqID the seqID to set
      */
     public void setSeqID(String seqID) {
-        this.seqID = seqID;
+        this.refSeqID = seqID;
     }
 
     /**
@@ -238,7 +380,7 @@ public class GFFEntry {
      * @return the attr
      */
     public String getAttr() {
-        return attr;
+        return attrString;
     }
     
     
@@ -249,7 +391,7 @@ public class GFFEntry {
      * @param seq 
      */
     public void setSequence(String seq){
-        attr = attr.concat(";seq=" + seq);            
+        attrString = attrString.concat(";seq=" + seq);            
     }
     
     
@@ -260,10 +402,12 @@ public class GFFEntry {
      * @return 
      */
     public String getSequence(){
-        if(attr.contains("seq=")){
-            int startPos = attr.indexOf("seq=")+4;
-            int stopPos = attr.indexOf(";", startPos);
-            return attr.substring(startPos, stopPos);
+        if(attrString.contains("seq=")){
+            int startPos = attrString.indexOf("seq=")+4;
+            int stopPos = attrString.indexOf(";", startPos);
+            if(stopPos==-1)
+                stopPos = attrString.length() - 1;
+            return attrString.substring(startPos, stopPos);
         }
         return "";
     }
@@ -279,11 +423,12 @@ public class GFFEntry {
      * @return 
      */
     public String toMirbaseFastAString(){
-        if(attr.contains("seq=")){
-            int startPos = attr.indexOf("seq=")+4;
-            int stopPos = attr.indexOf(";", startPos);
-            return ">" + this.seqID + " " + this.seqID.split("-")[1] + " " + this.seqID.split("-")[0] + " " + this.seqID.split("-")[1] 
-                    + CR + attr.substring(startPos, stopPos);
+        if(attrString.contains("seq=")){            
+            int startPos = attrString.indexOf("seq=")+4;
+            int stopPos = attrString.indexOf(";", startPos);
+            if (stopPos==-1)
+                stopPos=attrString.length()-1;
+            return ">" + featureID + "|" + this.refSeqID  + ":" + start + "-" + stop + "(" + strand + ")" + CR + attrString.substring(startPos, stopPos);
         }
         return "";
     }

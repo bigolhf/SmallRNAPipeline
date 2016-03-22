@@ -12,6 +12,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -34,7 +35,7 @@ import org.apache.logging.log4j.Logger;
  *
  * 1. distribution of start and end positions 2. distribution of mapped read
  * length
- *
+ * 2. overlap of reads with coding regions
  *
  * @author sr
  */
@@ -49,6 +50,8 @@ public class StepAnalyzeSAMforStartPositions extends NGSStep implements NGSBase{
     private static final String     ID_LONGEST_FEATURE  = "longestFeature";
     private static final String     ID_MIN_COUNTS       = "minCounts";
     private static final String     ID_SEPARATION       = "featureSeparation";
+    private static final String     ID_FEATURE_TYPES    = "featureTypes";
+    
     
     private static final String     INFILE_EXTENSION    = ".trim.clp.gen.sam";
     private static final String     POS_FILE_EXT        = ".trim.clp.gen.pos.tsv";
@@ -77,6 +80,8 @@ public class StepAnalyzeSAMforStartPositions extends NGSStep implements NGSBase{
     int[]                           coverage3           = new int[COVERAGE_SPAN];
     
     private GFFSet                  featureSet          = new GFFSet(); // stores the identified features
+    private ArrayList<String>       featureTypes        = new ArrayList<>();
+    private ArrayList<String>       featureStrings      = new ArrayList<>();
     
 
     public StepAnalyzeSAMforStartPositions(StepInputData sid) {
@@ -128,99 +133,43 @@ public class StepAnalyzeSAMforStartPositions extends NGSStep implements NGSBase{
             throw new NullPointerException("<" + ID_SEPARATION + "> : Missing Definition in Configuration File");
         }
         
+        if(configData.get(ID_BASELINE)!=null)
+            this.setFeatureTypes((ArrayList<String>)configData.get(ID_FEATURE_TYPES));
 
+
+        String chk;
       
-        
-        try{
-            this.setBaselinePercent((Integer) configData.get(ID_BASELINE));
-        }
-        catch(NumberFormatException exNm){
-            logger.error(ID_BASELINE + " <" + configData.get(ID_BASELINE) + "> is not an integer");
-            throw new NumberFormatException(ID_BASELINE + " <" + configData.get(ID_BASELINE) + "> is not an integer");
-        }        
-        if (this.getBaselinePercent() <= 0){
-            logger.error(ID_BASELINE + " <" + configData.get(ID_BASELINE) + "> must be an integer between 0 and 100");
-            throw new IllegalArgumentException(ID_BASELINE + " <" + configData.get(ID_BASELINE) + "> must be an integer between 0 and 100");
-        }
+        chk = checkParameter("Integer", ID_BASELINE, Integer.toString((Integer)configData.get(ID_BASELINE)), "0", "100", logger);
+        if(chk!=null)
+            this.setBaselinePercent((Integer)configData.get(ID_BASELINE));
 
         
-        try{
-            this.setShortestRead((Integer) configData.get(ID_SHORTEST_FEATURE));
-        }
-        catch(NumberFormatException exNm){
-            logger.error(ID_SHORTEST_FEATURE + " <" + ID_SHORTEST_FEATURE + "> is not an integer");
-            throw new NumberFormatException(ID_SHORTEST_FEATURE + " <" + ID_SHORTEST_FEATURE + "> is not an integer");
-        }        
-        if (this.getShortestRead() <= 0 ){
-            logger.error(ID_SHORTEST_FEATURE + " <" + configData.get(ID_SHORTEST_FEATURE) + "> must be > 0 ");
-            throw new IllegalArgumentException(ID_SHORTEST_FEATURE + " <" + configData.get(ID_SHORTEST_FEATURE) + "> must be > 0 ");
-        }
-        
+        chk = checkParameter("Integer", ID_SHORTEST_FEATURE, Integer.toString((Integer)configData.get(ID_SHORTEST_FEATURE)), "0", "100", logger);
+        if(chk!=null)
+            this.setShortestRead((Integer)configData.get(ID_SHORTEST_FEATURE));
+
         
 
-        try{
-            this.setLongestRead((Integer) configData.get(ID_LONGEST_FEATURE));
-        }
-        catch(NumberFormatException exNm){
-            logger.error(ID_LONGEST_FEATURE + " <" + ID_LONGEST_FEATURE + "> is not an integer");
-            throw new NumberFormatException(ID_LONGEST_FEATURE + " <" + ID_LONGEST_FEATURE + "> is not an integer");
-        }        
-        if (this.getLongestRead() <= 0 ){
-            logger.error(ID_LONGEST_FEATURE + " <" + configData.get(ID_LONGEST_FEATURE) + "> must be > 0 ");
-            throw new IllegalArgumentException(ID_LONGEST_FEATURE + " <" + configData.get(ID_LONGEST_FEATURE) + "> must be > 0 ");
-        }
-        
+        chk = checkParameter("Integer", ID_LONGEST_FEATURE, Integer.toString((Integer)configData.get(ID_LONGEST_FEATURE)), "0", "NA", logger);
+        if(chk!=null)
+            this.setLongestRead((Integer)configData.get(ID_LONGEST_FEATURE));
 
-        try{
-            this.setMinCounts((Integer) configData.get(ID_MIN_COUNTS));
-        }
-        catch(NumberFormatException exNm){
-            logger.error(ID_MIN_COUNTS + " <" + ID_MIN_COUNTS + "> is not an integer");
-            throw new NumberFormatException(ID_MIN_COUNTS + " <" + ID_MIN_COUNTS + "> is not an integer");
-        }        
-        if (this.getMinCounts() <= 0 ){
-            logger.error(ID_MIN_COUNTS + " <" + configData.get(ID_MIN_COUNTS) + "> must be > 0 ");
-            throw new IllegalArgumentException(ID_MIN_COUNTS + " <" + configData.get(ID_MIN_COUNTS) + "> must be > 0 ");
-        }
-        
 
-        try{
-            this.setLocationBleed((Integer) configData.get(ID_BLEED));
-        }
-        catch(NumberFormatException exNm){
-            logger.error(ID_BLEED + " <" + ID_BLEED + "> is not an integer");
-            throw new NumberFormatException(ID_BLEED + " <" + ID_BLEED + "> is not an integer");
-        }        
-        if (this.getLocationBleed() <= 0 ){
-            logger.error(ID_BLEED + " <" + configData.get(ID_BLEED) + "> must be > 0 ");
-            throw new IllegalArgumentException(ID_BLEED + " <" + configData.get(ID_BLEED) + "> must be > 0 ");
-        }
+        chk = checkParameter("Integer", ID_MIN_COUNTS, Integer.toString((Integer)configData.get(ID_MIN_COUNTS)), "0", "NA", logger);
+        if(chk!=null)
+            this.setMinCounts((Integer)configData.get(ID_MIN_COUNTS));
+
+
+        chk = checkParameter("Integer", ID_BLEED, Integer.toString((Integer)configData.get(ID_BLEED)), "0", "NA", logger);
+        if(chk!=null)
+            this.setLocationBleed((Integer)configData.get(ID_BLEED));
+
         
         
 
-        try{
-            this.setSeparation((Integer) configData.get(ID_SEPARATION));
-        }
-        catch(NumberFormatException exNm){
-            logger.error(ID_SEPARATION + " <" + ID_SEPARATION + "> is not an integer");
-            throw new NumberFormatException(ID_SEPARATION + " <" + ID_SEPARATION + "> is not an integer");
-        }        
-        if (this.getSeparation() <= 0 ){
-            logger.error(ID_SEPARATION + " <" + configData.get(ID_SEPARATION) + "> must be > 0 ");
-            throw new IllegalArgumentException(ID_SEPARATION + " <" + configData.get(ID_SEPARATION) + "> must be > 0 ");
-        }
-        
-        try{
-            this.setMiRBaseRelease((Integer) configData.get(ID_MIRBASE_VERSION));
-        }
-        catch(Exception exNm){
-            logger.error(ID_MIRBASE_VERSION + " <" + configData.get(ID_MIRBASE_VERSION) + "> is not an integer");
-            throw new NumberFormatException(ID_MIRBASE_VERSION + " <" + configData.get(ID_MIRBASE_VERSION) + "> is not an integer");
-        }        
-        if (this.getMiRBaseRelease() <= 0){
-            logger.error(ID_MIRBASE_VERSION + " <" + configData.get(ID_MIRBASE_VERSION) + "> must be positive integer");
-            throw new IllegalArgumentException(ID_MIRBASE_VERSION + " <" + configData.get(ID_MIRBASE_VERSION) + "> must be positive integer");
-        }
+        chk = checkParameter("Integer", ID_MIRBASE_VERSION, Integer.toString((Integer)configData.get(ID_MIRBASE_VERSION)), "6", "NA", logger);
+        if(chk!=null)
+            this.setMiRBaseRelease((Integer)configData.get(ID_MIRBASE_VERSION));
         
 
         this.setReferenceGenome((String) configData.get(ID_REF_GENOME));
@@ -229,11 +178,11 @@ public class StepAnalyzeSAMforStartPositions extends NGSStep implements NGSBase{
             throw new IllegalArgumentException(ID_REF_GENOME + " <" + configData.get(ID_REF_GENOME) + "> must be a 3 letter string");            
         }
 
+        
         logger.info("passed");
     }
     
-    
-    
+        
     
     
     
@@ -299,12 +248,6 @@ public class StepAnalyzeSAMforStartPositions extends NGSStep implements NGSBase{
         int shortestFeature = this.getShortestRead();
         int longestFeature  = this.getLongestRead();
         
-//        String pathToData = stepInputData.getProjectRoot() + FileSeparator + stepInputData.getProjectID();
-//        pathToData = pathToData.replace(FileSeparator + FileSeparator, FileSeparator).trim();
-        
-//        String outputFolder = pathToData + FileSeparator + stepInputData.getOutputFolder();
-//        String posAnalysisOutputFolder = pathToData + FileSeparator + posAnalysisOutFolder;
-//        outputFolder = outputFolder.replace(FileSeparator + FileSeparator, FileSeparator).trim();
         Boolean fA = new File(outFolder).mkdir();        
         if (fA) {
             logger.info("created output folder <" + outFolder + "> for results");
@@ -324,13 +267,10 @@ public class StepAnalyzeSAMforStartPositions extends NGSStep implements NGSBase{
             logger.info("results will be written to " + positionFile);
             
             samLine = null;
-            
-            int lineCount = 0;
             try {
                 BufferedReader brSAM = new BufferedReader(new FileReader(new File(samInputFile)));
                 while ((samLine = brSAM.readLine()) != null) {
                     
-                    SAMEntry e;
                     SAMEntry samEntry = new SAMEntry(samLine);
                     if (samEntry.isHeaderLine() == false && samEntry.isMappedRead()) {
                         mappedReads.add(new MappedRead(samEntry.getStartPos(), samEntry.getEndPos(),
@@ -348,248 +288,36 @@ public class StepAnalyzeSAMforStartPositions extends NGSStep implements NGSBase{
                 throw new IOException(STEP_ID_STRING + ": error parsing SAM file <" + samInputFile + ">");
             }
 
-            /**
-             *
-             * condense overlapping reads into single features, i.e., those
-             * which have start/stop positions that vary by <= ´bleed´. Start a
-             * new feature when the separation between current read and feature
-             * is great than ´separation´.
-             *
-             * if a read is going to be used to identify a feature, then it is
-             * probably sufficient for it to arise in only one sample, because
-             * it won´t be identified in a differential expression analysis
-             * anyway
-             *
-             * need to accommodate the possibility of two features in the same
-             * position but on different strands therefore we sort by strand and
-             * position
-             */
-            try {
-                Collections.sort(mappedReads);
-
-                int bleed = this.getLocationBleed();
-                
-                int matchCount5 = 0;
-                int matchCount3 = 0;
-                int preMatchCount5 = 0;
-                int preMatchCount3 = 0;
-                int totalCounts = 0;
-                
-                MappedRead mappedRead = ((MappedRead) mappedReads.get(0));
-                //logger.debug(mappedRead.toString());
-                String currentChr = mappedRead.getChr();
-                Strand currentStrand = mappedRead.getStrand();
-
-                /*
-                 need to accommodate the possibility of two features in the
-                 same position but on different strands
-                 */
-                int currentStart5 = 100000000;
-                int currentStop5 = -1;
-                int currentStart3 = -1;
-                int currentStop3 = 100000000;
-
-                /*
-                 using an int array might not be the best way to proceed, but try for now
-                 */
-                int coverage5Start = -1;
-                int coverage3Start = -1;
-                
-                if (currentStrand.equals(Strand.PLUS)) {
-                    currentStart5 = mappedRead.getStartPos();
-                    currentStop5 = mappedRead.getEndPos();
-                    coverage5Start = currentStart5 - COVERAGE_SPAN / 2;
-                } else {
-                    currentStart3 = mappedRead.getStartPos();
-                    currentStop3 = mappedRead.getEndPos();                    
-                    coverage3Start = currentStart3 - COVERAGE_SPAN / 2;
-                }
-                
-                //String featureOutFile = pathToData + FileSeparator + posAnalysisOutFolder + FileSeparator + sampleData.getDataFile().replace(".fastq", featuresExtension);
-//                positionFile
-                //featureOutFile = featureOutFile.replace(FileSeparator + FileSeparator, FileSeparator).trim();x
-                
-                BufferedWriter bwFT = new BufferedWriter(new FileWriter(new File(featureOutFile)));
-                bwFT.write("ID\tChr\t \tStart\tStop\tLength\tCoverage\tDispersion\n");
-
-                Iterator itMR = mappedReads.iterator();
-                Boolean startNewFeature3 = false;
-                Boolean startNewFeature5 = false;
-                while (itMR.hasNext()) {
-                    mappedRead = (MappedRead) itMR.next();
-                    //logger.info(mappedRead.toString());
-                    if (mappedRead.getChr().equals(currentChr) == false || mappedRead.getStrand().equals(currentStrand) == false) {
-                        if (mappedRead.getChr().equals(currentChr) == false) {
-                            //logger.debug("different chr. start new feature");
-                        }
-                        if (mappedRead.getStrand().equals(currentStrand) == false) {
-                            logger.debug("different strand. start new feature");                            
-                        }
-                        currentStrand = mappedRead.getStrand();
-                        currentChr = mappedRead.getChr();
-                        if (currentStrand == Strand.PLUS) {
-                            startNewFeature3 = false;
-                            startNewFeature5 = false;
-                            currentStart5 = mappedRead.getStartPos();
-                            currentStop5 = mappedRead.getEndPos();
-                            coverage5Start = currentStart5 - COVERAGE_SPAN / 2;
-                            addCounts5(currentStart5 - coverage5Start, mappedRead.getEndPos() - coverage5Start, mappedRead.getCount());
-                        } else {
-                            startNewFeature3 = false;
-                            startNewFeature5 = false;
-                            currentStart3 = mappedRead.getStartPos();
-                            currentStop3 = mappedRead.getEndPos();
-                            coverage3Start = currentStart3 + COVERAGE_SPAN / 2;
-                            addCounts3(coverage3Start - mappedRead.getStartPos(), coverage3Start - mappedRead.getEndPos(), mappedRead.getCount());
-                        }
-                        
-                    } else {
-                        switch (currentStrand) {
-                            case PLUS:
-                                if (mappedRead.getStartPos() - currentStart5 > separation) {
-                                    //logger.debug("read too far away. start new 5' feature");                                    
-                                    startNewFeature5 = true;
-                                } else {
-                                    if (mappedRead.getStartPos() < currentStart5) {
-                                        //logger.debug("extend 5´ start from " + currentStart5 + " to " + mappedRead.getStartPos());
-                                        currentStart5 = mappedRead.getStartPos();
-                                        if( currentStart5 <= coverage5Start)
-                                            startNewFeature5 = true;
-                                    }
-                                    if (mappedRead.getEndPos() > currentStop5) {
-                                        //logger.debug("extend 5´ end from " + currentStop5 + " to " + mappedRead.getEndPos());
-                                        currentStop5 = mappedRead.getEndPos();
-                                        if( currentStop5 >= coverage5Start + COVERAGE_SPAN )
-                                            startNewFeature5 = true;
-                                    }
-                                    try {
-                                        //logger.debug(printCoverage5(currentStart5 - coverage5Start, mappedRead.getEndPos() - coverage5Start, "|"));
-                                        this.addCounts5(currentStart5 - coverage5Start, mappedRead.getEndPos() - coverage5Start, mappedRead.getCount());
-                                        //logger.debug(printCoverage5(currentStart5 - coverage5Start, mappedRead.getEndPos() - coverage5Start, "|"));
-                                    } catch (ArrayIndexOutOfBoundsException exAB) {
-                                        logger.error("5' Array out of bounds");
-                                        throw new IOException("5' Array out of bounds");
-                                    }
-                                }
-                                break;
-                            
-                                
-                            case MINUS:
-                                if ((mappedRead.getStartPos() - currentStart3 > separation) || (currentStop3 - mappedRead.getEndPos() > separation)) {
-                                    //logger.debug("read too far away. start new 3' feature");
-                                    startNewFeature3 = true;
-                                } else {
-                                    //logger.debug("add read to existing feature");
-                                    if (mappedRead.getStartPos() > currentStart3) {
-                                        //logger.debug("extend 3´ start from " + currentStart3 + " to " + mappedRead.getStartPos());
-                                        currentStart3 = mappedRead.getStartPos();
-                                        if(currentStart3 <= coverage3Start)
-                                            startNewFeature3 = true;
-                                    }
-                                    if (mappedRead.getEndPos() < currentStop3) {
-                                        //logger.debug("extend 3´ end from " + currentStop3 + " to " + mappedRead.getEndPos());
-                                        currentStop3 = mappedRead.getEndPos();
-                                        if(currentStop3 >= coverage3Start + COVERAGE_SPAN) 
-                                            startNewFeature3 = true;
-                                    }
-                                    try {
-                                        //logger.debug(printCoverage3(coverage3Start - currentStop3, coverage3Start - currentStart3, "|"));
-                                        this.addCounts3(coverage3Start - mappedRead.getStartPos(), coverage3Start - mappedRead.getEndPos(), mappedRead.getCount());
-                                        //logger.debug(printCoverage3(coverage3Start - currentStop3, coverage3Start - currentStart3, "|"));
-                                    } catch (ArrayIndexOutOfBoundsException exAB) {
-                                        logger.error("3' Array out of bounds");
-                                        logger.error(mappedRead.toString());
-                                        logger.error(exAB);
-                                        throw new IOException("3' Array out of bounds" + "\n" + mappedRead.toString());
-                                    }
-                                }
-                                break;
-                            
-                                
-                            case UNKNOWN:
-                                logger.error("no Strand information for read, cannot process ");
-                                logger.error(mappedRead.toString());
-                                break;
-                            
-                        }
-                        
-                    }
-                    
-                    if (startNewFeature5) {
-                        if(currentStop5 - currentStart5 + 1 <= longestFeature 
-                                && currentStop5 - currentStart5 + 1>= shortestFeature 
-                                && countCoverage5(currentStart5 - coverage5Start, currentStop5 - coverage5Start) >= minCounts){
-                            bwFT.write(featureCount + "\t" + currentChr + "\t" + currentStrand + "\t" + currentStart5 + "\t" + currentStop5 + "\t"
-                                    + (currentStop5 - currentStart5 + 1) + "\t" + this.countCoverage5(currentStart5 - coverage5Start, currentStop5 - coverage5Start)
-                                    + "\t" + this.countDispersion5(currentStart5 - coverage5Start, currentStop5 - coverage5Start) + "\n");
-                            if(featureSet.doesRegionContainFeature(currentStart5, currentStop5, currentStrand, currentChr, bleed)==false){
-                                GFFEntry newEntry = new GFFEntry(hostCode  + "-" + Integer.toString(featureCount) + ":5|" + currentChr  + ":" + currentStart5+ "-" + currentStop5, currentStrand.toString(), currentChr, currentStart5, currentStop5);
-                                String featureSeq = genomeFasta.getSubSeq(currentChr, currentStrand, currentStart5, currentStop5);
-                                newEntry.setSequence(featureSeq);
-                                featureSet.addEntry(newEntry);
-                            }                            
-                        }
-                        
-                        currentStart5 = mappedRead.getStartPos();
-                        currentStop5 = mappedRead.getEndPos();
-
-                        coverage5Start = currentStart5 - COVERAGE_SPAN / 2;
-                        clearCoverage5();
-                        try {
-                            this.addCounts5(mappedRead.getStartPos() - coverage5Start, mappedRead.getEndPos() - coverage5Start, mappedRead.getCount());
-                        } catch (ArrayIndexOutOfBoundsException exAB) {
-                            logger.error("5' Array out of bounds when writing data");
-                            throw new IOException(STEP_ID_STRING + ": 5' Array out of bounds when writing data");
-                        }
-                        
-                        currentStrand = mappedRead.getStrand();
-                        currentChr = mappedRead.getChr();
-                        featureCount++;
-                        startNewFeature5 = false;
-                        
-                    } else {                                         
-                        if (startNewFeature3 ) {
-                            if(currentStop3 - currentStart3 + 1<= longestFeature 
-                                && currentStop3 - currentStart3 + 1>= shortestFeature
-                                && countCoverage3(coverage3Start - currentStop3, coverage3Start - currentStart3) > minCounts){
-                                bwFT.write(featureCount + "\t" + currentChr + "\t" + currentStrand + "\t" + currentStart3 + "\t" + currentStop3 + "\t"
-                                        + (currentStop3 - currentStart3 + 1) + "\t" + this.countCoverage3(coverage3Start - currentStop3, coverage3Start - currentStart3)
-                                        + "\t" + this.countDispersion3(coverage3Start - currentStop3, coverage3Start - currentStart3) + "\n");
-                                if(featureSet.doesRegionContainFeature(currentStart3, currentStop3, currentStrand, currentChr, bleed)==false){
-                                    GFFEntry newEntry = new GFFEntry(hostCode + "-" + Integer.toString(featureCount) + ":3|" + currentChr  + ":" + currentStart5+ "-" + currentStop5, currentStrand.toString(), currentChr, currentStart3, currentStop3);
-                                    String featureSeq = SimpleSeq.complement(genomeFasta.getSubSeq(currentChr, currentStrand, currentStart3, currentStop3));
-                                    newEntry.setSequence(featureSeq);
-                                    featureSet.addEntry(newEntry);                                    
-                                }
-                                
-                            }
-                            
-                            currentStart3 = mappedRead.getStartPos();
-                            currentStop3 = mappedRead.getEndPos();
-
-                            coverage3Start = currentStart3 + COVERAGE_SPAN / 2;
-                            clearCoverage3();
-                            try {
-                                this.addCounts3(coverage3Start - mappedRead.getStartPos(), coverage3Start - mappedRead.getEndPos(), mappedRead.getCount());
-                            } catch (ArrayIndexOutOfBoundsException exAB) {
-                                logger.error("3' Array out of bounds when writing data");
-                                throw new IOException(STEP_ID_STRING + ": 3' Array out of bounds when writing data");
-                            }
-                            currentStrand = mappedRead.getStrand();
-                            currentChr = mappedRead.getChr();                           
-                            featureCount++;
-                            startNewFeature3 = false;
-                        }
-                    }
-                    
-                }
-                bwFT.close();
-            } catch (IOException exIO) {
-                logger.error(exIO);
-                throw new IOException(STEP_ID_STRING + ": error writing feature details file <" + featureOutFile + ">");
-            }
             
+            featureCount = processSAMReads(featureOutFile, featureCount);
+            logger.info("completed parsing");
         }
+        
+        
+        /*
+          compare the predicted features to the GFF annotated to see how much 
+          overlap we have
+        */
+        String featVsGFFFile = outFolder + FILESEPARATOR + stepInputData.getProjectID() + ".gff_vs_feat.tsv";
+        try{
+            BufferedWriter bwFQ = new BufferedWriter(new FileWriter(new File(featVsGFFFile)));
+                for(GFFEntry gffEntry: gffSet.getGFFEntries()){
+                    for(GFFEntry feature: featureSet.getGFFEntries()){
+                        if(gffEntry.doesFeatureContainRegion(feature)){
+                            bwFQ.write("PASS\t" + gffEntry.getType() + "\t" + feature.toGFF3String() + "\n");
+                        }else{
+                            //bwFQ.write("FAIL\t" + gffEntry.getType() + "\t" + feature.toGFF3String() + "\n");
+                        }                            
+                    }
+                }
+            bwFQ.close();
+        }
+        catch(IOException exIO){
+            logger.error("error writing frequency file <" + featVsGFFFile + ">");
+            logger.error(exIO);
+            throw new IOException(STEP_ID_STRING + ": error writing frequency file <" + featVsGFFFile + ">");
+        }
+        
         
         String featureFile = outFolder + FILESEPARATOR + stepInputData.getProjectID() + ".features.tsv";
         try{
@@ -629,10 +357,354 @@ public class StepAnalyzeSAMforStartPositions extends NGSStep implements NGSBase{
             throw new IOException(STEP_ID_STRING + ": error writing fasta feature file <" + fastaFile + ">");
         }
         
+        String posFile = outFolder + FILESEPARATOR + stepInputData.getProjectID() + ".pos.tsv";
+        try{
+            String headerString = "";
+            BufferedWriter bwPS = new BufferedWriter(new FileWriter(new File(posFile)));
+                for(String featureType: this.getFeatureTypes()){
+                    headerString = headerString.concat(featureType + "\tcounts\t");
+                }    
+                bwPS.write(headerString.substring(0, headerString.length()-1) + "\n");
+                
+                for(String featureString: featureStrings){
+                    bwPS.write(featureString + "\n");
+                }
+            bwPS.close();
+        }
+        catch(IOException exIO){
+            logger.error("error writing start position file <" + fastaFile + ">");
+            logger.error(exIO);
+            throw new IOException(STEP_ID_STRING + ": error writing fasta position file <" + fastaFile + ">");
+        }
+        
+        
         logger.info(STEP_ID_STRING + ": completed");
         
+        
+
     }
 
+    
+    
+    /**
+     *
+     * condense overlapping reads into single features, i.e., those
+     * which have start/stop positions that vary by <= ´bleed´. Start a
+     * new feature when the separation between current read and feature
+     * is great than ´separation´.
+     *
+     * if a read is going to be used to identify a feature, then it is
+     * probably sufficient for it to arise in only one sample, because
+     * it won´t be identified in a differential expression analysis
+     * anyway
+     *
+     * Also need to accommodate the possibility of two features in the same
+     * position but on different strands therefore we sort by strand and
+     * position
+     * 
+     * @param featureOutFile
+     * @param featureCount
+     * @return
+     * @throws IOException 
+     */
+    private int processSAMReads(String featureOutFile, int featureCount) throws IOException{
+        
+        String hostCode = this.getReferenceGenome();
+        int shortestFeature = this.getShortestRead();            
+        int longestFeature  = this.getLongestRead();
+        
+        try {
+            Collections.sort(mappedReads);
+
+            int bleed = this.getLocationBleed();
+
+            MappedRead mappedRead = ((MappedRead) mappedReads.get(0));
+            //logger.debug(mappedRead.toString());
+            String currentChr = mappedRead.getChr();
+            Strand currentStrand = mappedRead.getStrand();
+            String featureString = "";
+            for(String featureType: this.getFeatureTypes()){
+                featureString = featureString.concat(findOverlappingFeature(mappedRead, featureType) + "\t");                    
+            }
+            featureStrings.add(featureString.substring(0, featureString.length()-1));
+
+            /*
+             need to accommodate the possibility of two features in the
+             same position but on different strands
+             */
+            int currentStart5 = 100000000;
+            int currentStop5 = -1;
+            int currentStart3 = -1;
+            int currentStop3 = 100000000;
+
+            /*
+             using an int array might not be the best way to proceed, but try for now
+             */
+            int coverage5Start = -1;
+            int coverage3Start = -1;
+
+            if (currentStrand.equals(Strand.PLUS)) {
+                currentStart5 = mappedRead.getStartPos();
+                currentStop5 = mappedRead.getEndPos();
+                coverage5Start = currentStart5 - COVERAGE_SPAN / 2;
+            } else {
+                currentStart3 = mappedRead.getStartPos();
+                currentStop3 = mappedRead.getEndPos();                    
+                coverage3Start = currentStart3 - COVERAGE_SPAN / 2;
+            }
+
+
+            BufferedWriter bwFT = new BufferedWriter(new FileWriter(new File(featureOutFile)));
+            bwFT.write("ID\tChr\t \tStart\tStop\tLength\tCoverage\tDispersion\n");
+
+            Iterator itMR = mappedReads.iterator();
+            Boolean startNewFeature3 = false;
+            Boolean startNewFeature5 = false;
+            while (itMR.hasNext()) {
+                mappedRead = (MappedRead) itMR.next();
+                featureString = "";
+                for(String featureType: this.getFeatureTypes()){
+                    featureString = featureString.concat(findOverlappingFeature(mappedRead, featureType) + "\t");                    
+                }
+                featureStrings.add(featureString.substring(0, featureString.length()-1));
+                //logger.debug(mappedRead.toString());
+                if (mappedRead.getChr().equals(currentChr) == false || mappedRead.getStrand().equals(currentStrand) == false) {
+                    if (mappedRead.getChr().equals(currentChr) == false) {
+                        //logger.debug("different chr. start new feature");
+                    }
+                    if (mappedRead.getStrand().equals(currentStrand) == false) {
+                        logger.debug("different strand. start new feature");                            
+                    }
+                    currentStrand = mappedRead.getStrand();
+                    currentChr = mappedRead.getChr();
+                    if (currentStrand == Strand.PLUS) {
+                        startNewFeature3 = false;
+                        startNewFeature5 = false;
+                        currentStart5 = mappedRead.getStartPos();
+                        currentStop5 = mappedRead.getEndPos();
+                        coverage5Start = currentStart5 - COVERAGE_SPAN / 2;
+                        addCounts5(currentStart5 - coverage5Start, mappedRead.getEndPos() - coverage5Start, mappedRead.getCount());
+                    } else {
+                        startNewFeature3 = false;
+                        startNewFeature5 = false;
+                        currentStart3 = mappedRead.getStartPos();
+                        currentStop3 = mappedRead.getEndPos();
+                        coverage3Start = currentStart3 + COVERAGE_SPAN / 2;
+                        addCounts3(coverage3Start - mappedRead.getStartPos(), coverage3Start - mappedRead.getEndPos(), mappedRead.getCount());
+                    }
+
+                } else {
+                    switch (currentStrand) {
+                        case PLUS:
+                            if (mappedRead.getStartPos() - currentStart5 > separation) {
+                                //logger.debug("read too far away. start new 5' feature");                                    
+                                startNewFeature5 = true;
+                            } else {
+                                if (mappedRead.getStartPos() < currentStart5) {
+                                    //logger.debug("extend 5´ start from " + currentStart5 + " to " + mappedRead.getStartPos());
+                                    currentStart5 = mappedRead.getStartPos();
+                                    if( currentStart5 <= coverage5Start)
+                                        startNewFeature5 = true;
+                                }
+                                if (mappedRead.getEndPos() > currentStop5) {
+                                    //logger.debug("extend 5´ end from " + currentStop5 + " to " + mappedRead.getEndPos());
+                                    currentStop5 = mappedRead.getEndPos();
+                                    if( currentStop5 >= coverage5Start + COVERAGE_SPAN )
+                                        startNewFeature5 = true;
+                                }
+                                try {
+                                    //logger.debug(printCoverage5(currentStart5 - coverage5Start, mappedRead.getEndPos() - coverage5Start, "|"));
+                                    this.addCounts5(currentStart5 - coverage5Start, mappedRead.getEndPos() - coverage5Start, mappedRead.getCount());
+                                    //logger.debug(printCoverage5(currentStart5 - coverage5Start, mappedRead.getEndPos() - coverage5Start, "|"));
+                                } catch (ArrayIndexOutOfBoundsException exAB) {
+                                    logger.error("5' Array out of bounds");
+                                    throw new IOException("5' Array out of bounds");
+                                }
+                            }
+                            break;
+
+
+                        case MINUS:
+                            if ((mappedRead.getStartPos() - currentStart3 > separation) || (currentStop3 - mappedRead.getEndPos() > separation)) {
+                                //logger.debug("read too far away. start new 3' feature");
+                                startNewFeature3 = true;
+                            } else {
+                                //logger.debug("add read to existing feature");
+                                if (mappedRead.getStartPos() > currentStart3) {
+                                    //logger.debug("extend 3´ start from " + currentStart3 + " to " + mappedRead.getStartPos());
+                                    currentStart3 = mappedRead.getStartPos();
+                                    if(currentStart3 <= coverage3Start)
+                                        startNewFeature3 = true;
+                                }
+                                if (mappedRead.getEndPos() < currentStop3) {
+                                    //logger.debug("extend 3´ end from " + currentStop3 + " to " + mappedRead.getEndPos());
+                                    currentStop3 = mappedRead.getEndPos();
+                                    if(currentStop3 >= coverage3Start + COVERAGE_SPAN) 
+                                        startNewFeature3 = true;
+                                }
+                                try {
+                                    //logger.debug(printCoverage3(coverage3Start - currentStop3, coverage3Start - currentStart3, "|"));
+                                    this.addCounts3(coverage3Start - mappedRead.getStartPos(), coverage3Start - mappedRead.getEndPos(), mappedRead.getCount());
+                                    //logger.debug(printCoverage3(coverage3Start - currentStop3, coverage3Start - currentStart3, "|"));
+                                } catch (ArrayIndexOutOfBoundsException exAB) {
+                                    logger.error("3' Array out of bounds");
+                                    logger.error(mappedRead.toString());
+                                    logger.error(exAB);
+                                    throw new IOException("3' Array out of bounds" + "\n" + mappedRead.toString());
+                                }
+                            }
+                            break;
+
+
+                        case UNKNOWN:
+                            logger.error("no Strand information for read, cannot process ");
+                            logger.error(mappedRead.toString());
+                            break;
+
+                    }
+
+                }
+
+                if (startNewFeature5) {
+                    if(currentStop5 - currentStart5 + 1 <= longestFeature 
+                            && currentStop5 - currentStart5 + 1>= shortestFeature 
+                            && countCoverage5(currentStart5 - coverage5Start, currentStop5 - coverage5Start) >= minCounts){
+                        bwFT.write(featureCount + "\t" + currentChr + "\t" + currentStrand + "\t" + currentStart5 + "\t" + currentStop5 + "\t"
+                                + (currentStop5 - currentStart5 + 1) + "\t" + this.countCoverage5(currentStart5 - coverage5Start, currentStop5 - coverage5Start)
+                                + "\t" + this.countDispersion5(currentStart5 - coverage5Start, currentStop5 - coverage5Start) + "\n");
+                        if(featureSet.doesRegionContainFeature(currentStart5, currentStop5, currentStrand, currentChr, bleed)==false){
+                            GFFEntry newEntry = new GFFEntry(
+                                    currentChr,
+                                    "srp",
+                                    "smallRNA",
+                                    currentStart5, 
+                                    currentStop5,
+                                    ".",
+                                    currentStrand.toString(),
+                                    "0",
+                                    "ID=" + hostCode  + "-" + Integer.toString(featureCount) + ":5|" + currentChr  + ":" + currentStart5+ "-" + currentStop5
+                                    );
+                            String featureSeq = genomeFasta.getSubSeq(currentChr, currentStrand, currentStart5, currentStop5);
+                            newEntry.setSequence(featureSeq);
+                            featureSet.addEntry(newEntry);
+                        }                            
+                    }
+
+                    currentStart5 = mappedRead.getStartPos();
+                    currentStop5 = mappedRead.getEndPos();
+
+                    coverage5Start = currentStart5 - COVERAGE_SPAN / 2;
+                    clearCoverage5();
+                    try {
+                        this.addCounts5(mappedRead.getStartPos() - coverage5Start, mappedRead.getEndPos() - coverage5Start, mappedRead.getCount());
+                    } catch (ArrayIndexOutOfBoundsException exAB) {
+                        logger.error("5' Array out of bounds when writing data");
+                        throw new IOException(STEP_ID_STRING + ": 5' Array out of bounds when writing data");
+                    }
+
+                    currentStrand = mappedRead.getStrand();
+                    currentChr = mappedRead.getChr();
+                    featureCount++;
+                    startNewFeature5 = false;
+
+                } else {                                         
+                    if (startNewFeature3 ) {
+                        if(currentStop3 - currentStart3 + 1<= longestFeature 
+                            && currentStop3 - currentStart3 + 1>= shortestFeature
+                            && countCoverage3(coverage3Start - currentStop3, coverage3Start - currentStart3) > minCounts){
+                            bwFT.write(featureCount + "\t" + currentChr + "\t" + currentStrand + "\t" + currentStart3 + "\t" + currentStop3 + "\t"
+                                    + (currentStop3 - currentStart3 + 1) + "\t" + this.countCoverage3(coverage3Start - currentStop3, coverage3Start - currentStart3)
+                                    + "\t" + this.countDispersion3(coverage3Start - currentStop3, coverage3Start - currentStart3) + "\n");
+                            if(featureSet.doesRegionContainFeature(currentStart3, currentStop3, currentStrand, currentChr, bleed)==false){
+     //                           GFFEntry newEntry = new GFFEntry(hostCode + "-" + Integer.toString(featureCount) + ":3|" + currentChr  + ":" + currentStart5+ "-" + currentStop5, currentStrand.toString(), currentChr, currentStart3, currentStop3);
+                                GFFEntry newEntry = new GFFEntry(
+                                        currentChr,
+                                        "srp",
+                                        "smallRNA",
+                                        currentStart5, 
+                                        currentStop5,
+                                        ".",
+                                        currentStrand.toString(),
+                                        "0",
+                                        "ID=" + hostCode + "-" + Integer.toString(featureCount) + ":3|" + currentChr  + ":" + currentStart5+ "-" + currentStop5
+                                        );
+                                String featureSeq = SimpleSeq.complement(genomeFasta.getSubSeq(currentChr, currentStrand, currentStart3, currentStop3));
+                                newEntry.setSequence(featureSeq);
+                                featureSet.addEntry(newEntry);                                    
+                            }
+
+                        }
+
+                        currentStart3 = mappedRead.getStartPos();
+                        currentStop3 = mappedRead.getEndPos();
+
+                        coverage3Start = currentStart3 + COVERAGE_SPAN / 2;
+                        clearCoverage3();
+                        try {
+                            this.addCounts3(coverage3Start - mappedRead.getStartPos(), coverage3Start - mappedRead.getEndPos(), mappedRead.getCount());
+                        } catch (ArrayIndexOutOfBoundsException exAB) {
+                            logger.error("3' Array out of bounds when writing data");
+                            throw new IOException(STEP_ID_STRING + ": 3' Array out of bounds when writing data");
+                        }
+                        currentStrand = mappedRead.getStrand();
+                        currentChr = mappedRead.getChr();                           
+                        featureCount++;
+                        startNewFeature3 = false;
+                    }
+                }
+
+            }
+            bwFT.close();
+        } catch (IOException exIO) {
+            logger.error(exIO);
+            throw new IOException(STEP_ID_STRING + ": error writing feature details file <" + featureOutFile + ">");
+        }
+        return featureCount;
+    }
+    
+    
+    
+    
+    /**
+     * Is there a feature in the GFFEntry table that overlaps this read?
+     * 
+     * @param queryRead
+     * @param featureType
+     * @return 
+     */
+    private int checkFeatureOverlap(MappedRead queryRead, String featureType, int bleed){
+        GFFEntry gffEntry = gffSet.findOverlappingFeature(queryRead, featureType, bleed);
+        if (gffEntry!=null)
+            return gffEntry.getStart() - queryRead.getStartPos();
+        else
+            return -9999;
+    }
+    
+    
+    
+
+
+
+    /**
+     * Is there a feature in the GFFEntry table that overlaps this read?
+     * 
+     * @param queryRead
+     * @param featureType
+     * @return 
+     */
+    private String findOverlappingFeature(MappedRead queryRead, String featureType){
+        GFFEntry gffEntry = gffSet.doesFeatureContainRegion(queryRead, featureType);
+        if (gffEntry!=null)
+            return Integer.toString(gffEntry.getStart() - queryRead.getStartPos()) + "\t" + queryRead.getCount();
+        else
+            return "-8888\t" + queryRead.getCount();
+    }
+    
+    
+    
+    
+    
+    
     /**
      * calculate average count across the mapped region for + Strand
      *
@@ -871,9 +943,10 @@ public class StepAnalyzeSAMforStartPositions extends NGSStep implements NGSBase{
         configData.put(ID_BLEED, 2);
         configData.put(ID_BASELINE, 5);
         configData.put(ID_SHORTEST_FEATURE, 2);
-        configData.put(ID_LONGEST_FEATURE, 2);
+        configData.put(ID_LONGEST_FEATURE, 200);
         configData.put(ID_MIN_COUNTS, 1000);
         configData.put(ID_SEPARATION, 10);
+        configData.put(ID_FEATURE_TYPES, new ArrayList<>(Arrays.asList("mRNA", "CDS", "exon")));
         
         return configData;
     }
@@ -997,6 +1070,20 @@ public class StepAnalyzeSAMforStartPositions extends NGSStep implements NGSBase{
      */
     public void setSeparation(int separation) {
         this.separation = separation;
+    }
+
+    /**
+     * @return the featureTypes
+     */
+    public ArrayList<String> getFeatureTypes() {
+        return featureTypes;
+    }
+
+    /**
+     * @param featureTypes the featureTypes to set
+     */
+    public void setFeatureTypes(ArrayList<String> featureTypes) {
+        this.featureTypes = featureTypes;
     }
     
 }
