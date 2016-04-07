@@ -10,7 +10,7 @@ import org.apache.logging.log4j.Logger;
 
 
 /**
- *
+ * THIS CLASS SHOULD NOT BE CHANGED WITHOUT CONSULTING WITH OTHER AUTHORS
  * @author sr
  */
 abstract public class NGSStep {
