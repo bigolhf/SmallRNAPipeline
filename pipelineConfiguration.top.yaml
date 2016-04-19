@@ -1,0 +1,3 @@
+UNZIP:
+  no_of_threads: 4
+  unzip_software: /usr/local/pigz

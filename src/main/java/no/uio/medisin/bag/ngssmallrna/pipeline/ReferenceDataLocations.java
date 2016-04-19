@@ -8,7 +8,8 @@ package no.uio.medisin.bag.ngssmallrna.pipeline;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
-import static no.uio.medisin.bag.ngssmallrna.pipeline.MiRNAFeature.logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * contains information about root paths to the different data types
@@ -17,6 +18,8 @@ import static no.uio.medisin.bag.ngssmallrna.pipeline.MiRNAFeature.logger;
  */
 public class ReferenceDataLocations {
     
+    static Logger                       logger                     = LogManager.getLogger();
+
     public final static     String ID_CONFIG_ID                    = "ReferenceData";
     public final static     String ID_GENOME_FOLDER                = "genomeRootFolder";
     public final static     String ID_MIRBASE_FOLDER               = "mirbaseFolder";

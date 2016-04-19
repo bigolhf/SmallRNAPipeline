@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
-import no.uio.medisin.bag.jmirpara.SimpleSeq;
+import no.uio.medisin.bag.core.SimpleSeq;
 import no.uio.medisin.bag.ngssmallrna.pipeline.ReferenceDataLocations;
 import no.uio.medisin.bag.ngssmallrna.pipeline.SampleDataEntry;
 import org.apache.commons.lang3.StringUtils;

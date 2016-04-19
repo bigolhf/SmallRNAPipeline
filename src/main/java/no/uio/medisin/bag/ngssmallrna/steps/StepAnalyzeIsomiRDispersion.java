@@ -17,31 +17,16 @@ import java.util.Iterator;
 import java.util.List;
 import no.uio.medisin.bag.ngssmallrna.pipeline.ConditionEntry;
 import no.uio.medisin.bag.ngssmallrna.pipeline.ConditionSet;
-import no.uio.medisin.bag.ngssmallrna.pipeline.MiRNADispAnalysisResult;
-import no.uio.medisin.bag.ngssmallrna.pipeline.IsomiRSet;
-import no.uio.medisin.bag.ngssmallrna.pipeline.MiRNAFeature;
-import no.uio.medisin.bag.ngssmallrna.pipeline.MirFeatureSet;
+import no.uio.medisin.bag.core.MiRNADispAnalysisResult;
+import no.uio.medisin.bag.core.IsomiRSet;
+import no.uio.medisin.bag.core.MiRNAFeature;
+import no.uio.medisin.bag.core.MirFeatureSet;
 import no.uio.medisin.bag.ngssmallrna.pipeline.SampleDataEntry;
 import org.apache.commons.lang3.ArrayUtils;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
-import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
 import static org.apache.commons.math3.stat.inference.TestUtils.pairedTTest;
 
 

@@ -16,15 +16,15 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
-import no.uio.medisin.bag.jmirpara.SimpleSeq;
+import no.uio.medisin.bag.core.SimpleSeq;
 import no.uio.medisin.bag.ngssmallrna.pipeline.ReferenceDataLocations;
-import no.uio.medisin.bag.ngssmallrna.pipeline.GFFEntry;
-import no.uio.medisin.bag.ngssmallrna.pipeline.GFFSet;
-import no.uio.medisin.bag.ngssmallrna.pipeline.GenomeSeq;
-import no.uio.medisin.bag.ngssmallrna.pipeline.MappedRead;
-import no.uio.medisin.bag.ngssmallrna.pipeline.SAMEntry;
+import no.uio.medisin.bag.core.GFFEntry;
+import no.uio.medisin.bag.core.GFFSet;
+import no.uio.medisin.bag.core.GenomeSeq;
+import no.uio.medisin.bag.core.MappedRead;
+import no.uio.medisin.bag.core.SAMEntry;
 import no.uio.medisin.bag.ngssmallrna.pipeline.SampleDataEntry;
-import no.uio.medisin.bag.ngssmallrna.pipeline.Strand;
+import no.uio.medisin.bag.core.Strand;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -267,6 +267,7 @@ public class StepAnalyzeSAMforStartPositions extends NGSStep implements NGSBase{
             logger.info("results will be written to " + positionFile);
             
             samLine = null;
+            int mapCount = 0;
             try {
                 BufferedReader brSAM = new BufferedReader(new FileReader(new File(samInputFile)));
                 while ((samLine = brSAM.readLine()) != null) {

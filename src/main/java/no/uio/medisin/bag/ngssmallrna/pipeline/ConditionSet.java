@@ -10,7 +10,8 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
 /**
- *
+ * stores a set of Conditions, and implements specific operations on the set
+ * 
  * @author sr
  */
 public class ConditionSet {

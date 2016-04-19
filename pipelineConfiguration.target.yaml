@@ -1,0 +1,8 @@
+menu:
+  backgroundImage: 
+    image: menu.png
+    tile: true
+  font: 
+    color: blue
+    size: 14pt
+    family: Arial

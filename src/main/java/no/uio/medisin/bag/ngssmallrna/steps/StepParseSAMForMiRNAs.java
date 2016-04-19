@@ -17,9 +17,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import no.uio.medisin.bag.ngssmallrna.pipeline.IsomiRSet;
-import no.uio.medisin.bag.ngssmallrna.pipeline.MiRNAFeature;
-import no.uio.medisin.bag.ngssmallrna.pipeline.MirFeatureSet;
+import no.uio.medisin.bag.core.IsomiRSet;
+import no.uio.medisin.bag.core.MiRNAFeature;
+import no.uio.medisin.bag.core.MirFeatureSet;
 import no.uio.medisin.bag.ngssmallrna.pipeline.SampleDataEntry;
 
 import org.apache.logging.log4j.LogManager;

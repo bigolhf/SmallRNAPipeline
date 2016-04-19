@@ -1,0 +1,78 @@
+ReferenceData:
+  genomeRootFolder: /data/genomes
+  targetscanFolder: /data/targetscan
+  mirbaseFolder: /data/mirbase
+BowtieMapSingleReads:
+  mappingSoftware: /usr/local/bin/bowtie
+  host: hsa
+  alignmentMode: v
+  noOfMismatches: 2
+ParseSAMForMiRNAs:
+  baselinePercent: 5
+  host: hsa
+  analyzeIsomirs: true
+  mirbaseVersion: 20
+  bleed: 2
+DEwithEdgeR:
+  host: hsa
+  pValue: 2
+  mirbaseVersion: 20
+UnzipInputFiles:
+  noOfThreads: 4
+  unzipSoftware: /usr/local/pigz
+CollapseReads:
+  fastq2fastaLocation: /usr/local/bin/fastq_to_fasta
+  fastxCollapserLocation: /usr/local/bin/fastx_collapser
+SingleReadAdapterTrim:
+  adapterSoftware: /Users/simonray/software/trimmomatic/Trimmomatic-0.33/trimmomatic-0.33.jar
+  adapterFile: /Users/simonray/NetBeansProjects/SmallRNAPipeline/test/TruSeqE-SE.fa
+  minAvgReadQual: 30
+  minAlignScore: 7
+  noOfThreads: 4
+  noOfMismatches: 2
+BSMapReads:
+  reportUnmappedReads: false
+  mappingStrand: 0
+  startAtThisRead: 1
+  threeNucleoideMapping: false
+  reportRepeatsValue: 1
+  skipSAMHeader: false
+  endtAtThisRead: -1
+  gapSize: 0
+  host: hsa
+  transitionMap: TC
+  minInsertSize: 28
+  lowQualityFilterValue: 5
+  mapFirstNucleotides: 0
+  trimAdapterSequence: true
+  includeRefSeq: false
+  maxInsertSize: 500
+  noOfMismatches: 0.08
+  randomSeed: 0
+  adapterSequence:
+  - GATCGGAAGAGCACACGTCTGAACTCCAGTCACACAGTGATCTCGTATGCCGTCTTCTGCTTG
+  - AATGATACGGCGACCACCGAGATCTACACTCTTTCCCTACACGACGCTCTTCCGATCT
+  kmerCutoffRatio: 1.0E-6
+  genomeIndexInterval: 4
+  pathToBSmap: /usr/local/bin/bsmap
+  digestionSite: C-CGG
+  messageLevel: 1
+  'seedSize:': 16
+  qualityThresholdTrimValue: 0
+  noOfThreads: 4
+AnalyzeStartPositions:
+  baselinePercent: 5
+  minCounts: 1000
+  featureSeparation: 10
+  host: hsa
+  longestFeature: 2
+  mirbaseVersion: 20
+  bleed: 2
+  shortestFeature: 2
+CleanUp:
+  noOfThreads: 4
+  unzipSoftware: /usr/local/pigz
+  fileTypes:
+  - fastq
+  - fasta
+  - sam

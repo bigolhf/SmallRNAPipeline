@@ -6,7 +6,16 @@
 package no.uio.medisin.bag.ngssmallrna.pipeline;
 
 /**
+ * This stores a condition entry as defined in the TSV data file specified 
+ * at run time. e.g. if the TSV file has the format
+ *     File                Source    Condition  Time	Note
+ *   2726_S3.fastq          Msy        ph5.5     t0      Msy
+ *   2726_S4.fastq          Msy        ph6.1     t0      Msy
  *
+ * then there are two conditions, "ph5.5" & "ph6.1"
+ * 
+ * this can is used to consolidate data from different samples but identical conditions
+ * 
  * @author sr
  */
 public class ConditionEntry {
